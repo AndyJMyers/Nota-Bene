@@ -22,7 +22,6 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -35,7 +34,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -72,6 +70,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
@@ -116,10 +115,10 @@ private fun NotaBeneApp() {
         Box(Modifier.fillMaxSize().background(Ink)) {
             CalmBackground(effect, accent)
             Column(
-                Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 12.dp),
+                Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Header(effect) { effect = if (effect == Effect.STARS) Effect.SNOW else Effect.STARS }
+                Header()
                 InstrumentTabs(selected, accent) { selected = it }
                 AnimatedContent(
                     targetState = selected,
@@ -132,33 +131,34 @@ private fun NotaBeneApp() {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
-                MoodControl(mood, accent) { mood = it }
+                MoodAndAtmosphere(
+                    value = mood,
+                    accent = accent,
+                    effect = effect,
+                    onMoodChange = { mood = it },
+                    onCycleEffect = { effect = if (effect == Effect.STARS) Effect.SNOW else Effect.STARS }
+                )
             }
         }
     }
 }
 
 @Composable
-private fun Header(effect: Effect, onCycle: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text("NOTA BENE", color = Color(0xFFE9E0D2), fontSize = 28.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-            Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
-        }
-        TextButton(onClick = onCycle) {
-            Text(if (effect == Effect.STARS) "✦ SKY" else "❄ SNOW", color = Color(0xFFC8BDC8), fontSize = 12.sp)
-        }
+private fun Header() {
+    Column {
+        Text("NOTA BENE", color = Color(0xFFE9E0D2), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+        Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp)
     }
 }
 
 @Composable
 private fun InstrumentTabs(selected: Tab, accent: Color, onSelect: (Tab) -> Unit) {
-    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Tab.entries.forEach { tab ->
             val active = tab == selected
             val glow by animateFloatAsState(if (active) 1f else .14f, tween(420), label = "filament glow")
             Box(
-                Modifier.width(72.dp).height(48.dp)
+                Modifier.weight(1f).height(50.dp)
                     .background(Brush.verticalGradient(listOf(lerp(Ink, accent, glow * .55f), Glass, Ink)), RoundedCornerShape(7.dp))
                     .border(2.dp, lerp(Color(0xFF39313B), accent, glow), RoundedCornerShape(7.dp))
                     .clickable { onSelect(tab) },
@@ -308,13 +308,26 @@ private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modif
 }
 
 @Composable
-private fun MoodControl(value: Float, accent: Color, onChange: (Float) -> Unit) {
-    Column {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("MOOD / ATMOSPHERE", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
-            Text("${(value * 100).roundToInt()}", color = accent, fontSize = 11.sp)
+private fun MoodAndAtmosphere(
+    value: Float,
+    accent: Color,
+    effect: Effect,
+    onMoodChange: (Float) -> Unit,
+    onCycleEffect: () -> Unit
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("MOOD", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+                Text("${(value * 100).roundToInt()}", color = accent, fontSize = 11.sp)
+            }
+            Slider(value = value, onValueChange = onMoodChange, colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent))
         }
-        Slider(value = value, onValueChange = onChange, colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent))
+        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            OutlinedButton(onClick = onCycleEffect) {
+                Text(if (effect == Effect.STARS) "✦ NIGHT SKY" else "❄ FALLING SNOW", color = Color(0xFFC8BDC8), fontSize = 11.sp)
+            }
+        }
     }
 }
 

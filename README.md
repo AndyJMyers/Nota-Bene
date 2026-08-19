@@ -104,3 +104,7 @@ The project targets Android 16 (API 36) and supports Android 8+ (API 26).
 Nota Bene is initially being developed for its creator's own regular use. Features will be added or removed according to whether they prove useful in practice. Only if it becomes a genuinely useful daily companion will a wider release be considered.
 
 The priority is not feature count. It is making a small application pleasant enough, fast enough and useful enough to keep opening.
+
+## Repository policy
+
+This repository is publicly visible so builds can be downloaded and verified. Nota Bene remains a privately directed personal project: external pull requests are not accepted, and publication here is not an invitation to contribute code.
