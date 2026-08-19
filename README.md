@@ -85,7 +85,9 @@ The first buildable baseline establishes:
 - star and snow background modes;
 - placeholders for typed, voice and photo capture.
 
-Next: Room-backed offline records, beginning with Payments and Medicine.
+The Payments circuit now supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
+
+Next: refine payment extraction through real receipt testing, then give Medicine the same complete treatment.
 
 ## Build
 
