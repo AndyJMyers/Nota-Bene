@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title description">
+  <title id="title">Nota Bene</title>
+  <desc id="description">Retro-futurist instrument panel masthead for the Nota Bene Android application</desc>
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#08070f"/><stop offset="0.55" stop-color="#17121c"/><stop offset="1" stop-color="#090812"/>
+    </linearGradient>
+    <linearGradient id="spectrum" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#321052"/><stop offset="0.36" stop-color="#164b89"/><stop offset="0.7" stop-color="#f2c94c"/><stop offset="1" stop-color="#9d174d"/>
+    </linearGradient>
+    <radialGradient id="lamp">
+      <stop offset="0" stop-color="#fff1b8" stop-opacity="0.95"/><stop offset="0.26" stop-color="#f2c94c" stop-opacity="0.8"/><stop offset="1" stop-color="#9d174d" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="9"/></filter>
+    <pattern id="grain" width="37" height="31" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="7" r="0.7" fill="#fff" opacity="0.12"/><circle cx="25" cy="19" r="0.5" fill="#fff" opacity="0.08"/><path d="M12 28l3-1" stroke="#fff" stroke-width="0.5" opacity="0.08"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="360" rx="24" fill="url(#panel)"/>
+  <rect x="9" y="9" width="1182" height="342" rx="18" fill="none" stroke="#403643" stroke-width="2"/>
+  <rect x="24" y="24" width="1152" height="312" rx="12" fill="url(#grain)" stroke="#211b25"/>
+  <g fill="#8e8490"><circle cx="48" cy="48" r="6"/><circle cx="1152" cy="48" r="6"/><circle cx="48" cy="312" r="6"/><circle cx="1152" cy="312" r="6"/></g>
+  <circle cx="600" cy="102" r="86" fill="url(#lamp)" filter="url(#glow)" opacity="0.6"/><circle cx="600" cy="102" r="5" fill="#fff1b8"/><path d="M555 103h90" stroke="#f2c94c" stroke-width="2" opacity="0.55"/>
+  <text x="600" y="170" text-anchor="middle" fill="#eee5d7" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" letter-spacing="16">NOTA BENE</text>
+  <text x="600" y="211" text-anchor="middle" fill="#9d949f" font-family="Arial, Helvetica, sans-serif" font-size="16" letter-spacing="8">PERSONAL OPERATIONS LOG</text>
+  <g font-family="Arial, Helvetica, sans-serif" font-size="13" font-weight="700" letter-spacing="2" text-anchor="middle">
+    <g transform="translate(304 252)"><rect width="104" height="48" rx="7" fill="#17131a" stroke="#514553"/><text x="52" y="30" fill="#756c77">PAY</text></g>
+    <g transform="translate(424 252)"><rect width="104" height="48" rx="7" fill="#17131a" stroke="#514553"/><text x="52" y="30" fill="#756c77">MED</text></g>
+    <g transform="translate(544 252)"><rect width="112" height="48" rx="7" fill="#493919" stroke="#f2c94c" stroke-width="2"/><rect x="8" y="7" width="96" height="26" rx="5" fill="url(#lamp)" opacity="0.45"/><text x="56" y="30" fill="#fff1b8">BODY</text></g>
+    <g transform="translate(672 252)"><rect width="104" height="48" rx="7" fill="#17131a" stroke="#514553"/><text x="52" y="30" fill="#756c77">TASK</text></g>
+    <g transform="translate(792 252)"><rect width="104" height="48" rx="7" fill="#17131a" stroke="#514553"/><text x="52" y="30" fill="#756c77">ASK</text></g>
+  </g>
+  <rect x="304" y="316" width="592" height="4" rx="2" fill="url(#spectrum)"/>
+</svg>
