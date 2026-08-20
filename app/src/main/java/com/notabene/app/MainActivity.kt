@@ -788,7 +788,8 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
     }
     val duration = (baseDuration / (.65f + energy * .55f)).toInt()
     val phase by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(duration), RepeatMode.Restart), label = "atmosphere")
-    Canvas(Modifier.fillMaxSize().alpha(.2f + energy * .22f)) {
+    val atmosphereAlpha = ((.2f + energy * .22f) * 1.5f).coerceAtMost(.72f)
+    Canvas(Modifier.fillMaxSize().alpha(atmosphereAlpha)) {
         when (effect) {
             Effect.STARS -> {
                 repeat(58) { index ->
