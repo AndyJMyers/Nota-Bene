@@ -9,6 +9,8 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "payments")
@@ -33,9 +35,30 @@ interface PaymentDao {
     suspend fun delete(id: Long)
 }
 
-@Database(entities = [PaymentRecord::class], version = 1, exportSchema = false)
+@Entity(tableName = "ask_items")
+data class AskItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val text: String,
+    val done: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface AskDao {
+    @Query("SELECT * FROM ask_items ORDER BY done ASC, createdAt DESC")
+    fun observeAll(): Flow<List<AskItem>>
+
+    @Insert
+    suspend fun insert(item: AskItem)
+
+    @Query("UPDATE ask_items SET done = :done WHERE id = :id")
+    suspend fun setDone(id: Long, done: Boolean)
+}
+
+@Database(entities = [PaymentRecord::class, AskItem::class], version = 2, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
+    abstract fun askDao(): AskDao
 
     companion object {
         @Volatile private var instance: NotaBeneDatabase? = null
@@ -45,7 +68,15 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
+        }
+
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `ask_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `text` TEXT NOT NULL, `done` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)"
+                )
+            }
         }
     }
 }

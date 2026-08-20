@@ -39,6 +39,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -68,6 +69,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -129,6 +131,7 @@ private fun NotaBeneApp() {
                 }
                 when (selected) {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
+                    Tab.RESEARCH -> AskPanel(accent, Modifier.weight(1f))
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
                 MoodAndAtmosphere(
@@ -290,6 +293,90 @@ private fun PaymentRow(payment: PaymentRecord, accent: Color, onDelete: () -> Un
             }
             if (payment.amount.isNotBlank()) Text(payment.amount, color = accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             TextButton(onClick = onDelete) { Text("×", color = Color(0xFF817781), fontSize = 20.sp) }
+        }
+    }
+}
+
+@Composable
+private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val dao = remember { NotaBeneDatabase.get(context).askDao() }
+    val items by dao.observeAll().collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+    var draft by remember { mutableStateOf("") }
+    var hideCompleted by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("Type or speak something to investigate") }
+    val visibleItems = remember(items, hideCompleted) { if (hideCompleted) items.filterNot { it.done } else items }
+
+    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val words = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+            if (words.isNotBlank()) {
+                draft = words
+                status = "Speech captured — edit it or keep it"
+            } else status = "No speech was returned"
+        } else status = "Listening cancelled"
+    }
+
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Text("NEW QUESTION / TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                PaymentField("What needs looking into?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                dao.insert(AskItem(text = draft.trim()))
+                                draft = ""
+                                status = "ASK item saved locally"
+                            }
+                        },
+                        enabled = draft.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = accent)
+                    ) { Text("KEEP", color = Ink, fontWeight = FontWeight.Black) }
+                    OutlinedButton(onClick = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "What needs investigating?")
+                        }
+                        runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
+                    }) { Text("LISTEN") }
+                }
+                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+            }
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("ASK ITEMS  ${items.count { !it.done }} OPEN", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            TextButton(onClick = { hideCompleted = !hideCompleted }) {
+                Text(if (hideCompleted) "SHOW COMPLETED" else "HIDE COMPLETED", color = accent, fontSize = 10.sp)
+            }
+        }
+        if (visibleItems.isEmpty()) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text(if (items.isEmpty()) "Nothing waiting to be investigated" else "All completed items are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
+            }
+        } else {
+            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                items(visibleItems, key = { it.id }) { item ->
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(checked = item.done, onCheckedChange = { done -> scope.launch { dao.setDone(item.id, done) } })
+                            Text(
+                                item.text,
+                                color = if (item.done) Color(0xFF777078) else Color(0xFFE6DEE6),
+                                fontSize = 14.sp,
+                                textDecoration = if (item.done) TextDecoration.LineThrough else TextDecoration.None,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

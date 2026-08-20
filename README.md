@@ -85,7 +85,9 @@ The first buildable baseline establishes:
 - star and snow background modes;
 - placeholders for typed, voice and photo capture.
 
-The Payments circuit now supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
+The Payments circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
+
+The ASK circuit supports typed or spoken items, persistent open/done state, checkbox completion and hiding completed items.
 
 Next: refine payment extraction through real receipt testing, then give Medicine the same complete treatment.
 
