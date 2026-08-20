@@ -5,6 +5,8 @@ import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Insert
+import androidx.room.Index
+import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
@@ -96,12 +98,55 @@ interface BodyDao {
     suspend fun delete(id: Long)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class], version = 4, exportSchema = false)
+@Entity(tableName = "medications")
+data class Medication(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val dosage: String,
+    val doseTime: String,
+    val startingDoses: Int,
+    val reorderAt: Int,
+    val active: Boolean = true,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "dose_logs",
+    indices = [Index(value = ["medicationId", "doseDate"], unique = true)]
+)
+data class DoseLog(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val medicationId: Long,
+    val doseDate: String,
+    val scheduledFor: Long,
+    val takenAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface MedicationDao {
+    @Query("SELECT * FROM medications ORDER BY active DESC, createdAt DESC")
+    fun observeMedications(): Flow<List<Medication>>
+
+    @Query("SELECT * FROM dose_logs ORDER BY takenAt DESC")
+    fun observeDoseLogs(): Flow<List<DoseLog>>
+
+    @Insert
+    suspend fun insertMedication(item: Medication): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertDoseLog(item: DoseLog): Long
+
+    @Query("UPDATE medications SET active = :active WHERE id = :id")
+    suspend fun setActive(id: Long, active: Boolean)
+}
+
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class], version = 5, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
     abstract fun taskDao(): TaskDao
     abstract fun bodyDao(): BodyDao
+    abstract fun medicationDao(): MedicationDao
 
     companion object {
         @Volatile private var instance: NotaBeneDatabase? = null
@@ -111,7 +156,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -135,6 +180,18 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `body_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `observation` TEXT NOT NULL, `measurement` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)"
                 )
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `medications` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `dosage` TEXT NOT NULL, `doseTime` TEXT NOT NULL, `startingDoses` INTEGER NOT NULL, `reorderAt` INTEGER NOT NULL, `active` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `dose_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `medicationId` INTEGER NOT NULL, `doseDate` TEXT NOT NULL, `scheduledFor` INTEGER NOT NULL, `takenAt` INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_dose_logs_medicationId_doseDate` ON `dose_logs` (`medicationId`, `doseDate`)")
             }
         }
     }

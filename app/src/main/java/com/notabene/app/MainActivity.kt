@@ -45,6 +45,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -77,7 +78,13 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.text.DateFormat
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
 
@@ -136,6 +143,7 @@ private fun NotaBeneApp() {
                 }
                 when (selected) {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
+                    Tab.MEDICINE -> MedicationPanel(accent, Modifier.weight(1f))
                     Tab.HEALTH -> BodyPanel(accent, Modifier.weight(1f))
                     Tab.TASKS -> TaskPanel(accent, Modifier.weight(1f))
                     Tab.RESEARCH -> AskPanel(accent, Modifier.weight(1f))
@@ -562,6 +570,155 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val dao = remember { NotaBeneDatabase.get(context).medicationDao() }
+    val medications by dao.observeMedications().collectAsState(initial = emptyList())
+    val logs by dao.observeDoseLogs().collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+    var name by remember { mutableStateOf("") }
+    var dosage by remember { mutableStateOf("") }
+    var doseTime by remember { mutableStateOf("08:00") }
+    var startingDoses by remember { mutableStateOf("") }
+    var reorderAt by remember { mutableStateOf("7") }
+    var showHalted by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("One schedule represents one daily dose") }
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(60_000)
+        }
+    }
+
+    val visibleMedications = remember(medications, showHalted) {
+        if (showHalted) medications else medications.filter { it.active }
+    }
+    val validTime = parseDoseTime(doseTime)
+    val validStock = startingDoses.toIntOrNull()?.takeIf { it >= 0 }
+    val validReorder = reorderAt.toIntOrNull()?.takeIf { it >= 0 }
+
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+            Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text("NEW MEDICATION SCHEDULE", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    PaymentField("Medication", name, { name = it }, Modifier.weight(1.25f), accent)
+                    PaymentField("Dosage", dosage, { dosage = it }, Modifier.weight(.9f), accent)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    PaymentField("Daily time", doseTime, { doseTime = it }, Modifier.weight(1f), accent)
+                    PaymentField("Doses left", startingDoses, { startingDoses = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
+                    PaymentField("Reorder at", reorderAt, { reorderAt = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                dao.insertMedication(
+                                    Medication(
+                                        name = name.trim(), dosage = dosage.trim(),
+                                        doseTime = validTime!!.format(DateTimeFormatter.ofPattern("HH:mm")),
+                                        startingDoses = validStock!!, reorderAt = validReorder!!
+                                    )
+                                )
+                                name = ""; dosage = ""; startingDoses = ""; status = "Medication schedule saved locally"
+                            }
+                        },
+                        enabled = name.isNotBlank() && dosage.isNotBlank() && validTime != null && validStock != null && validReorder != null,
+                        colors = ButtonDefaults.buttonColors(containerColor = accent)
+                    ) { Text("ADD", color = Ink, fontWeight = FontWeight.Black) }
+                    Text(status, color = Color(0xFFA79DA8), fontSize = 10.sp, modifier = Modifier.weight(1f))
+                }
+            }
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("MEDICINES", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RadioButton(selected = !showHalted, onClick = { showHalted = false })
+                Text("ACTIVE", color = if (!showHalted) accent else Color(0xFF777078), fontSize = 9.sp)
+                RadioButton(selected = showHalted, onClick = { showHalted = true })
+                Text("WITH HALTED", color = if (showHalted) accent else Color(0xFF777078), fontSize = 9.sp)
+            }
+        }
+        if (visibleMedications.isEmpty()) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text("No medication schedules to show", color = Color(0xFF6F6771), fontSize = 13.sp)
+            }
+        } else {
+            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                items(visibleMedications, key = { it.id }) { medication ->
+                    MedicationRow(medication, logs.filter { it.medicationId == medication.id }, now, accent) { action ->
+                        scope.launch {
+                            when (action) {
+                                MedicationAction.TAKEN -> {
+                                    val scheduled = scheduledForToday(medication.doseTime)
+                                    dao.insertDoseLog(DoseLog(medicationId = medication.id, doseDate = LocalDate.now().toString(), scheduledFor = scheduled))
+                                }
+                                MedicationAction.TOGGLE_ACTIVE -> dao.setActive(medication.id, !medication.active)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private enum class MedicationAction { TAKEN, TOGGLE_ACTIVE }
+
+@Composable
+private fun MedicationRow(medication: Medication, logs: List<DoseLog>, now: Long, accent: Color, onAction: (MedicationAction) -> Unit) {
+    val today = LocalDate.now().toString()
+    val todayLog = logs.firstOrNull { it.doseDate == today }
+    val remaining = (medication.startingDoses - logs.size).coerceAtLeast(0)
+    val scheduled = scheduledForToday(medication.doseTime)
+    val stateText = when {
+        !medication.active -> "HALTED"
+        todayLog != null && todayLog.takenAt <= scheduled + 60 * 60 * 1000 -> "TAKEN ON TIME"
+        todayLog != null -> "TAKEN LATE"
+        now > scheduled -> "OVERDUE"
+        else -> "DUE ${medication.doseTime}"
+    }
+    val stateColor = when {
+        !medication.active -> Color(0xFF777078)
+        todayLog != null -> Color(0xFF73B58A)
+        now > scheduled -> Crimson
+        else -> accent
+    }
+    val reorder = remaining <= medication.reorderAt
+
+    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(medication.name, color = if (medication.active) Color(0xFFE6DEE6) else Color(0xFF777078), fontWeight = FontWeight.SemiBold)
+                    Text("${medication.dosage}  ·  DAILY ${medication.doseTime}", color = Color(0xFF9A919B), fontSize = 10.sp)
+                }
+                Text(stateText, color = stateColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("$remaining DOSES LEFT", color = if (reorder) Crimson else Color(0xFFC5BBC5), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                if (reorder && medication.active) Text("APPLY FOR MORE", color = Crimson, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (medication.active) {
+                    Button(
+                        onClick = { onAction(MedicationAction.TAKEN) },
+                        enabled = todayLog == null && remaining > 0,
+                        colors = ButtonDefaults.buttonColors(containerColor = accent)
+                    ) { Text("TAKEN", color = Ink, fontWeight = FontWeight.Black) }
+                }
+                OutlinedButton(onClick = { onAction(MedicationAction.TOGGLE_ACTIVE) }) {
+                    Text(if (medication.active) "HALT" else "RESTART")
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modifier) {
     Card(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(12.dp)) {
         Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -600,6 +757,17 @@ private fun parseCapture(text: String): Pair<String, String> {
     val amount = amounts.maxByOrNull { it.first }?.second.orEmpty()
     val merchant = lines.firstOrNull { line -> !amountPattern.containsMatchIn(line) && line.any(Char::isLetter) }?.take(60).orEmpty()
     return merchant to amount
+}
+
+private fun parseDoseTime(value: String): LocalTime? = try {
+    LocalTime.parse(value.trim(), DateTimeFormatter.ofPattern("H:mm"))
+} catch (_: DateTimeParseException) {
+    null
+}
+
+private fun scheduledForToday(value: String): Long {
+    val time = parseDoseTime(value) ?: LocalTime.MIDNIGHT
+    return LocalDate.now().atTime(time).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 }
 
 private fun moodColour(value: Float): Color = when {
