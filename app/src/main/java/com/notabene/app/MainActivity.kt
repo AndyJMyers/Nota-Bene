@@ -136,6 +136,7 @@ private fun NotaBeneApp() {
                 }
                 when (selected) {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
+                    Tab.HEALTH -> BodyPanel(accent, Modifier.weight(1f))
                     Tab.TASKS -> TaskPanel(accent, Modifier.weight(1f))
                     Tab.RESEARCH -> AskPanel(accent, Modifier.weight(1f))
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
@@ -478,6 +479,80 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
                                     Text("WAITING ON  ${task.waitingOn}", color = if (task.done) Color(0xFF655F66) else accent, fontSize = 10.sp, letterSpacing = 1.sp)
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val dao = remember { NotaBeneDatabase.get(context).bodyDao() }
+    val observations by dao.observeAll().collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+    var draft by remember { mutableStateOf("") }
+    var measurement by remember { mutableStateOf("") }
+    var status by remember { mutableStateOf("Type or speak an observation") }
+
+    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val words = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+            if (words.isNotBlank()) {
+                draft = words
+                status = "Speech captured — edit it or keep it"
+            } else status = "No speech was returned"
+        } else status = "Listening cancelled"
+    }
+
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Text("NEW BODY RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                PaymentField("Symptom or observation", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
+                PaymentField("Measurement (optional)", measurement, { measurement = it }, Modifier.fillMaxWidth(), accent)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                dao.insert(BodyItem(observation = draft.trim(), measurement = measurement.trim()))
+                                draft = ""; measurement = ""
+                                status = "Body record saved locally"
+                            }
+                        },
+                        enabled = draft.isNotBlank() || measurement.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = accent)
+                    ) { Text("KEEP", color = Ink, fontWeight = FontWeight.Black) }
+                    OutlinedButton(onClick = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Describe the observation")
+                        }
+                        runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
+                    }) { Text("LISTEN") }
+                }
+                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+            }
+        }
+        Text("BODY HISTORY  ${observations.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+        if (observations.isEmpty()) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text("No observations recorded", color = Color(0xFF6F6771), fontSize = 13.sp)
+            }
+        } else {
+            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                items(observations, key = { it.id }) { item ->
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                if (item.observation.isNotBlank()) Text(item.observation, color = Color(0xFFE6DEE6), fontSize = 14.sp)
+                                if (item.measurement.isNotBlank()) Text(item.measurement, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt)), color = Color(0xFF847C86), fontSize = 10.sp)
+                            }
+                            TextButton(onClick = { scope.launch { dao.delete(item.id) } }) { Text("×", color = Color(0xFF817781), fontSize = 20.sp) }
                         }
                     }
                 }

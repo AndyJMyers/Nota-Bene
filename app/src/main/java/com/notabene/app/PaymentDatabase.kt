@@ -76,11 +76,32 @@ interface TaskDao {
     suspend fun setDone(id: Long, done: Boolean)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class], version = 3, exportSchema = false)
+@Entity(tableName = "body_items")
+data class BodyItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val observation: String,
+    val measurement: String = "",
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface BodyDao {
+    @Query("SELECT * FROM body_items ORDER BY createdAt DESC")
+    fun observeAll(): Flow<List<BodyItem>>
+
+    @Insert
+    suspend fun insert(item: BodyItem)
+
+    @Query("DELETE FROM body_items WHERE id = :id")
+    suspend fun delete(id: Long)
+}
+
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class], version = 4, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
     abstract fun taskDao(): TaskDao
+    abstract fun bodyDao(): BodyDao
 
     companion object {
         @Volatile private var instance: NotaBeneDatabase? = null
@@ -90,7 +111,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -105,6 +126,14 @@ abstract class NotaBeneDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `task_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `text` TEXT NOT NULL, `waitingOn` TEXT NOT NULL, `done` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)"
+                )
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `body_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `observation` TEXT NOT NULL, `measurement` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)"
                 )
             }
         }

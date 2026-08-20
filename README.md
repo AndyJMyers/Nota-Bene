@@ -91,6 +91,8 @@ The ASK circuit supports typed or spoken items, persistent open/done state, chec
 
 The TASK circuit provides the same persistent spoken-or-typed checklist, with an optional lightweight “waiting on” dependency for each task.
 
+The BODY circuit records typed or spoken symptoms and observations, optional measurements and automatic timestamps in a persistent history.
+
 Next: refine payment extraction through real receipt testing, then give Medicine the same complete treatment.
 
 ## Build
