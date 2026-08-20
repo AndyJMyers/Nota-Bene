@@ -133,7 +133,7 @@ private fun NotaBeneApp() {
 
     MaterialTheme(colorScheme = darkColorScheme(primary = accent, surface = Glass, background = Ink)) {
         Box(Modifier.fillMaxSize().background(Ink)) {
-            CalmBackground(effect, accent)
+            CalmBackground(effect, accent, mood)
             Column(
                 Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -774,56 +774,65 @@ private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modif
 }
 
 @Composable
-private fun CalmBackground(effect: Effect, accent: Color) {
+private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
     val motion = rememberInfiniteTransition(label = "calm background")
-    val duration = when (effect) {
-        Effect.STARS -> 16_000
-        Effect.SNOW -> 12_000
-        Effect.OIL -> 24_000
-        Effect.WAVES -> 18_000
+    val energy = when {
+        mood < .33f -> .55f - (mood / .33f) * .2f
+        else -> .35f + ((mood - .33f) / .67f) * .8f
     }
+    val baseDuration = when (effect) {
+        Effect.STARS -> 28_000
+        Effect.SNOW -> 28_000
+        Effect.OIL -> 42_000
+        Effect.WAVES -> 32_000
+    }
+    val duration = (baseDuration / (.65f + energy * .55f)).toInt()
     val phase by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(duration), RepeatMode.Restart), label = "atmosphere")
-    Canvas(Modifier.fillMaxSize().alpha(.42f)) {
+    Canvas(Modifier.fillMaxSize().alpha(.2f + energy * .22f)) {
         when (effect) {
             Effect.STARS -> {
                 repeat(58) { index ->
                     val x = ((index * 83) % 101) / 100f * size.width
                     val y = ((index * 47) % 103) / 102f * size.height
-                    val pulse = .12f + ((phase + index * .17f) % 1f) * .38f
+                    val pulse = .08f + ((phase + index * .17f) % 1f) * (.22f + energy * .18f)
                     drawCircle(if (index % 7 == 0) accent else Color.White, .7f + index % 3, Offset(x, y), alpha = pulse)
                 }
 
                 val novaPulse = (.5f + .5f * sin(phase * 2f * PI.toFloat()))
                 val nova = Offset(size.width * .78f, size.height * .22f)
-                drawCircle(accent, 8f + novaPulse * 18f, nova, alpha = .05f + novaPulse * .08f)
-                drawCircle(Color.White, 1.6f + novaPulse * 1.5f, nova, alpha = .5f)
+                drawCircle(accent, 7f + novaPulse * (10f + energy * 9f), nova, alpha = .03f + novaPulse * energy * .08f)
+                drawCircle(Color.White, 1.4f + novaPulse * energy * 1.5f, nova, alpha = .32f + energy * .18f)
                 repeat(6) { ray ->
                     val angle = ray * PI.toFloat() / 3f
                     val length = 9f + novaPulse * 13f
-                    drawLine(Color.White, nova, Offset(nova.x + cos(angle) * length, nova.y + sin(angle) * length), 1f, alpha = .08f + novaPulse * .1f)
+                    drawLine(Color.White, nova, Offset(nova.x + cos(angle) * length, nova.y + sin(angle) * length), 1f, alpha = .04f + novaPulse * energy * .1f)
                 }
 
                 val comet = (phase * 2.2f) % 1f
                 if (comet < .2f) {
                     val p = comet / .2f
                     val head = Offset(size.width * (.08f + p * .7f), size.height * (.2f + p * .2f))
-                    drawLine(Color.White, Offset(head.x - 75f, head.y - 34f), head, 1.5f, alpha = .42f * (1f - p))
-                    drawCircle(Color.White, 2.2f, head, alpha = .65f * (1f - p))
+                    drawLine(Color.White, Offset(head.x - 75f, head.y - 34f), head, 1.5f, alpha = energy * .34f * (1f - p))
+                    drawCircle(Color.White, 2.2f, head, alpha = energy * .52f * (1f - p))
                 }
                 val secondComet = ((phase + .57f) * 1.7f) % 1f
                 if (secondComet < .14f) {
                     val p = secondComet / .14f
                     val head = Offset(size.width * (.35f + p * .45f), size.height * (.66f + p * .12f))
-                    drawLine(accent, Offset(head.x - 55f, head.y - 20f), head, 1.2f, alpha = .3f * (1f - p))
+                    drawLine(accent, Offset(head.x - 55f, head.y - 20f), head, 1.2f, alpha = energy * .26f * (1f - p))
                 }
             }
 
             Effect.SNOW -> repeat(34) { index ->
                 val baseX = ((index * 83) % 101) / 100f * size.width
                 val baseY = ((index * 47 + 19) % 103) / 102f * size.height
-                val x = (baseX + sin((phase + index) * 2f * PI.toFloat()) * (6f + index % 8)) % size.width
-                val y = (baseY + phase * size.height) % size.height
-                drawCircle(Color.White, 1.6f + index % 4, Offset(x, y), alpha = .24f + (index % 4) * .06f)
+                val current = phase * 2f * PI.toFloat()
+                val broadDrift = sin(current * (.55f + index % 4 * .08f) + index * .73f) * (18f + index % 6 * 5f)
+                val gust = sin(current * (1.7f + index % 3 * .12f) + index * 1.31f) * (5f + energy * 9f)
+                val x = (baseX + broadDrift + gust + size.width) % size.width
+                val eddy = sin(current * 2.1f + index * .91f) * (34f + index % 5 * 8f) * (.55f + energy * .25f)
+                val y = (baseY + phase * size.height + eddy + size.height) % size.height
+                drawCircle(Color.White, 1.4f + index % 4, Offset(x, y), alpha = (.18f + (index % 4) * .045f) * (.65f + energy * .35f))
             }
 
             Effect.OIL -> {
@@ -833,22 +842,22 @@ private fun CalmBackground(effect: Effect, accent: Color) {
                     val x = size.width * (.5f + .34f * sin(angle * (.45f + index * .05f)))
                     val y = size.height * (.5f + .38f * cos(angle * (.32f + index * .04f)))
                     val radius = size.minDimension * (.24f + index * .035f)
-                    drawCircle(colours[index], radius, Offset(x, y), alpha = .055f + index * .008f)
-                    drawCircle(lerp(colours[index], Color.White, .18f), radius * .55f, Offset(x + radius * .2f, y - radius * .12f), alpha = .025f)
+                    drawCircle(colours[index], radius * (.85f + energy * .15f), Offset(x, y), alpha = (.038f + index * .007f) * (.7f + energy * .35f))
+                    drawCircle(lerp(colours[index], Color.White, .18f), radius * .55f, Offset(x + radius * .2f, y - radius * .12f), alpha = .016f + energy * .01f)
                 }
             }
 
             Effect.WAVES -> repeat(5) { band ->
                 val path = Path()
                 val baseY = size.height * (.24f + band * .13f)
-                val amplitude = 12f + band * 5f
+                val amplitude = (8f + band * 4f) * (.65f + energy * .5f)
                 val steps = 32
                 repeat(steps + 1) { step ->
                     val x = size.width * step / steps
                     val y = baseY + sin(step * .45f + phase * 2f * PI.toFloat() + band * .9f) * amplitude
                     if (step == 0) path.moveTo(x, y) else path.lineTo(x, y)
                 }
-                drawPath(path, lerp(accent, Color.White, band * .08f), alpha = .12f + band * .025f, style = Stroke(width = 1.4f + band * .3f))
+                drawPath(path, lerp(accent, Color.White, band * .08f), alpha = (.075f + band * .018f) * (.65f + energy * .45f), style = Stroke(width = 1.2f + band * .25f))
             }
         }
     }
