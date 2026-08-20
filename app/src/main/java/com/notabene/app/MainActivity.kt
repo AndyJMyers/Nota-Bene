@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -70,6 +71,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
@@ -81,6 +84,8 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.text.DateFormat
 import java.time.LocalDate
 import java.time.LocalTime
@@ -126,10 +131,28 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun NotaBeneApp() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val database = remember { NotaBeneDatabase.get(context) }
     var selected by remember { mutableStateOf(Tab.PAYMENTS) }
     var mood by remember { mutableFloatStateOf(.42f) }
     var effect by remember { mutableStateOf(Effect.STARS) }
     val accent = moodColour(mood)
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    ) { uri ->
+        if (uri != null) scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    context.contentResolver.openOutputStream(uri)?.use { exportWorkbook(database, it) }
+                        ?: error("Could not open the selected file")
+                }
+                Toast.makeText(context, "Nota Bene records exported", Toast.LENGTH_SHORT).show()
+            } catch (_: Exception) {
+                Toast.makeText(context, "Export failed", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     MaterialTheme(colorScheme = darkColorScheme(primary = accent, surface = Glass, background = Ink)) {
         Box(Modifier.fillMaxSize().background(Ink)) {
@@ -143,7 +166,8 @@ private fun NotaBeneApp() {
                     accent = accent,
                     effect = effect,
                     onMoodChange = { mood = it },
-                    onCycleEffect = { effect = effect.next() }
+                    onCycleEffect = { effect = effect.next() },
+                    onExport = { exportLauncher.launch("nota-bene-${LocalDate.now()}.xlsx") }
                 )
                 InstrumentTabs(selected, accent) { selected = it }
                 AnimatedContent(
@@ -172,7 +196,8 @@ private fun Header(
     accent: Color,
     effect: Effect,
     onMoodChange: (Float) -> Unit,
-    onCycleEffect: () -> Unit
+    onCycleEffect: () -> Unit,
+    onExport: () -> Unit
 ) {
     Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
@@ -188,6 +213,9 @@ private fun Header(
             )
             TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(effect.label, color = Color(0xFFC8BDC8), fontSize = 9.sp)
+            }
+            TextButton(onClick = onExport, modifier = Modifier.width(30.dp).semantics { contentDescription = "Export records" }, contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                Text("⇩", color = Color(0xFFE9E0D2), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
