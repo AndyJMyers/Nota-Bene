@@ -66,7 +66,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -87,6 +89,9 @@ import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 private val Ink = Color(0xFF090812)
 private val Glass = Color(0xFF28212B)
@@ -103,7 +108,14 @@ private enum class Tab(val shortLabel: String, val title: String, val prompt: St
     RESEARCH("ASK", "Further research", "Add a question to investigate")
 }
 
-private enum class Effect { STARS, SNOW }
+private enum class Effect(val label: String) {
+    STARS("✦ SKY"),
+    SNOW("❄ SNOW"),
+    OIL("◉ OIL"),
+    WAVES("≋ WAVES");
+
+    fun next(): Effect = entries[(ordinal + 1) % entries.size]
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -131,7 +143,7 @@ private fun NotaBeneApp() {
                     accent = accent,
                     effect = effect,
                     onMoodChange = { mood = it },
-                    onCycleEffect = { effect = if (effect == Effect.STARS) Effect.SNOW else Effect.STARS }
+                    onCycleEffect = { effect = effect.next() }
                 )
                 InstrumentTabs(selected, accent) { selected = it }
                 AnimatedContent(
@@ -175,7 +187,7 @@ private fun Header(
                 colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
             )
             TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                Text(if (effect == Effect.STARS) "✦ SKY" else "❄ SNOW", color = Color(0xFFC8BDC8), fontSize = 9.sp)
+                Text(effect.label, color = Color(0xFFC8BDC8), fontSize = 9.sp)
             }
         }
     }
@@ -764,16 +776,80 @@ private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modif
 @Composable
 private fun CalmBackground(effect: Effect, accent: Color) {
     val motion = rememberInfiniteTransition(label = "calm background")
-    val phase by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(if (effect == Effect.STARS) 7000 else 11000), RepeatMode.Restart), label = "atmosphere")
+    val duration = when (effect) {
+        Effect.STARS -> 16_000
+        Effect.SNOW -> 12_000
+        Effect.OIL -> 24_000
+        Effect.WAVES -> 18_000
+    }
+    val phase by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(duration), RepeatMode.Restart), label = "atmosphere")
     Canvas(Modifier.fillMaxSize().alpha(.42f)) {
-        val count = if (effect == Effect.STARS) 42 else 30
-        repeat(count) { index ->
-            val baseX = ((index * 83) % 101) / 100f * size.width
-            val baseY = ((index * 47 + if (effect == Effect.SNOW) 19 else 0) % 103) / 102f * size.height
-            val x = if (effect == Effect.SNOW) (baseX + phase * (12 + index % 7)) % size.width else baseX
-            val y = if (effect == Effect.SNOW) (baseY + phase * size.height) % size.height else baseY
-            val pulse = if (effect == Effect.STARS) .12f + ((phase + index * .17f) % 1f) * .32f else .3f
-            drawCircle(if (effect == Effect.STARS) accent else Color.White, if (effect == Effect.STARS) 0.8f + index % 3 else 1.8f + index % 4, Offset(x, y), alpha = pulse)
+        when (effect) {
+            Effect.STARS -> {
+                repeat(58) { index ->
+                    val x = ((index * 83) % 101) / 100f * size.width
+                    val y = ((index * 47) % 103) / 102f * size.height
+                    val pulse = .12f + ((phase + index * .17f) % 1f) * .38f
+                    drawCircle(if (index % 7 == 0) accent else Color.White, .7f + index % 3, Offset(x, y), alpha = pulse)
+                }
+
+                val novaPulse = (.5f + .5f * sin(phase * 2f * PI.toFloat()))
+                val nova = Offset(size.width * .78f, size.height * .22f)
+                drawCircle(accent, 8f + novaPulse * 18f, nova, alpha = .05f + novaPulse * .08f)
+                drawCircle(Color.White, 1.6f + novaPulse * 1.5f, nova, alpha = .5f)
+                repeat(6) { ray ->
+                    val angle = ray * PI.toFloat() / 3f
+                    val length = 9f + novaPulse * 13f
+                    drawLine(Color.White, nova, Offset(nova.x + cos(angle) * length, nova.y + sin(angle) * length), 1f, alpha = .08f + novaPulse * .1f)
+                }
+
+                val comet = (phase * 2.2f) % 1f
+                if (comet < .2f) {
+                    val p = comet / .2f
+                    val head = Offset(size.width * (.08f + p * .7f), size.height * (.2f + p * .2f))
+                    drawLine(Color.White, Offset(head.x - 75f, head.y - 34f), head, 1.5f, alpha = .42f * (1f - p))
+                    drawCircle(Color.White, 2.2f, head, alpha = .65f * (1f - p))
+                }
+                val secondComet = ((phase + .57f) * 1.7f) % 1f
+                if (secondComet < .14f) {
+                    val p = secondComet / .14f
+                    val head = Offset(size.width * (.35f + p * .45f), size.height * (.66f + p * .12f))
+                    drawLine(accent, Offset(head.x - 55f, head.y - 20f), head, 1.2f, alpha = .3f * (1f - p))
+                }
+            }
+
+            Effect.SNOW -> repeat(34) { index ->
+                val baseX = ((index * 83) % 101) / 100f * size.width
+                val baseY = ((index * 47 + 19) % 103) / 102f * size.height
+                val x = (baseX + sin((phase + index) * 2f * PI.toFloat()) * (6f + index % 8)) % size.width
+                val y = (baseY + phase * size.height) % size.height
+                drawCircle(Color.White, 1.6f + index % 4, Offset(x, y), alpha = .24f + (index % 4) * .06f)
+            }
+
+            Effect.OIL -> {
+                val colours = listOf(Purple, Blue, accent, Fusion, Crimson)
+                repeat(5) { index ->
+                    val angle = phase * 2f * PI.toFloat() + index * 1.37f
+                    val x = size.width * (.5f + .34f * sin(angle * (.45f + index * .05f)))
+                    val y = size.height * (.5f + .38f * cos(angle * (.32f + index * .04f)))
+                    val radius = size.minDimension * (.24f + index * .035f)
+                    drawCircle(colours[index], radius, Offset(x, y), alpha = .055f + index * .008f)
+                    drawCircle(lerp(colours[index], Color.White, .18f), radius * .55f, Offset(x + radius * .2f, y - radius * .12f), alpha = .025f)
+                }
+            }
+
+            Effect.WAVES -> repeat(5) { band ->
+                val path = Path()
+                val baseY = size.height * (.24f + band * .13f)
+                val amplitude = 12f + band * 5f
+                val steps = 32
+                repeat(steps + 1) { step ->
+                    val x = size.width * step / steps
+                    val y = baseY + sin(step * .45f + phase * 2f * PI.toFloat() + band * .9f) * amplitude
+                    if (step == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                drawPath(path, lerp(accent, Color.White, band * .08f), alpha = .12f + band * .025f, style = Stroke(width = 1.4f + band * .3f))
+            }
         }
     }
 }
