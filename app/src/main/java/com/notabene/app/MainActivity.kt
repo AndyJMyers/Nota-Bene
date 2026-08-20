@@ -80,7 +80,6 @@ import kotlinx.coroutines.launch
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.roundToInt
 
 private val Ink = Color(0xFF090812)
 private val Glass = Color(0xFF28212B)
@@ -154,25 +153,21 @@ private fun Header(
     onMoodChange: (Float) -> Unit,
     onCycleEffect: () -> Unit
 ) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.weight(1f).padding(top = 5.dp)) {
+    Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text("NOTA BENE", color = Color(0xFFE9E0D2), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
             Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp)
         }
-        Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("MOOD", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
-                Text("${(mood * 100).roundToInt()}", color = accent, fontSize = 10.sp)
-                TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                    Text(if (effect == Effect.STARS) "✦ SKY" else "❄ SNOW", color = Color(0xFFC8BDC8), fontSize = 9.sp)
-                }
-            }
+        Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
             Slider(
                 value = mood,
                 onValueChange = onMoodChange,
-                modifier = Modifier.fillMaxWidth().height(40.dp),
+                modifier = Modifier.weight(1f).height(48.dp),
                 colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
             )
+            TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                Text(if (effect == Effect.STARS) "✦ SKY" else "❄ SNOW", color = Color(0xFFC8BDC8), fontSize = 9.sp)
+            }
         }
     }
 }
