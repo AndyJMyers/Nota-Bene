@@ -848,17 +848,112 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                 }
             }
 
-            Effect.WAVES -> repeat(5) { band ->
-                val path = Path()
-                val baseY = size.height * (.24f + band * .13f)
-                val amplitude = (8f + band * 4f) * (.65f + energy * .5f)
-                val steps = 32
-                repeat(steps + 1) { step ->
-                    val x = size.width * step / steps
-                    val y = baseY + sin(step * .45f + phase * 2f * PI.toFloat() + band * .9f) * amplitude
-                    if (step == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            Effect.WAVES -> {
+                val turn = phase * 2f * PI.toFloat()
+                val seaBlue = lerp(Color(0xFF073C4C), accent, .28f)
+                val greenRoom = Color(0xFF178777)
+                val foam = Color(0xFFD9F2E9)
+                val horizon = size.height * .38f
+
+                // Deep, uneven swells give the scene mass rather than an oscilloscope trace.
+                repeat(3) { band ->
+                    val swell = Path()
+                    val top = horizon + size.height * band * .13f
+                    val lift = (18f + band * 12f) * (.72f + energy * .32f)
+                    swell.moveTo(0f, top)
+                    swell.cubicTo(
+                        size.width * .16f, top - lift + sin(turn + band) * 8f,
+                        size.width * .34f, top + lift,
+                        size.width * .52f, top - lift * .65f
+                    )
+                    swell.cubicTo(
+                        size.width * .68f, top - lift * 1.25f,
+                        size.width * .83f, top + lift * .8f,
+                        size.width, top - lift * .25f + cos(turn * .8f + band) * 7f
+                    )
+                    swell.lineTo(size.width, size.height)
+                    swell.lineTo(0f, size.height)
+                    swell.close()
+                    drawPath(swell, lerp(seaBlue, Color.Black, band * .12f), alpha = .18f + band * .045f)
                 }
-                drawPath(path, lerp(accent, Color.White, band * .08f), alpha = (.075f + band * .018f) * (.65f + energy * .45f), style = Stroke(width = 1.2f + band * .25f))
+
+                // A curling shore-break: green room, lip, and the hooked foam of a woodblock sea.
+                val surge = sin(turn * .72f) * size.width * .018f
+                val curlX = size.width * .68f + surge
+                val curlY = size.height * .53f
+                val breaker = Path().apply {
+                    moveTo(size.width * .22f, size.height * .69f)
+                    cubicTo(size.width * .39f, size.height * .54f, curlX - size.width * .19f, curlY - size.height * .17f, curlX, curlY - size.height * .16f)
+                    cubicTo(curlX + size.width * .13f, curlY - size.height * .14f, curlX + size.width * .16f, curlY + size.height * .01f, curlX + size.width * .04f, curlY + size.height * .06f)
+                    cubicTo(curlX - size.width * .02f, curlY + size.height * .08f, curlX - size.width * .045f, curlY + size.height * .015f, curlX + size.width * .005f, curlY - size.height * .025f)
+                    cubicTo(curlX - size.width * .12f, curlY - size.height * .035f, size.width * .45f, size.height * .68f, size.width * .22f, size.height * .69f)
+                    close()
+                }
+                drawPath(breaker, greenRoom, alpha = .34f + energy * .08f)
+                drawPath(breaker, lerp(greenRoom, foam, .24f), alpha = .33f, style = Stroke(width = 2.2f + energy))
+
+                val lip = Path().apply {
+                    moveTo(size.width * .43f, size.height * .50f)
+                    cubicTo(size.width * .54f, size.height * .37f, curlX - size.width * .06f, curlY - size.height * .21f, curlX + size.width * .035f, curlY - size.height * .14f)
+                    cubicTo(curlX + size.width * .10f, curlY - size.height * .09f, curlX + size.width * .12f, curlY - size.height * .015f, curlX + size.width * .045f, curlY + size.height * .015f)
+                }
+                drawPath(lip, foam, alpha = .48f + energy * .08f, style = Stroke(width = 3.2f + energy * 1.4f))
+
+                // Wind tears the crest into claws and occasional upward-blown spindrift towers.
+                repeat(9) { finger ->
+                    val rootX = curlX - size.width * .11f + finger * size.width * .026f
+                    val rootY = curlY - size.height * (.18f - finger * .008f)
+                    val gust = sin(turn * (1.05f + finger * .025f) + finger * .8f)
+                    val tip = Offset(
+                        rootX + size.width * (.018f + finger % 3 * .006f),
+                        rootY - size.height * (.025f + finger % 4 * .014f) * (.7f + energy * .35f) + gust * 7f
+                    )
+                    drawLine(foam, Offset(rootX, rootY), tip, 1.2f + finger % 3 * .45f, alpha = .32f + energy * .09f)
+                    if (finger % 2 == 0) drawCircle(foam, 1.4f + energy, tip, alpha = .35f)
+                }
+
+                repeat(16) { fleck ->
+                    val drift = (phase * (24f + energy * 18f) + fleck * 13f) % 46f
+                    val x = curlX - size.width * .08f + (fleck % 8) * size.width * .025f + drift
+                    val y = curlY - size.height * (.20f + (fleck % 5) * .022f) + sin(turn + fleck) * 9f
+                    drawCircle(foam, .8f + fleck % 3 * .55f, Offset(x, y), alpha = .22f + energy * .08f)
+                }
+
+                // A tiny square-rigger, heeled into the weather on the hostile horizon.
+                val shipX = size.width * (.17f + sin(turn * .33f) * .012f)
+                val shipY = horizon - 8f + sin(turn * .85f) * 5f
+                val heel = 7f
+                val hull = Path().apply {
+                    moveTo(shipX - 27f, shipY)
+                    lineTo(shipX + 24f, shipY + heel)
+                    lineTo(shipX + 15f, shipY + 16f + heel)
+                    lineTo(shipX - 19f, shipY + 12f)
+                    close()
+                }
+                drawPath(hull, Color(0xFF080B10), alpha = .75f)
+                repeat(2) { mast ->
+                    val mx = shipX - 9f + mast * 21f
+                    val deckY = shipY + 5f + mast * 3f
+                    val topY = deckY - 45f + mast * 8f
+                    drawLine(Color(0xFF111017), Offset(mx, deckY), Offset(mx + heel, topY), 1.5f, alpha = .78f)
+                    val sail = Path().apply {
+                        moveTo(mx + heel - 1f, topY + 5f)
+                        lineTo(mx + heel + 16f, topY + 25f)
+                        lineTo(mx + 4f, topY + 27f)
+                        close()
+                    }
+                    drawPath(sail, lerp(foam, accent, .18f), alpha = .42f)
+                }
+
+                // Broken shore foam in the foreground keeps the water visibly in motion.
+                repeat(3) { line ->
+                    val wash = Path()
+                    val y = size.height * (.78f + line * .075f) + sin(turn + line) * (7f + energy * 3f)
+                    wash.moveTo(-10f, y)
+                    wash.cubicTo(size.width * .22f, y - 18f, size.width * .36f, y + 17f, size.width * .55f, y - 5f)
+                    wash.cubicTo(size.width * .73f, y - 22f, size.width * .88f, y + 13f, size.width + 10f, y - 8f)
+                    drawPath(wash, foam, alpha = .18f + line * .045f, style = Stroke(width = 1.8f + line * .6f))
+                }
             }
         }
     }
