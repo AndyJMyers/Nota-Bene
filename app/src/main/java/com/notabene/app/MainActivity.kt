@@ -649,35 +649,57 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
         } else {
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 items(visibleMedications, key = { it.id }) { medication ->
-                    MedicationRow(medication, logs.filter { it.medicationId == medication.id }, now, accent) { action ->
-                        scope.launch {
-                            when (action) {
-                                MedicationAction.TAKEN -> {
-                                    val scheduled = scheduledForToday(medication.doseTime)
-                                    dao.insertDoseLog(DoseLog(medicationId = medication.id, doseDate = LocalDate.now().toString(), scheduledFor = scheduled))
-                                }
-                                MedicationAction.TOGGLE_ACTIVE -> dao.setActive(medication.id, !medication.active)
+                    MedicationRow(
+                        medication = medication,
+                        logs = logs.filter { it.medicationId == medication.id },
+                        now = now,
+                        accent = accent,
+                        onTaken = { takenAt ->
+                            scope.launch {
+                                val scheduled = scheduledForToday(medication.doseTime)
+                                dao.insertDoseLog(
+                                    DoseLog(
+                                        medicationId = medication.id,
+                                        doseDate = LocalDate.now().toString(),
+                                        scheduledFor = scheduled,
+                                        takenAt = takenAt
+                                    )
+                                )
                             }
+                        },
+                        onToggleActive = {
+                            scope.launch { dao.setActive(medication.id, !medication.active) }
                         }
-                    }
+                    )
                 }
             }
         }
     }
 }
 
-private enum class MedicationAction { TAKEN, TOGGLE_ACTIVE }
-
 @Composable
-private fun MedicationRow(medication: Medication, logs: List<DoseLog>, now: Long, accent: Color, onAction: (MedicationAction) -> Unit) {
+private fun MedicationRow(
+    medication: Medication,
+    logs: List<DoseLog>,
+    now: Long,
+    accent: Color,
+    onTaken: (Long) -> Unit,
+    onToggleActive: () -> Unit
+) {
     val today = LocalDate.now().toString()
     val todayLog = logs.firstOrNull { it.doseDate == today }
     val remaining = (medication.startingDoses - logs.size).coerceAtLeast(0)
     val scheduled = scheduledForToday(medication.doseTime)
+    val clockFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    var takenTime by remember(medication.id) { mutableStateOf(LocalTime.now().format(clockFormat)) }
+    val parsedTakenTime = parseDoseTime(takenTime)
+    val recordedTime = todayLog?.takenAt?.let {
+        DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it))
+    }
     val stateText = when {
         !medication.active -> "HALTED"
-        todayLog != null && todayLog.takenAt <= scheduled + 60 * 60 * 1000 -> "TAKEN ON TIME"
-        todayLog != null -> "TAKEN LATE"
+        todayLog != null && todayLog.takenAt <= scheduled + 60 * 60 * 1000 -> "TAKEN $recordedTime"
+        todayLog != null -> "TAKEN LATE $recordedTime"
         now > scheduled -> "OVERDUE"
         else -> "DUE ${medication.doseTime}"
     }
@@ -702,16 +724,24 @@ private fun MedicationRow(medication: Medication, logs: List<DoseLog>, now: Long
                 Text("$remaining DOSES LEFT", color = if (reorder) Crimson else Color(0xFFC5BBC5), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (reorder && medication.active) Text("APPLY FOR MORE", color = Crimson, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (medication.active) {
-                    Button(
-                        onClick = { onAction(MedicationAction.TAKEN) },
-                        enabled = todayLog == null && remaining > 0,
-                        colors = ButtonDefaults.buttonColors(containerColor = accent)
-                    ) { Text("TAKEN", color = Ink, fontWeight = FontWeight.Black) }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (medication.active && todayLog == null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PaymentField("Taken at", takenTime, { takenTime = it }, Modifier.weight(1f), accent)
+                        Button(
+                            onClick = {
+                                val takenAt = LocalDate.now().atTime(parsedTakenTime!!).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                                onTaken(takenAt)
+                            },
+                            enabled = parsedTakenTime != null && remaining > 0,
+                            colors = ButtonDefaults.buttonColors(containerColor = accent)
+                        ) { Text("LOG TAKEN", color = Ink, fontWeight = FontWeight.Black) }
+                    }
                 }
-                OutlinedButton(onClick = { onAction(MedicationAction.TOGGLE_ACTIVE) }) {
-                    Text(if (medication.active) "HALT" else "RESTART")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    OutlinedButton(onClick = onToggleActive) {
+                        Text(if (medication.active) "HALT" else "RESTART")
+                    }
                 }
             }
         }

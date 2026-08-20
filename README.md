@@ -93,7 +93,7 @@ The TASK circuit provides the same persistent spoken-or-typed checklist, with an
 
 The BODY circuit records typed or spoken symptoms and observations, optional measurements and automatic timestamps in a persistent history.
 
-The MED circuit manages one daily scheduled dose per medication record, records taken doses, retains the log below the top-level view, counts remaining stock, signals reorder time and preserves halted medication histories when dosage changes.
+The MED circuit manages one daily scheduled dose per medication record, records an explicit taken time, retains the log below the top-level view, counts remaining stock, signals reorder time and preserves halted medication histories when dosage changes.
 
 Next: refine payment extraction through real receipt testing, then give Medicine the same complete treatment.
 
