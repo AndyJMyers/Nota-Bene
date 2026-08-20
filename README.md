@@ -89,6 +89,8 @@ The Payments circuit supports manual entry, system speech recognition and on-dev
 
 The ASK circuit supports typed or spoken items, persistent open/done state, checkbox completion and hiding completed items.
 
+The TASK circuit provides the same persistent spoken-or-typed checklist, with an optional lightweight “waiting on” dependency for each task.
+
 Next: refine payment extraction through real receipt testing, then give Medicine the same complete treatment.
 
 ## Build

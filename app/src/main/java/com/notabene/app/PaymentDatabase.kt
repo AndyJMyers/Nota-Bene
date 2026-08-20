@@ -55,10 +55,32 @@ interface AskDao {
     suspend fun setDone(id: Long, done: Boolean)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class], version = 2, exportSchema = false)
+@Entity(tableName = "task_items")
+data class TaskItem(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val text: String,
+    val waitingOn: String = "",
+    val done: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface TaskDao {
+    @Query("SELECT * FROM task_items ORDER BY done ASC, createdAt DESC")
+    fun observeAll(): Flow<List<TaskItem>>
+
+    @Insert
+    suspend fun insert(item: TaskItem)
+
+    @Query("UPDATE task_items SET done = :done WHERE id = :id")
+    suspend fun setDone(id: Long, done: Boolean)
+}
+
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class], version = 3, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
+    abstract fun taskDao(): TaskDao
 
     companion object {
         @Volatile private var instance: NotaBeneDatabase? = null
@@ -68,13 +90,21 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
                     "CREATE TABLE IF NOT EXISTS `ask_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `text` TEXT NOT NULL, `done` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)"
+                )
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `task_items` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `text` TEXT NOT NULL, `waitingOn` TEXT NOT NULL, `done` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)"
                 )
             }
         }

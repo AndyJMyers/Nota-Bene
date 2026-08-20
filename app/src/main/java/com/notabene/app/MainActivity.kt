@@ -131,6 +131,7 @@ private fun NotaBeneApp() {
                 }
                 when (selected) {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
+                    Tab.TASKS -> TaskPanel(accent, Modifier.weight(1f))
                     Tab.RESEARCH -> AskPanel(accent, Modifier.weight(1f))
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
@@ -373,6 +374,93 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
                                 textDecoration = if (item.done) TextDecoration.LineThrough else TextDecoration.None,
                                 modifier = Modifier.weight(1f)
                             )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val dao = remember { NotaBeneDatabase.get(context).taskDao() }
+    val tasks by dao.observeAll().collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+    var draft by remember { mutableStateOf("") }
+    var waitingOn by remember { mutableStateOf("") }
+    var hideCompleted by remember { mutableStateOf(false) }
+    var status by remember { mutableStateOf("Type or speak a task") }
+    val visibleTasks = remember(tasks, hideCompleted) { if (hideCompleted) tasks.filterNot { it.done } else tasks }
+
+    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val words = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty()
+            if (words.isNotBlank()) {
+                draft = words
+                status = "Speech captured — edit it or keep it"
+            } else status = "No speech was returned"
+        } else status = "Listening cancelled"
+    }
+
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Text("NEW TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                PaymentField("What needs doing?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
+                PaymentField("Waiting on… (optional)", waitingOn, { waitingOn = it }, Modifier.fillMaxWidth(), accent)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                dao.insert(TaskItem(text = draft.trim(), waitingOn = waitingOn.trim()))
+                                draft = ""; waitingOn = ""
+                                status = "Task saved locally"
+                            }
+                        },
+                        enabled = draft.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = accent)
+                    ) { Text("KEEP", color = Ink, fontWeight = FontWeight.Black) }
+                    OutlinedButton(onClick = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "What needs doing?")
+                        }
+                        runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
+                    }) { Text("LISTEN") }
+                }
+                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+            }
+        }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("TASKS  ${tasks.count { !it.done }} OPEN", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            TextButton(onClick = { hideCompleted = !hideCompleted }) {
+                Text(if (hideCompleted) "SHOW COMPLETED" else "HIDE COMPLETED", color = accent, fontSize = 10.sp)
+            }
+        }
+        if (visibleTasks.isEmpty()) {
+            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+                Text(if (tasks.isEmpty()) "Nothing waiting to be done" else "All completed tasks are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
+            }
+        } else {
+            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                items(visibleTasks, key = { it.id }) { task ->
+                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Checkbox(checked = task.done, onCheckedChange = { done -> scope.launch { dao.setDone(task.id, done) } })
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    task.text,
+                                    color = if (task.done) Color(0xFF777078) else Color(0xFFE6DEE6),
+                                    fontSize = 14.sp,
+                                    textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
+                                )
+                                if (task.waitingOn.isNotBlank()) {
+                                    Text("WAITING ON  ${task.waitingOn}", color = if (task.done) Color(0xFF655F66) else accent, fontSize = 10.sp, letterSpacing = 1.sp)
+                                }
+                            }
                         }
                     }
                 }
