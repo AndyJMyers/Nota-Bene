@@ -120,7 +120,13 @@ private fun NotaBeneApp() {
                 Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Header()
+                Header(
+                    mood = mood,
+                    accent = accent,
+                    effect = effect,
+                    onMoodChange = { mood = it },
+                    onCycleEffect = { effect = if (effect == Effect.STARS) Effect.SNOW else Effect.STARS }
+                )
                 InstrumentTabs(selected, accent) { selected = it }
                 AnimatedContent(
                     targetState = selected,
@@ -135,23 +141,39 @@ private fun NotaBeneApp() {
                     Tab.RESEARCH -> AskPanel(accent, Modifier.weight(1f))
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
-                MoodAndAtmosphere(
-                    value = mood,
-                    accent = accent,
-                    effect = effect,
-                    onMoodChange = { mood = it },
-                    onCycleEffect = { effect = if (effect == Effect.STARS) Effect.SNOW else Effect.STARS }
-                )
             }
         }
     }
 }
 
 @Composable
-private fun Header() {
-    Column {
-        Text("NOTA BENE", color = Color(0xFFE9E0D2), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-        Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp)
+private fun Header(
+    mood: Float,
+    accent: Color,
+    effect: Effect,
+    onMoodChange: (Float) -> Unit,
+    onCycleEffect: () -> Unit
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.weight(1f).padding(top = 5.dp)) {
+            Text("NOTA BENE", color = Color(0xFFE9E0D2), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
+            Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp)
+        }
+        Column(Modifier.weight(1f)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("MOOD", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+                Text("${(mood * 100).roundToInt()}", color = accent, fontSize = 10.sp)
+                TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    Text(if (effect == Effect.STARS) "✦ SKY" else "❄ SNOW", color = Color(0xFFC8BDC8), fontSize = 9.sp)
+                }
+            }
+            Slider(
+                value = mood,
+                onValueChange = onMoodChange,
+                modifier = Modifier.fillMaxWidth().height(40.dp),
+                colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
+            )
+        }
     }
 }
 
@@ -478,30 +500,6 @@ private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modif
             HorizontalDivider(Modifier.width(44.dp), color = accent)
             Spacer(Modifier.height(9.dp))
             Text("Scheduled for a later working circuit", color = Color(0xFF756D77), fontSize = 11.sp)
-        }
-    }
-}
-
-@Composable
-private fun MoodAndAtmosphere(
-    value: Float,
-    accent: Color,
-    effect: Effect,
-    onMoodChange: (Float) -> Unit,
-    onCycleEffect: () -> Unit
-) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("MOOD", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
-                Text("${(value * 100).roundToInt()}", color = accent, fontSize = 11.sp)
-            }
-            Slider(value = value, onValueChange = onMoodChange, colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent))
-        }
-        Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            OutlinedButton(onClick = onCycleEffect) {
-                Text(if (effect == Effect.STARS) "✦ NIGHT SKY" else "❄ FALLING SNOW", color = Color(0xFFC8BDC8), fontSize = 11.sp)
-            }
         }
     }
 }
