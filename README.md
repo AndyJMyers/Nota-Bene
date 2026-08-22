@@ -125,6 +125,18 @@ Open the repository in Android Studio, or run on Windows:
 
 The project targets Android 16 (API 36) and supports Android 8+ (API 26).
 
+## Google Play preparation
+
+First-draft publication documents are kept in [`docs/google-play`](docs/google-play):
+
+- [store listing copy and asset brief](docs/google-play/STORE_LISTING.md);
+- [privacy policy](docs/google-play/PRIVACY_POLICY.md);
+- [Data Safety answers](docs/google-play/DATA_SAFETY_DRAFT.md);
+- [Health Apps declaration](docs/google-play/HEALTH_DECLARATION_DRAFT.md); and
+- [submission checklist](docs/google-play/SUBMISSION_CHECKLIST.md).
+
+These remain working drafts until the release candidate, public privacy contact and hosted privacy-policy URL are final.
+
 ## Development approach
 
 Nota Bene is initially being developed for its creator's own regular use. Features will be added or removed according to whether they prove useful in practice. Only if it becomes a genuinely useful daily companion will a wider release be considered.
