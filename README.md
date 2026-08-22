@@ -143,6 +143,8 @@ Nota Bene is initially being developed for its creator's own regular use. Featur
 
 The priority is not feature count. It is making a small application pleasant enough, fast enough and useful enough to keep opening.
 
+The working method developed through 32 Visualisations and Nota Bene is recorded in [The Human–AI Android Manifesto](docs/HUMAN_AI_ANDROID_MANIFESTO.md).
+
 ## Repository policy
 
 This repository is publicly visible so builds can be downloaded and verified. Nota Bene remains a privately directed personal project: external pull requests are not accepted, and publication here is not an invitation to contribute code.
