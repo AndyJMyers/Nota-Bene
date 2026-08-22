@@ -809,50 +809,54 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
         else -> .35f + ((mood - .33f) / .67f) * .8f
     }
     val baseDuration = when (effect) {
-        Effect.STARS -> 28_000
-        Effect.SNOW -> 28_000
-        Effect.OIL -> 42_000
-        Effect.WAVES -> 32_000
+        Effect.STARS -> 20_000
+        Effect.SNOW -> 21_000
+        Effect.OIL -> 30_000
+        Effect.WAVES -> 24_000
     }
     val duration = (baseDuration / (.65f + energy * .55f)).toInt()
     val phase by motion.animateFloat(0f, 1f, infiniteRepeatable(tween(duration), RepeatMode.Restart), label = "atmosphere")
-    val atmosphereAlpha = ((.2f + energy * .22f) * 1.5f).coerceAtMost(.72f)
+    val atmosphereAlpha = (.62f + energy * .18f).coerceAtMost(.88f)
+    val animationSilver = Color(0xFFD4D9E1)
+    val animationGold = Color(0xFFE6B94A)
+    val animationRed = Color(0xFFC5214F)
+    val animationPalette = listOf(animationSilver, animationGold, animationRed)
     Canvas(Modifier.fillMaxSize().alpha(atmosphereAlpha)) {
         when (effect) {
             Effect.STARS -> {
-                repeat(58) { index ->
+                repeat(74) { index ->
                     val x = ((index * 83) % 101) / 100f * size.width
                     val y = ((index * 47) % 103) / 102f * size.height
-                    val pulse = .08f + ((phase + index * .17f) % 1f) * (.22f + energy * .18f)
-                    drawCircle(if (index % 7 == 0) accent else Color.White, .7f + index % 3, Offset(x, y), alpha = pulse)
+                    val pulse = .26f + ((phase + index * .17f) % 1f) * (.38f + energy * .22f)
+                    drawCircle(animationPalette[index % 3], 1.2f + index % 4, Offset(x, y), alpha = pulse.coerceAtMost(.92f))
                 }
 
                 val novaPulse = (.5f + .5f * sin(phase * 2f * PI.toFloat()))
                 val nova = Offset(size.width * .78f, size.height * .22f)
-                drawCircle(accent, 7f + novaPulse * (10f + energy * 9f), nova, alpha = .03f + novaPulse * energy * .08f)
-                drawCircle(Color.White, 1.4f + novaPulse * energy * 1.5f, nova, alpha = .32f + energy * .18f)
-                repeat(6) { ray ->
-                    val angle = ray * PI.toFloat() / 3f
-                    val length = 9f + novaPulse * 13f
-                    drawLine(Color.White, nova, Offset(nova.x + cos(angle) * length, nova.y + sin(angle) * length), 1f, alpha = .04f + novaPulse * energy * .1f)
+                drawCircle(animationRed, 12f + novaPulse * (22f + energy * 14f), nova, alpha = .12f + novaPulse * energy * .18f)
+                drawCircle(animationGold, 4f + novaPulse * energy * 4f, nova, alpha = .66f + energy * .16f)
+                repeat(8) { ray ->
+                    val angle = ray * PI.toFloat() / 4f
+                    val length = 17f + novaPulse * 27f
+                    drawLine(animationSilver, nova, Offset(nova.x + cos(angle) * length, nova.y + sin(angle) * length), 1.8f, alpha = .18f + novaPulse * energy * .26f)
                 }
 
                 val comet = (phase * 2.2f) % 1f
                 if (comet < .2f) {
                     val p = comet / .2f
                     val head = Offset(size.width * (.08f + p * .7f), size.height * (.2f + p * .2f))
-                    drawLine(Color.White, Offset(head.x - 75f, head.y - 34f), head, 1.5f, alpha = energy * .34f * (1f - p))
-                    drawCircle(Color.White, 2.2f, head, alpha = energy * .52f * (1f - p))
+                    drawLine(animationSilver, Offset(head.x - 105f, head.y - 48f), head, 3f, alpha = (.44f + energy * .3f) * (1f - p))
+                    drawCircle(animationGold, 4.2f, head, alpha = (.62f + energy * .24f) * (1f - p))
                 }
                 val secondComet = ((phase + .57f) * 1.7f) % 1f
                 if (secondComet < .14f) {
                     val p = secondComet / .14f
                     val head = Offset(size.width * (.35f + p * .45f), size.height * (.66f + p * .12f))
-                    drawLine(accent, Offset(head.x - 55f, head.y - 20f), head, 1.2f, alpha = energy * .26f * (1f - p))
+                    drawLine(animationRed, Offset(head.x - 82f, head.y - 31f), head, 2.5f, alpha = (.38f + energy * .28f) * (1f - p))
                 }
             }
 
-            Effect.SNOW -> repeat(34) { index ->
+            Effect.SNOW -> repeat(48) { index ->
                 val baseX = ((index * 83) % 101) / 100f * size.width
                 val baseY = ((index * 47 + 19) % 103) / 102f * size.height
                 val current = phase * 2f * PI.toFloat()
@@ -861,26 +865,26 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                 val x = (baseX + broadDrift + gust + size.width) % size.width
                 val eddy = sin(current * 2.1f + index * .91f) * (34f + index % 5 * 8f) * (.55f + energy * .25f)
                 val y = (baseY + phase * size.height + eddy + size.height) % size.height
-                drawCircle(Color.White, 1.4f + index % 4, Offset(x, y), alpha = (.18f + (index % 4) * .045f) * (.65f + energy * .35f))
+                drawCircle(animationPalette[index % 3], 2.1f + index % 5, Offset(x, y), alpha = (.42f + (index % 4) * .07f) * (.72f + energy * .28f))
             }
 
             Effect.OIL -> {
-                val colours = listOf(Purple, Blue, accent, Fusion, Crimson)
-                repeat(5) { index ->
+                val colours = listOf(animationRed, animationGold, animationSilver, animationRed, animationGold, animationSilver)
+                repeat(6) { index ->
                     val angle = phase * 2f * PI.toFloat() + index * 1.37f
                     val x = size.width * (.5f + .34f * sin(angle * (.45f + index * .05f)))
                     val y = size.height * (.5f + .38f * cos(angle * (.32f + index * .04f)))
-                    val radius = size.minDimension * (.24f + index * .035f)
-                    drawCircle(colours[index], radius * (.85f + energy * .15f), Offset(x, y), alpha = (.038f + index * .007f) * (.7f + energy * .35f))
-                    drawCircle(lerp(colours[index], Color.White, .18f), radius * .55f, Offset(x + radius * .2f, y - radius * .12f), alpha = .016f + energy * .01f)
+                    val radius = size.minDimension * (.29f + index * .045f)
+                    drawCircle(colours[index], radius * (.86f + energy * .18f), Offset(x, y), alpha = (.12f + index * .018f) * (.78f + energy * .34f))
+                    drawCircle(lerp(colours[index], animationSilver, .28f), radius * .58f, Offset(x + radius * .2f, y - radius * .12f), alpha = .075f + energy * .035f)
                 }
             }
 
             Effect.WAVES -> {
                 val turn = phase * 2f * PI.toFloat()
-                val seaBlue = lerp(Color(0xFF073C4C), accent, .28f)
-                val greenRoom = Color(0xFF178777)
-                val foam = Color(0xFFD9F2E9)
+                val seaBlue = lerp(Color(0xFF330815), animationRed, .42f)
+                val greenRoom = lerp(animationRed, animationGold, .48f)
+                val foam = animationSilver
                 val horizon = size.height * .38f
 
                 // The whole sea rolls sideways, so even the deep water is visibly travelling.
@@ -898,7 +902,7 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                     swell.lineTo(size.width, size.height)
                     swell.lineTo(0f, size.height)
                     swell.close()
-                    drawPath(swell, lerp(seaBlue, Color.Black, band * .12f), alpha = .18f + band * .045f)
+                    drawPath(swell, lerp(seaBlue, animationGold, band * .12f), alpha = .31f + band * .065f)
                 }
 
                 // Two breakers move through a full life: swell, steepen, barrel, collapse, wash.
@@ -920,7 +924,7 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                         lineTo(crestX - shoulder * 1.8f, waterline + size.height * .09f)
                         close()
                     }
-                    drawPath(body, lerp(seaBlue, greenRoom, .45f + barrel * .35f), alpha = .30f + life * .14f)
+                    drawPath(body, lerp(seaBlue, greenRoom, .45f + barrel * .35f), alpha = .48f + life * .19f)
 
                     // The opening is a separate dark translucent hollow, not a closed emblem.
                     if (barrel > .12f) {
@@ -930,21 +934,21 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                             cubicTo(crestX + shoulder * .29f, waterline - rise * .52f, crestX + shoulder * .08f, waterline - rise * .42f, crestX - shoulder * .18f, waterline - rise * .66f)
                             close()
                         }
-                        drawPath(hollow, Color(0xFF031C25), alpha = barrel * .48f)
+                        drawPath(hollow, Color(0xFF24040E), alpha = barrel * .68f)
                     }
 
                     val lip = Path().apply {
                         moveTo(crestX - shoulder * .54f, waterline - rise * .72f)
                         cubicTo(crestX - shoulder * .15f, waterline - rise * 1.12f, crestX + shoulder * .38f, waterline - rise * (1.06f - collapse * .24f), crestX + shoulder * (.52f + collapse * .55f), waterline - rise * (.42f - collapse * .18f))
                     }
-                    drawPath(lip, foam, alpha = .26f + life * .34f, style = Stroke(width = 2.3f + barrel * 2.6f))
+                    drawPath(lip, animationGold, alpha = .48f + life * .4f, style = Stroke(width = 3.4f + barrel * 3.4f))
 
                     repeat(7) { finger ->
                         val rootX = crestX - shoulder * .15f + finger * shoulder * .105f
                         val rootY = waterline - rise * (1f - finger * .035f)
                         val sprayThrow = barrel * (12f + finger % 3 * 7f) + collapse * (22f + finger * 3f)
                         val tip = Offset(rootX + sprayThrow, rootY - barrel * (10f + finger % 4 * 5f) + sin(turn * 1.4f + finger) * 4f)
-                        drawLine(foam, Offset(rootX, rootY), tip, 1f + finger % 3 * .5f, alpha = life * (.25f + energy * .12f))
+                        drawLine(if (finger % 3 == 0) animationRed else foam, Offset(rootX, rootY), tip, 1.8f + finger % 3 * .7f, alpha = life * (.46f + energy * .2f))
                     }
 
                     // After the lip falls, white water runs ahead and broadens along the shore.
@@ -954,14 +958,14 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                             moveTo(crestX - shoulder * .25f, waterline)
                             cubicTo(crestX + shoulder * .35f, waterline - 18f * (1f - collapse), front - shoulder * .3f, waterline + 14f, front, waterline + 5f)
                         }
-                        drawPath(whiteWater, foam, alpha = collapse * .43f, style = Stroke(width = 3f + collapse * 4f))
+                        drawPath(whiteWater, animationSilver, alpha = collapse * .72f, style = Stroke(width = 4.5f + collapse * 6f))
                     }
 
                     repeat(10) { fleck ->
                         val sprayLife = (barrel + collapse * .7f).coerceAtMost(1f)
                         val x = crestX + (fleck - 3) * 9f + collapse * fleck * 8f
                         val y = waterline - rise - (fleck % 5) * 8f + sin(turn * 1.3f + fleck) * 7f
-                        drawCircle(foam, .8f + fleck % 3 * .5f, Offset(x, y), alpha = sprayLife * .31f)
+                        drawCircle(animationPalette[fleck % 3], 1.5f + fleck % 3 * .8f, Offset(x, y), alpha = sprayLife * .58f)
                     }
                 }
 
@@ -976,19 +980,19 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                     lineTo(shipX - 19f, shipY + 12f)
                     close()
                 }
-                drawPath(hull, Color(0xFF080B10), alpha = .75f)
+                drawPath(hull, Color(0xFF26040D), alpha = .9f)
                 repeat(2) { mast ->
                     val mx = shipX - 9f + mast * 21f
                     val deckY = shipY + 5f + mast * 3f
                     val topY = deckY - 45f + mast * 8f
-                    drawLine(Color(0xFF111017), Offset(mx, deckY), Offset(mx + heel, topY), 1.5f, alpha = .78f)
+                    drawLine(animationGold, Offset(mx, deckY), Offset(mx + heel, topY), 1.8f, alpha = .82f)
                     val sail = Path().apply {
                         moveTo(mx + heel - 1f, topY + 5f)
                         lineTo(mx + heel + 16f, topY + 25f)
                         lineTo(mx + 4f, topY + 27f)
                         close()
                     }
-                    drawPath(sail, lerp(foam, accent, .18f), alpha = .42f)
+                    drawPath(sail, lerp(animationSilver, animationGold, .34f), alpha = .72f)
                 }
 
                 // Broken shore foam in the foreground keeps the water visibly in motion.
@@ -998,7 +1002,12 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
                     wash.moveTo(-10f, y)
                     wash.cubicTo(size.width * .22f, y - 18f, size.width * .36f, y + 17f, size.width * .55f, y - 5f)
                     wash.cubicTo(size.width * .73f, y - 22f, size.width * .88f, y + 13f, size.width + 10f, y - 8f)
-                    drawPath(wash, foam, alpha = .18f + line * .045f, style = Stroke(width = 1.8f + line * .6f))
+                    drawPath(
+                        wash,
+                        animationPalette[line],
+                        alpha = .38f + line * .08f,
+                        style = Stroke(width = 2.8f + line * .9f)
+                    )
                 }
             }
         }
