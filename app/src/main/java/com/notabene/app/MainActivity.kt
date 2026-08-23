@@ -23,6 +23,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +72,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -132,6 +135,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun NotaBeneApp() {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val backgroundInteraction = remember { MutableInteractionSource() }
     val scope = rememberCoroutineScope()
     val database = remember { NotaBeneDatabase.get(context) }
     var selected by remember { mutableStateOf(Tab.PAYMENTS) }
@@ -155,7 +161,18 @@ private fun NotaBeneApp() {
     }
 
     MaterialTheme(colorScheme = darkColorScheme(primary = accent, surface = Glass, background = Ink)) {
-        Box(Modifier.fillMaxSize().background(Ink)) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Ink)
+                .clickable(
+                    interactionSource = backgroundInteraction,
+                    indication = null
+                ) {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                }
+        ) {
             CalmBackground(effect, accent, mood)
             Column(
                 Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp),
@@ -732,6 +749,7 @@ private fun MedicationRow(
     val scheduled = scheduledForToday(medication.doseTime)
     val clockFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var takenTime by remember(medication.id) { mutableStateOf(LocalTime.now().format(clockFormat)) }
+    var expanded by remember(medication.id) { mutableStateOf(false) }
     val parsedTakenTime = parseDoseTime(takenTime)
     val recordedTime = todayLog?.takenAt?.let {
         DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it))
@@ -753,12 +771,16 @@ private fun MedicationRow(
 
     Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.fillMaxWidth().clickable { expanded = !expanded },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(Modifier.weight(1f)) {
                     Text(medication.name, color = if (medication.active) Color(0xFFE6DEE6) else Color(0xFF777078), fontWeight = FontWeight.SemiBold)
                     Text("${medication.dosage}  ·  DAILY ${medication.doseTime}", color = Color(0xFF9A919B), fontSize = 10.sp)
                 }
                 Text(stateText, color = stateColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Text(if (expanded) "  ▲" else "  ▼", color = accent, fontSize = 9.sp)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("$remaining DOSES LEFT", color = if (reorder) Crimson else Color(0xFFC5BBC5), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -776,6 +798,22 @@ private fun MedicationRow(
                             enabled = parsedTakenTime != null && remaining > 0,
                             colors = ButtonDefaults.buttonColors(containerColor = accent)
                         ) { Text("LOG TAKEN", color = Ink, fontWeight = FontWeight.Black) }
+                    }
+                }
+                if (expanded) {
+                    HorizontalDivider(color = Color(0xFF4B424D))
+                    Text("DOSE HISTORY", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    if (logs.isEmpty()) {
+                        Text("No doses recorded", color = Color(0xFF817881), fontSize = 11.sp)
+                    } else {
+                        logs.sortedByDescending { it.takenAt }.forEach { log ->
+                            val taken = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(log.takenAt))
+                            val planned = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(log.scheduledFor))
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(taken, color = Color(0xFFD4CCD4), fontSize = 11.sp)
+                                Text("due $planned", color = Color(0xFF8F8790), fontSize = 10.sp)
+                            }
+                        }
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
