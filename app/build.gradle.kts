@@ -13,8 +13,8 @@ android {
         applicationId = "com.notabene.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 18
-        versionName = "0.7.2-alpha18"
+        versionCode = 19
+        versionName = "0.7.3-alpha19"
     }
 
     buildFeatures { compose = true }

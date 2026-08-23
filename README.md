@@ -2,18 +2,26 @@
 
 ![Nota Bene — Personal Operations Log](docs/readme-header.svg)
 
+<p align="center">
+  <img src="docs/assets/nb-fountain-icon-512.png" alt="Nota Bene fountain pen icon" width="160" />
+</p>
+
 ### A small personal app for recording the things worth remembering.
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_16-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_19-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.0-alpha16/nota-bene-dev.apk)
+[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.3-alpha19/nota-bene-dev.apk)
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
 </div>
+
+<p align="center">
+  <img src="docs/assets/nota-bene-rich-icon-1200.png" alt="Bastet recording a characteristically varied day in Nota Bene" width="720" />
+</p>
 
 Nota Bene is being built first and foremost as a personal utility: fast to use, locally persistent, deliberately simple, and designed around information that is easy to forget but useful to have recorded.
 
@@ -90,13 +98,16 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Alpha 16 (`v0.7.0-alpha16`)** provides:
+**Alpha 19 (`v0.7.3-alpha19`)** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - the consistent five-tab shell and instrument-panel visual language;
 - the continuous four-colour mood control and four animated backgrounds;
 - local persistence through Room;
-- a five-sheet XLSX export through Android's save picker.
+- a five-sheet XLSX export through Android's save picker;
+- tap-away keyboard dismissal throughout the app;
+- expandable medicine dose histories; and
+- the new N.B. fountain-pen identity in the launcher, app header and project page.
 
 The Payments circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
 
@@ -110,8 +121,8 @@ The MED circuit manages one daily scheduled dose per medication record, records 
 
 The current development APK is published as a GitHub pre-release:
 
-- [Download `nota-bene-dev.apk` (Alpha 16)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.0-alpha16/nota-bene-dev.apk)
-- SHA-256: `CB3CF0CD06826743CE4117740BE739DB4A73ADBF2DC96DFADF3C7125B1D0542D`
+- [Download `nota-bene-dev.apk` (Alpha 19)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.3-alpha19/nota-bene-dev.apk)
+- SHA-256: `74F56C0F9E91B2AA57C9CC7B75B858A34503ABD3C675DD98EB040673DBE371F6`
 
 Near-term work is practical rather than expansive: test receipt extraction against real receipts, improve control reliability, add persistent medicine notifications and refine the animated backgrounds on an actual phone.
 
