@@ -720,9 +720,10 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
         } else {
             LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 items(visibleMedications, key = { it.id }) { medication ->
+                    val medicationLogs = logs.filter { it.medicationId == medication.id }
                     MedicationRow(
                         medication = medication,
-                        logs = logs.filter { it.medicationId == medication.id },
+                        logs = medicationLogs,
                         now = now,
                         accent = accent,
                         onTaken = { takenAt ->
@@ -740,6 +741,11 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
                         },
                         onToggleActive = {
                             scope.launch { dao.setActive(medication.id, !medication.active) }
+                        },
+                        onSetStock = { amountOnHand ->
+                            scope.launch {
+                                dao.setStartingDoses(medication.id, amountOnHand + medicationLogs.size)
+                            }
                         }
                     )
                 }
@@ -755,7 +761,8 @@ private fun MedicationRow(
     now: Long,
     accent: Color,
     onTaken: (Long) -> Unit,
-    onToggleActive: () -> Unit
+    onToggleActive: () -> Unit,
+    onSetStock: (Int) -> Unit
 ) {
     val today = LocalDate.now().toString()
     val todayLog = logs.firstOrNull { it.doseDate == today }
@@ -764,6 +771,7 @@ private fun MedicationRow(
     val clockFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var takenTime by remember(medication.id) { mutableStateOf(LocalTime.now().format(clockFormat)) }
     var expanded by remember(medication.id) { mutableStateOf(false) }
+    var stockOnHand by remember(medication.id, remaining) { mutableStateOf(remaining.toString()) }
     val parsedTakenTime = parseDoseTime(takenTime)
     val recordedTime = todayLog?.takenAt?.let {
         DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it))
@@ -815,6 +823,22 @@ private fun MedicationRow(
                     }
                 }
                 if (expanded) {
+                    HorizontalDivider(color = Color(0xFF4B424D))
+                    Text("STOCK", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        PaymentField(
+                            "Amount on hand",
+                            stockOnHand,
+                            { stockOnHand = it.filter(Char::isDigit) },
+                            Modifier.weight(1f),
+                            accent
+                        )
+                        Button(
+                            onClick = { onSetStock(stockOnHand.toInt()) },
+                            enabled = stockOnHand.toIntOrNull() != null,
+                            colors = ButtonDefaults.buttonColors(containerColor = accent)
+                        ) { Text("SET STOCK", color = Ink, fontWeight = FontWeight.Black) }
+                    }
                     HorizontalDivider(color = Color(0xFF4B424D))
                     Text("DOSE HISTORY", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     if (logs.isEmpty()) {

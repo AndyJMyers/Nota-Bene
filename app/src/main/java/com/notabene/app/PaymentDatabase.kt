@@ -138,6 +138,9 @@ interface MedicationDao {
 
     @Query("UPDATE medications SET active = :active WHERE id = :id")
     suspend fun setActive(id: Long, active: Boolean)
+
+    @Query("UPDATE medications SET startingDoses = :startingDoses WHERE id = :id")
+    suspend fun setStartingDoses(id: Long, startingDoses: Int)
 }
 
 @Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class], version = 5, exportSchema = false)
