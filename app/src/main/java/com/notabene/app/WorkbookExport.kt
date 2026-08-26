@@ -20,7 +20,7 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
     val medicineNames = medicines.associate { it.id to it.name }
 
     val sheets = listOf(
-        ExportSheet("PAY", listOf(listOf("Date", "Merchant", "Amount", "Note", "Captured from")) + payments.map {
+        ExportSheet("SPEND", listOf(listOf("Date", "Merchant", "Amount", "Note", "Captured from")) + payments.map {
             listOf(exportDate(it.createdAt), it.merchant, it.amount, it.note, it.capturedFrom)
         }),
         ExportSheet("ASK", listOf(listOf("Date", "Question", "Completed")) + asks.map {
@@ -29,11 +29,11 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
         ExportSheet("TASK", listOf(listOf("Date", "Task", "Waiting on", "Completed")) + tasks.map {
             listOf(exportDate(it.createdAt), it.text, it.waitingOn, yesNo(it.done))
         }),
-        ExportSheet("BODY", listOf(listOf("Date", "Observation", "Measurement")) + body.map {
+        ExportSheet("SOMA", listOf(listOf("Date", "Observation", "Measurement")) + body.map {
             listOf(exportDate(it.createdAt), it.observation, it.measurement)
         }),
         ExportSheet(
-            "MED",
+            "MEDS",
             listOf(listOf("Record type", "Medicine", "Dosage / dose date", "Dose time / scheduled", "Stock / taken", "Reorder at", "Status")) +
                 medicines.map {
                     listOf("Medicine", it.name, it.dosage, it.doseTime, it.startingDoses, it.reorderAt, if (it.active) "Active" else "Halted")

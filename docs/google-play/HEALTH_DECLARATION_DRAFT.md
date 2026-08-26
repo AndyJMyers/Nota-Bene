@@ -14,7 +14,7 @@ Nota Bene offers health-related features and must not select “My app doesn’t
 
 ### Diseases and Conditions Management
 
-**Only if the submitted release is presented as managing a condition.** The current app records symptoms and measurements but does not analyse them or claim to manage a named disease. On the present store copy, leave this unselected unless Google’s form guidance requires it for the BODY log.
+**Only if the submitted release is presented as managing a condition.** The current app records symptoms and measurements but does not analyse them or claim to manage a named disease. On the present store copy, leave this unselected unless Google’s form guidance requires it for the SOMA log.
 
 ## Categories that do not apply to the current app
 
@@ -37,4 +37,3 @@ Nota Bene is a local personal record-keeping and organisation tool. Users manual
 - Put a clear medical-purpose limitation and professional-advice disclaimer inside the app, not only in the store listing.
 - Keep the store listing strictly aligned with shipped behaviour; do not advertise persistent reminders until implemented.
 - Revisit applicable law and regulatory status before making any diagnosis, treatment, dosage or clinical claims.
-

@@ -10,10 +10,10 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_19-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_21-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.3-alpha19/nota-bene-dev.apk)
+[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.5-alpha21/nota-bene-dev.apk)
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
@@ -29,9 +29,9 @@ Nota Bene is being built first and foremost as a personal utility: fast to use, 
 
 | Instrument | Purpose |
 | :--- | :--- |
-| **PAY** | Card payments by receipt, manual entry or voice |
-| **MED** | Medicines, daily doses, stock counts and reorder warnings |
-| **BODY** | Symptoms, blood pressure and other health observations |
+| **SPEND** | Card payments by receipt, manual entry or voice |
+| **MEDS** | Medicines, daily doses, stock counts and reorder warnings |
+| **SOMA** | Symptoms, blood pressure and other health observations |
 | **TASK** | Lightweight to-dos and simple dependencies |
 | **ASK** | Research questions and completion tracking |
 
@@ -69,7 +69,7 @@ Anything deliberately entered or accepted by the user is treated as the recorded
 
 Primary data is stored locally in a Room database and survives application closure and phone restart. The expected data volume is small.
 
-The `⇩` control opens Android's standard save picker and exports a dated XLSX workbook with five worksheets: **PAY**, **ASK**, **TASK**, **BODY** and **MED**. Completed, hidden and halted records are included, together with medicine dose history.
+The `⇩` control opens Android's standard save picker and exports a dated XLSX workbook with five worksheets: **SPEND**, **MEDS**, **SOMA**, **TASK** and **ASK**. Completed, hidden and halted records are included, together with medicine dose history.
 
 > Personal and medical data stays on-device by default. Export, backup and any future network feature will require deliberate user action.
 
@@ -79,7 +79,7 @@ Nota Bene uses the same interface language throughout. Its tabs are large indust
 
 <div align="center">
 
-`PAY` · `MED` · `BODY` · `TASK` · `ASK`
+`SPEND` · `MEDS` · `SOMA` · `TASK` · `ASK`
 
 </div>
 
@@ -98,7 +98,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Alpha 19 (`v0.7.3-alpha19`)** provides:
+**Alpha 21 (`v0.7.5-alpha21`)** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - the consistent five-tab shell and instrument-panel visual language;
@@ -115,14 +115,14 @@ The ASK circuit supports typed or spoken items, persistent open/done state, chec
 
 The TASK circuit provides the same persistent spoken-or-typed checklist, with an optional lightweight “waiting on” dependency for each task.
 
-The BODY circuit records typed or spoken symptoms and observations, optional measurements and automatic timestamps in a persistent history.
+The SOMA circuit records typed or spoken symptoms and observations, optional measurements and automatic timestamps in a persistent history.
 
-The MED circuit manages one daily scheduled dose per medication record, records an explicit taken time, retains the log below the top-level view, counts remaining stock, signals reorder time and preserves halted medication histories when dosage changes.
+The MEDS circuit manages one daily scheduled dose per medication record, records an explicit taken time, retains the log below the top-level view, counts remaining stock, signals reorder time and preserves halted medication histories when dosage changes.
 
 The current development APK is published as a GitHub pre-release:
 
-- [Download `nota-bene-dev.apk` (Alpha 19)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.3-alpha19/nota-bene-dev.apk)
-- SHA-256: `74F56C0F9E91B2AA57C9CC7B75B858A34503ABD3C675DD98EB040673DBE371F6`
+- [Download `nota-bene-dev.apk` (Alpha 21)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.5-alpha21/nota-bene-dev.apk)
+- SHA-256: `5D7893CFA895E5A5F8900B97F97AB97A2A90F557EFCC2289F280DF445B669C92`
 
 Near-term work is practical rather than expansive: test receipt extraction against real receipts, improve control reliability, add persistent medicine notifications and refine the animated backgrounds on an actual phone.
 

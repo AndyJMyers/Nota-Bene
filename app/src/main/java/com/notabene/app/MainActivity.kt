@@ -113,9 +113,9 @@ private val Fusion = Color(0xFFF2C94C)
 private val Crimson = Color(0xFF9D174D)
 
 private enum class Tab(val shortLabel: String, val title: String, val prompt: String) {
-    PAYMENTS("PAY", "Payments", "Capture, check, then keep"),
-    MEDICINE("MED", "Medicine", "Record medicine or prescription"),
-    HEALTH("BODY", "Health log", "Log a symptom or measurement"),
+    PAYMENTS("SPEND", "Spending", "Capture, check, then keep"),
+    MEDICINE("MEDS", "Medicines", "Record medicine or prescription"),
+    HEALTH("SOMA", "Soma", "Log a symptom or measurement"),
     TASKS("TASK", "To do & dependencies", "Add a task or dependency"),
     RESEARCH("ASK", "Further research", "Add a question to investigate")
 }
@@ -589,7 +589,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW BODY RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW SOMA RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("Symptom or observation", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 PaymentField("Measurement (optional)", measurement, { measurement = it }, Modifier.fillMaxWidth(), accent)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -616,7 +616,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
                 Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
             }
         }
-        Text("BODY HISTORY  ${observations.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+        Text("SOMA HISTORY  ${observations.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
         if (observations.isEmpty()) {
             Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
                 Text("No observations recorded", color = Color(0xFF6F6771), fontSize = 13.sp)
