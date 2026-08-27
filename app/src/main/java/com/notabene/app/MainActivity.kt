@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -61,6 +62,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -144,9 +146,9 @@ private fun NotaBeneApp() {
     val backgroundInteraction = remember { MutableInteractionSource() }
     val scope = rememberCoroutineScope()
     val database = remember { NotaBeneDatabase.get(context) }
-    var selected by remember { mutableStateOf(Tab.PAYMENTS) }
-    var mood by remember { mutableFloatStateOf(.42f) }
-    var effect by remember { mutableStateOf(Effect.STARS) }
+    var selected by rememberSaveable { mutableStateOf(Tab.PAYMENTS) }
+    var mood by rememberSaveable { mutableFloatStateOf(.42f) }
+    var effect by rememberSaveable { mutableStateOf(Effect.STARS) }
     val accent = moodColour(mood)
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -179,7 +181,11 @@ private fun NotaBeneApp() {
         ) {
             CalmBackground(effect, accent, mood)
             Column(
-                Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 18.dp, vertical = 8.dp),
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 18.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Header(
