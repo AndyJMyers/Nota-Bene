@@ -25,6 +25,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,8 +38,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -328,7 +328,7 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
             }
     }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("CAPTURE / REVIEW", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -364,12 +364,12 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
         }
         Text("KEPT PAYMENTS  ${payments.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
         if (payments.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                 Text("Nothing kept yet", color = Color(0xFF6F6771), fontSize = 13.sp)
             }
         } else {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                items(payments, key = { it.id }) { payment ->
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                payments.forEach { payment ->
                     PaymentRow(payment, accent) { scope.launch { dao.delete(payment.id) } }
                 }
             }
@@ -422,7 +422,7 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
         } else status = "Listening cancelled"
     }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("NEW QUESTION / TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -458,12 +458,12 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
             }
         }
         if (visibleItems.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                 Text(if (items.isEmpty()) "Nothing waiting to be investigated" else "All completed items are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
             }
         } else {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                items(visibleItems, key = { it.id }) { item ->
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                visibleItems.forEach { item ->
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
@@ -507,7 +507,7 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
         } else status = "Listening cancelled"
     }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("NEW TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -544,12 +544,12 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
             }
         }
         if (visibleTasks.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                 Text(if (tasks.isEmpty()) "Nothing waiting to be done" else "All completed tasks are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
             }
         } else {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                items(visibleTasks, key = { it.id }) { task ->
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                visibleTasks.forEach { task ->
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = task.done, onCheckedChange = { done -> scope.launch { dao.setDone(task.id, done) } })
@@ -592,7 +592,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
         } else status = "Listening cancelled"
     }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("NEW SOMA RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -624,12 +624,12 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
         }
         Text("SOMA HISTORY  ${observations.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
         if (observations.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                 Text("No observations recorded", color = Color(0xFF6F6771), fontSize = 13.sp)
             }
         } else {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                items(observations, key = { it.id }) { item ->
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                observations.forEach { item ->
                     Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
@@ -676,7 +676,7 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     val validStock = startingDoses.toIntOrNull()?.takeIf { it >= 0 }
     val validReorder = reorderAt.toIntOrNull()?.takeIf { it >= 0 }
 
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(9.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text("NEW MEDICATION SCHEDULE", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -720,12 +720,12 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
             }
         }
         if (visibleMedications.isEmpty()) {
-            Box(Modifier.fillMaxWidth().weight(1f), contentAlignment = Alignment.Center) {
+            Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                 Text("No medication schedules to show", color = Color(0xFF6F6771), fontSize = 13.sp)
             }
         } else {
-            LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                items(visibleMedications, key = { it.id }) { medication ->
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                visibleMedications.forEach { medication ->
                     val medicationLogs = logs.filter { it.medicationId == medication.id }
                     MedicationRow(
                         medication = medication,

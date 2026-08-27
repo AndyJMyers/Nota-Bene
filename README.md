@@ -10,10 +10,10 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_22-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_23-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.6-alpha22/nota-bene-dev.apk)
+[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.7-alpha23/nota-bene-dev.apk)
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
@@ -98,7 +98,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Alpha 22 (`v0.7.6-alpha22`)** provides:
+**Alpha 23 (`v0.7.7-alpha23`)** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - the consistent five-tab shell and instrument-panel visual language;
@@ -108,7 +108,8 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 - tap-away keyboard dismissal throughout the app;
 - expandable medicine dose histories;
 - the new N.B. fountain-pen identity in the launcher, app header and project page; and
-- reliable sensor-driven rotation with system-bar-safe content.
+- reliable sensor-driven rotation with system-bar-safe content; and
+- continuous vertical scrolling through every instrument panel.
 
 The Payments circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
 
@@ -122,8 +123,8 @@ The MEDS circuit manages one daily scheduled dose per medication record, records
 
 The current development APK is published as a GitHub pre-release:
 
-- [Download `nota-bene-dev.apk` (Alpha 22)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.6-alpha22/nota-bene-dev.apk)
-- SHA-256: `7DCC5F5F69F6E499224F8431010CF8BB2D9A4F9C5C2EECE9C6FB9EF0DFC5A245`
+- [Download `nota-bene-dev.apk` (Alpha 23)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.7-alpha23/nota-bene-dev.apk)
+- SHA-256: `E170165B0D0876FF9DD722AC976FFD9350A4C4905D0DCA2F09020485DD1E1CD5`
 
 Near-term work is practical rather than expansive: test receipt extraction against real receipts, improve control reliability, add persistent medicine notifications and refine the animated backgrounds on an actual phone.
 
