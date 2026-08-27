@@ -1,7 +1,11 @@
 package com.notabene.app
 
+import android.Manifest
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.widget.Toast
@@ -35,12 +39,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -134,6 +140,7 @@ private enum class Effect(val label: String) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        MedicineReminderScheduler.prepare(applicationContext)
         setContent { NotaBeneApp() }
     }
 }
@@ -149,7 +156,17 @@ private fun NotaBeneApp() {
     var selected by rememberSaveable { mutableStateOf(Tab.PAYMENTS) }
     var mood by rememberSaveable { mutableFloatStateOf(.42f) }
     var effect by rememberSaveable { mutableStateOf(Effect.STARS) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    var remindersGranted by remember {
+        mutableStateOf(
+            Build.VERSION.SDK_INT < 33 ||
+                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        )
+    }
     val accent = moodColour(mood)
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> remindersGranted = granted }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
@@ -194,7 +211,10 @@ private fun NotaBeneApp() {
                     effect = effect,
                     onMoodChange = { mood = it },
                     onCycleEffect = { effect = effect.next() },
-                    onExport = { exportLauncher.launch("nota-bene-${LocalDate.now()}.xlsx") }
+                    onSettings = {
+                        remindersGranted = MedicineReminderScheduler.notificationsEnabled(context)
+                        showSettings = true
+                    }
                 )
                 InstrumentTabs(selected, accent) { selected = it }
                 AnimatedContent(
@@ -213,6 +233,32 @@ private fun NotaBeneApp() {
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
             }
+            if (showSettings) {
+                SettingsDialog(
+                    accent = accent,
+                    remindersGranted = remindersGranted,
+                    onDismiss = { showSettings = false },
+                    onRequestReminders = {
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            remindersGranted = true
+                        }
+                    },
+                    onExport = {
+                        showSettings = false
+                        exportLauncher.launch("nota-bene-${LocalDate.now()}.xlsx")
+                    },
+                    onErase = {
+                        scope.launch {
+                            withContext(Dispatchers.IO) { database.clearAllTables() }
+                            context.getSystemService(NotificationManager::class.java).cancelAll()
+                            Toast.makeText(context, "All Nota Bene records erased", Toast.LENGTH_LONG).show()
+                            showSettings = false
+                        }
+                    }
+                )
+            }
         }
     }
 }
@@ -224,7 +270,7 @@ private fun Header(
     effect: Effect,
     onMoodChange: (Float) -> Unit,
     onCycleEffect: () -> Unit,
-    onExport: () -> Unit
+    onSettings: () -> Unit
 ) {
     Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Image(
@@ -251,11 +297,83 @@ private fun Header(
             TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text(effect.label, color = Color(0xFFC8BDC8), fontSize = 9.sp)
             }
-            TextButton(onClick = onExport, modifier = Modifier.width(30.dp).semantics { contentDescription = "Export records" }, contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                Text("⇩", color = Color(0xFFE9E0D2), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onSettings, modifier = Modifier.width(30.dp).semantics { contentDescription = "Settings" }, contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                Text("*", color = Color(0xFFE9E0D2), fontSize = 22.sp, fontWeight = FontWeight.Bold)
             }
         }
     }
+}
+
+@Composable
+private fun SettingsDialog(
+    accent: Color,
+    remindersGranted: Boolean,
+    onDismiss: () -> Unit,
+    onRequestReminders: () -> Unit,
+    onExport: () -> Unit,
+    onErase: () -> Unit
+) {
+    var confirmErase by remember { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF17131B),
+        title = {
+            Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+        },
+        text = {
+            Column(
+                Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("MEDS REMINDERS", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                Text(
+                    "Nota Bene checks local schedules after a dose is due and again in the early evening if it is still unrecorded.",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
+                )
+                Button(
+                    onClick = onRequestReminders,
+                    enabled = !remindersGranted,
+                    colors = ButtonDefaults.buttonColors(containerColor = accent),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (remindersGranted) "REMINDERS ON" else "ENABLE REMINDERS", color = Ink, fontWeight = FontWeight.Black)
+                }
+                HorizontalDivider(color = Color(0xFF4B424D))
+                Text("DATA", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
+                    Text("EXPORT XLSX")
+                }
+                if (confirmErase) {
+                    Text("Erase every SPEND, MEDS, SOMA, TASK and ASK record on this device? Exported copies are not affected.", color = Color(0xFFE2B5C2), fontSize = 12.sp)
+                    Button(
+                        onClick = onErase,
+                        colors = ButtonDefaults.buttonColors(containerColor = Crimson),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("CONFIRM ERASE ALL", fontWeight = FontWeight.Black) }
+                    TextButton(onClick = { confirmErase = false }, modifier = Modifier.fillMaxWidth()) { Text("CANCEL") }
+                } else {
+                    TextButton(onClick = { confirmErase = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("ERASE ALL LOCAL DATA", color = Color(0xFFC98A9D))
+                    }
+                }
+                HorizontalDivider(color = Color(0xFF4B424D))
+                Text("PRIVACY & SAFETY", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                Text(
+                    "Records stay in Nota Bene's local database unless you deliberately export them. Speech recognition is provided by the service installed on your phone; receipt text recognition runs on the selected image. Protect exported workbooks as sensitive data.",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
+                )
+                Text(
+                    "Nota Bene is a personal recording and organisation tool. It is not a medical device, does not diagnose or recommend treatment, and must not be relied upon for emergencies or as the only record of essential medical information.",
+                    color = Color(0xFFE0D5DF),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("DONE", color = accent) } }
+    )
 }
 
 @Composable
@@ -743,6 +861,7 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
                                         takenAt = takenAt
                                     )
                                 )
+                                MedicineReminderScheduler.cancelNotification(context, medication.id)
                             }
                         },
                         onToggleActive = {

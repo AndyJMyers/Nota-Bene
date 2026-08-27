@@ -20,7 +20,9 @@ This information may include personal, financial and health information. The use
 
 Nota Bene stores its primary records in a local database on the user’s device. The developer does not operate a Nota Bene account, server, advertising network or analytics service, and the app does not send these records to the developer.
 
-The information is used only to provide the app’s recording, display, dose-status and export functions.
+The information is used only to provide the app’s recording, display, local reminder, dose-status and export functions.
+
+MEDS reminder checks run locally on the device. Nota Bene compares user-entered schedules with locally recorded doses and can display Android notifications. It does not send medicine information to the developer or a reminder server.
 
 Android may include app data in device or account backups when the user has enabled the operating system’s backup facilities. Those backups are controlled by the user’s device, Android version and account provider, not by the Nota Bene developer.
 
@@ -48,7 +50,7 @@ No storage or security mechanism can be guaranteed completely secure.
 
 ## Retention and deletion
 
-Records remain on the device until the user deletes them using an available in-app control, clears Nota Bene’s storage in Android settings, or uninstalls the app. Some record types do not yet have individual deletion controls; clearing app storage or uninstalling removes the local database.
+Records remain on the device until the user deletes them using an available in-app control, uses **Erase all local data** in settings, clears Nota Bene’s storage in Android settings, or uninstalls the app.
 
 Copies previously exported by the user and copies retained in an Android or third-party backup must be deleted separately from the location in which they were saved.
 
@@ -73,4 +75,3 @@ Privacy questions can be sent to:
 **[INSERT PUBLIC PRIVACY CONTACT EMAIL BEFORE PUBLICATION]**
 
 This draft must be published as a stable, publicly accessible HTML page and linked both from Google Play and from within the app before a health-app release is submitted.
-

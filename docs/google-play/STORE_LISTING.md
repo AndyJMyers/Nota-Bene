@@ -26,13 +26,13 @@ Nota Bene is a small personal operations log for the everyday details that are u
 
 SPEND records card payments by manual entry, speech or on-device receipt text recognition. Receipt photographs are used as input and are not kept by Nota Bene.
 
-MEDS keeps a simple record of medicines, daily dose times, doses taken, remaining stock and reorder thresholds. Medicines can be halted without losing their history when a prescription or dosage changes.
+MEDS keeps a simple record of medicines, daily dose times, doses taken, remaining stock and reorder thresholds. Local notifications flag an overdue dose and repeat in the early evening if it remains unrecorded. Medicines can be halted without losing their history when a prescription or dosage changes.
 
 SOMA records symptoms, blood-pressure readings and other health observations in a dated local history.
 
 TASK provides a lightweight checklist with optional “waiting on” dependencies. ASK keeps questions and research prompts, with completion tracking and the option to hide finished items.
 
-Your records are stored locally on your device. Nota Bene has no developer-operated account, advertising or analytics service. A single export control creates a dated Excel workbook containing SPEND, MEDS, SOMA, TASK and ASK worksheets, using Android’s standard save picker.
+Your records are stored locally on your device. Nota Bene has no developer-operated account, advertising or analytics service. The `*` settings control provides a dated Excel workbook containing SPEND, MEDS, SOMA, TASK and ASK worksheets through Android’s standard save picker.
 
 The interface is designed to be clear without being clinical. Large illuminated controls, a four-colour mood slider and restrained animated backgrounds give Nota Bene a distinctive retro-futurist character. Useful software need not be ugly.
 
@@ -51,7 +51,7 @@ Use current, unaltered in-app screens with realistic fictitious data. Remove per
 7. Export — Android save picker with the dated XLSX filename.
 8. Interface — one atmospheric background and the mood control.
 
-Recommended caption language: factual and brief, such as “Record the dose you actually took” or “Five useful records, one calm interface.” Do not claim that reminders or notifications exist until they do.
+Recommended caption language: factual and brief, such as “Record the dose you actually took” or “Five useful records, one calm interface.”
 
 ## Graphic assets still required
 

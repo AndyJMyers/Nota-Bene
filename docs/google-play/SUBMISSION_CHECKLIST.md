@@ -5,9 +5,9 @@
 - [ ] Insert the Play developer name, publication date and public privacy contact into `PRIVACY_POLICY.md`.
 - [ ] Publish the privacy policy as a stable public HTML page (not a PDF, not geofenced, no login required).
 - [ ] Add a clearly accessible privacy-policy link or full policy text inside Nota Bene.
-- [ ] Add an in-app medical disclaimer stating that Nota Bene is not a medical device, does not diagnose or recommend treatment, and is not for emergencies.
+- [x] Add an in-app medical disclaimer stating that Nota Bene is not a medical device, does not diagnose or recommend treatment, and is not for emergencies.
 - [ ] Decide whether `android:allowBackup="true"` is suitable for payment and health records; add explicit Android backup/data-extraction rules if required.
-- [ ] Give every user-created record type a clear deletion route, or ensure the in-app privacy/help screen plainly explains clearing all app data.
+- [x] Give every user-created record type a clear deletion route, or ensure the in-app privacy/help screen plainly explains clearing all app data.
 - [ ] Test the exported XLSX workbook in Excel, Google Sheets and LibreOffice using realistic fictitious records.
 
 ## Play Console declarations
@@ -45,4 +45,3 @@
 ## Personal developer account consideration
 
 If the Google Play developer account is a personal account created after 13 November 2023, check the current closed-testing requirements before applying for production access.
-

@@ -10,10 +10,10 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_23-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_24-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.7-alpha23/nota-bene-dev.apk)
+[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.8.0-alpha24/nota-bene-dev.apk)
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
@@ -49,7 +49,7 @@ Captured payment data is stored locally. Receipt photographs are an input mechan
 
 Record medicines and prescriptions with enough information to make everyday management easier. Each medicine has a daily dose time, remaining-dose count and reorder threshold. A dose can be recorded with its actual taken time; halted medicines and their histories remain available when a dosage changes.
 
-The current app shows due, overdue and reorder states while it is open. Persistent Android notifications are still to come.
+The app shows due, overdue and reorder states and provides local Android notifications after a dose becomes overdue, with a further early-evening reminder if it remains unrecorded. Reminder checks survive app closure and phone restart.
 
 ### Health log
 
@@ -69,7 +69,7 @@ Anything deliberately entered or accepted by the user is treated as the recorded
 
 Primary data is stored locally in a Room database and survives application closure and phone restart. The expected data volume is small.
 
-The `⇩` control opens Android's standard save picker and exports a dated XLSX workbook with five worksheets: **SPEND**, **MEDS**, **SOMA**, **TASK** and **ASK**. Completed, hidden and halted records are included, together with medicine dose history.
+The `*` settings control contains the export action. It opens Android's standard save picker and creates a dated XLSX workbook with five worksheets: **SPEND**, **MEDS**, **SOMA**, **TASK** and **ASK**. Completed, hidden and halted records are included, together with medicine dose history.
 
 > Personal and medical data stays on-device by default. Export, backup and any future network feature will require deliberate user action.
 
@@ -98,7 +98,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Alpha 23 (`v0.7.7-alpha23`)** provides:
+**Alpha 24 (`v0.8.0-alpha24`)** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - the consistent five-tab shell and instrument-panel visual language;
@@ -107,9 +107,11 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 - a five-sheet XLSX export through Android's save picker;
 - tap-away keyboard dismissal throughout the app;
 - expandable medicine dose histories;
-- the new N.B. fountain-pen identity in the launcher, app header and project page; and
-- reliable sensor-driven rotation with system-bar-safe content; and
-- continuous vertical scrolling through every instrument panel.
+- the new N.B. fountain-pen identity in the launcher, app header and project page;
+- reliable sensor-driven rotation with system-bar-safe content;
+- continuous vertical scrolling through every instrument panel;
+- persistent local MEDS reminders across app closure and phone restart; and
+- one compact `*` settings sheet for reminders, XLSX export, privacy, safety and data erasure.
 
 The Payments circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
 
@@ -123,10 +125,10 @@ The MEDS circuit manages one daily scheduled dose per medication record, records
 
 The current development APK is published as a GitHub pre-release:
 
-- [Download `nota-bene-dev.apk` (Alpha 23)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.7.7-alpha23/nota-bene-dev.apk)
-- SHA-256: `E170165B0D0876FF9DD722AC976FFD9350A4C4905D0DCA2F09020485DD1E1CD5`
+- [Download `nota-bene-dev.apk` (Alpha 24)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.8.0-alpha24/nota-bene-dev.apk)
+- SHA-256: `1A41000C3017AE1ACFDC759FC84DEC76A550D2EE511BB0F0FE0738AE3D0EF012`
 
-Near-term work is practical rather than expansive: test receipt extraction against real receipts, improve control reliability, add persistent medicine notifications and refine the animated backgrounds on an actual phone.
+Near-term work is practical rather than expansive: test receipt extraction and reminders on real devices, verify exports in common spreadsheet applications and complete release-candidate privacy and backup decisions.
 
 ## Build
 

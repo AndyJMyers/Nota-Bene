@@ -35,5 +35,5 @@ Nota Bene is a local personal record-keeping and organisation tool. Users manual
 - Publish a comprehensive privacy policy at a stable public HTML URL.
 - Put a privacy-policy link or the policy text inside the app.
 - Put a clear medical-purpose limitation and professional-advice disclaimer inside the app, not only in the store listing.
-- Keep the store listing strictly aligned with shipped behaviour; do not advertise persistent reminders until implemented.
+- Keep the store listing strictly aligned with the shipped local reminder behaviour.
 - Revisit applicable law and regulatory status before making any diagnosis, treatment, dosage or clinical claims.
