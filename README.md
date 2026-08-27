@@ -131,7 +131,7 @@ The current development APK is published as a GitHub pre-release:
 - [Download `nota-bene-dev.apk` (Alpha 25)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.8.1-alpha25/nota-bene-dev.apk)
 - SHA-256: `D6F6D0501FF46360A4DB071DE7C79C21512EA44FDEE9B88225879BC68145F6E4`
 
-Near-term work is practical rather than expansive: test receipt extraction, notification privacy, reminder timing and complete erasure on real devices; verify exports in common spreadsheet applications; and complete release-candidate publication details.
+Near-term work is practical rather than expansive: test receipt extraction, notification privacy, reminder timing and complete erasure on real devices; verify exports in common spreadsheet applications; and complete release-candidate publication details. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
 
 ## Build
 
