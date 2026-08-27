@@ -2,6 +2,8 @@
 
 Nota Bene offers health-related features and must not select “My app doesn’t provide any health features.”
 
+The recommended Play Store category is **Lifestyle**, but category selection does not remove the obligation to complete this declaration accurately.
+
 ## Categories to declare
 
 ### Medication and Treatment Management
@@ -28,7 +30,7 @@ Nota Bene offers health-related features and must not select “My app doesn’t
 
 ## Suggested explanatory statement
 
-Nota Bene is a local personal record-keeping and organisation tool. Users manually record medicines, dose times, doses taken, remaining stock, symptoms and measurements. The app displays due, overdue and reorder states derived from user-entered information. It does not diagnose conditions, calculate or recommend dosages, recommend treatment, connect to medical devices, provide emergency services, or transmit records to a healthcare provider or developer-operated service.
+Nota Bene is a local personal record-keeping and organisation tool, not a medical device. Users manually record medicines, dose times, doses taken, remaining stock, symptoms and measurements. The app displays administrative due, overdue and reorder states derived directly from user-entered information. Android may delay or suppress its local notifications, which are a helpful aid rather than a guaranteed or sole medicine reminder. The app does not diagnose, treat, cure or prevent any medical condition, calculate or recommend dosages, recommend treatment, connect to medical devices, provide emergency services, or transmit records to a healthcare provider or developer-operated service.
 
 ## Required supporting measures
 

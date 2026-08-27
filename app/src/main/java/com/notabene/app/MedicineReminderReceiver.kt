@@ -2,6 +2,7 @@ package com.notabene.app
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -33,6 +34,7 @@ object MedicineReminderScheduler {
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Reminders for user-entered medicine schedules"
+                lockscreenVisibility = Notification.VISIBILITY_PRIVATE
             }
         )
         schedule(context)
@@ -58,6 +60,14 @@ object MedicineReminderScheduler {
     fun cancelNotification(context: Context, medicationId: Long) {
         context.getSystemService(NotificationManager::class.java)
             .cancel(notificationId(medicationId))
+    }
+
+    fun eraseReminderData(context: Context) {
+        context.getSharedPreferences("meds_reminders", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .apply()
+        context.getSystemService(NotificationManager::class.java).cancelAll()
     }
 
     fun notificationsEnabled(context: Context): Boolean =
@@ -122,6 +132,14 @@ class MedicineReminderReceiver : BroadcastReceiver() {
             } else {
                 "${medication.name} ${medication.dosage} was due at ${medication.doseTime}."
             }
+            val publicNotification = NotificationCompat.Builder(context, ReminderChannel)
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle("MEDS reminder")
+                .setContentText("A MEDS entry needs attention. Unlock Nota Bene for details.")
+                .setContentIntent(openApp)
+                .setAutoCancel(true)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .build()
             val notification = NotificationCompat.Builder(context, ReminderChannel)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(if (stage == "evening") "MEDS still needs attention" else "MEDS reminder")
@@ -130,6 +148,8 @@ class MedicineReminderReceiver : BroadcastReceiver() {
                 .setContentIntent(openApp)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                .setPublicVersion(publicNotification)
                 .build()
             notificationManager.notify(MedicineReminderScheduler.idFor(medication.id), notification)
             preferences.edit().putBoolean(key, true).apply()

@@ -2,7 +2,6 @@ package com.notabene.app
 
 import android.Manifest
 import android.app.Activity
-import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -252,7 +251,7 @@ private fun NotaBeneApp() {
                     onErase = {
                         scope.launch {
                             withContext(Dispatchers.IO) { database.clearAllTables() }
-                            context.getSystemService(NotificationManager::class.java).cancelAll()
+                            MedicineReminderScheduler.eraseReminderData(context)
                             Toast.makeText(context, "All Nota Bene records erased", Toast.LENGTH_LONG).show()
                             showSettings = false
                         }
@@ -327,7 +326,7 @@ private fun SettingsDialog(
             ) {
                 Text("MEDS REMINDERS", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 Text(
-                    "Nota Bene checks local schedules after a dose is due and again in the early evening if it is still unrecorded.",
+                    "Nota Bene checks local schedules after a dose is due and again in the early evening if it is still unrecorded. Android may delay or suppress notifications because of battery, permission or device settings. Reminders are a helpful aid, not a substitute for paying attention to your prescription or medical advice.",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
@@ -360,15 +359,40 @@ private fun SettingsDialog(
                 HorizontalDivider(color = Color(0xFF4B424D))
                 Text("PRIVACY & SAFETY", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 Text(
-                    "Records stay in Nota Bene's local database unless you deliberately export them. Speech recognition is provided by the service installed on your phone; receipt text recognition runs on the selected image. Protect exported workbooks as sensitive data.",
+                    "YOUR RECORDS\nSPEND, MEDS, SOMA, TASK and ASK records stay in Nota Bene's local database. There is no Nota Bene account or server, and the developer cannot see them. Android cloud backup and device-transfer backup are disabled.",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
                 Text(
-                    "Nota Bene is a personal recording and organisation tool. It is not a medical device, does not diagnose or recommend treatment, and must not be relied upon for emergencies or as the only record of essential medical information.",
+                    "EXPORT\nRecords leave Nota Bene only when you deliberately export an XLSX workbook and choose where to save it. A cloud destination then applies its own privacy terms. Protect exports as sensitive data and delete them separately.",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
+                )
+                Text(
+                    "RECEIPTS & SPEECH\nReceipt images and recognised text are processed on-device and the image is not retained. Google's bundled ML Kit may send limited app, device, performance and installation diagnostics—not the receipt image or recognised text. Speech is handled by the recognition service installed on your phone; its provider may process audio under its own policy. Nota Bene keeps only text you accept.",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
+                )
+                Text(
+                    "REMINDERS & LOCK SCREEN\nMedicine checks run locally. Notification details are marked private; a generic message is shown until the phone is unlocked, subject to your Android lock-screen settings. Use a device screen lock.",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
+                )
+                Text(
+                    "DELETION\nErase all local data removes every record and reminder-state marker in Nota Bene. Previously exported copies must be deleted where you saved them.",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
+                )
+                Text(
+                    "MEDICAL LIMITS\nNota Bene is a personal recording and organisation tool, not a medical device. It does not diagnose, treat, cure or prevent any medical condition and does not give dose advice. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.",
                     color = Color(0xFFE0D5DF),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    "PUBLISHER\nDeveloped and published by Andy J Myers. Project and support: github.com/AndyJMyers/Nota-Bene",
+                    color = Color(0xFFC7BDC7),
+                    fontSize = 12.sp
                 )
             }
         },

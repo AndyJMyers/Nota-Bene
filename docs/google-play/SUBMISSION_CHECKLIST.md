@@ -2,11 +2,11 @@
 
 ## Blocking product and policy work
 
-- [ ] Insert the Play developer name, publication date and public privacy contact into `PRIVACY_POLICY.md`.
+- [ ] Add the public privacy contact email to `PRIVACY_POLICY.md` (developer name and publication date are present).
 - [ ] Publish the privacy policy as a stable public HTML page (not a PDF, not geofenced, no login required).
-- [ ] Add a clearly accessible privacy-policy link or full policy text inside Nota Bene.
+- [x] Add clear privacy and safety disclosure text inside Nota Bene under `*` settings.
 - [x] Add an in-app medical disclaimer stating that Nota Bene is not a medical device, does not diagnose or recommend treatment, and is not for emergencies.
-- [ ] Decide whether `android:allowBackup="true"` is suitable for payment and health records; add explicit Android backup/data-extraction rules if required.
+- [x] Disable Android cloud backup and device-transfer backup, with explicit exclusion rules for all app-data domains.
 - [x] Give every user-created record type a clear deletion route, or ensure the in-app privacy/help screen plainly explains clearing all app data.
 - [ ] Test the exported XLSX workbook in Excel, Google Sheets and LibreOffice using realistic fictitious records.
 
@@ -18,7 +18,7 @@
 - [ ] Health Apps: declare Medication and Treatment Management; assess Healthcare Services and Management using the live form wording.
 - [ ] Content rating questionnaire: complete accurately; the app contains no developer-supplied sexual, violent, gambling or drug-use content.
 - [ ] Target audience: adults; do not include child age groups.
-- [ ] Category and tags: start with Medical; reassess discoverability after testing.
+- [ ] Category and tags: start with Lifestyle while completing the Health Apps declaration accurately; reassess after testing.
 - [ ] Provide a support email and, if available, a support website.
 
 ## Store listing
@@ -40,6 +40,7 @@
 - [ ] Run lint, unit/instrumentation tests and a clean-install/upgrade test on supported Android versions.
 - [ ] Verify the release targets the API level required on the intended submission date.
 - [ ] Test receipt selection, speech recognition, local persistence, dose logging and export on the Play-delivered build.
+- [ ] Test locked-screen MEDS notification redaction, delayed/suppressed reminder behaviour and complete local erasure on representative devices.
 - [ ] Remove or clearly identify development-only behaviour.
 
 ## Personal developer account consideration
