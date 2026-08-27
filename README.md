@@ -35,7 +35,7 @@ Nota Bene is being built first and foremost as a personal utility: fast to use, 
 | **TASK** | Lightweight to-dos and simple dependencies |
 | **ASK** | Research questions and completion tracking |
 
-### Payments
+### SPEND
 
 Quickly record card payments using whichever method is easiest at the time:
 
@@ -45,21 +45,21 @@ Quickly record card payments using whichever method is easiest at the time:
 
 Captured payment data is stored locally. Receipt photographs are an input mechanism rather than a permanent image archive.
 
-### Medicine
+### MEDS
 
 Record medicines and prescriptions with enough information to make everyday management easier. Each medicine has a daily dose time, remaining-dose count and reorder threshold. A dose can be recorded with its actual taken time; halted medicines and their histories remain available when a dosage changes.
 
 The app shows due, overdue and reorder states and provides local Android notifications after a dose becomes overdue, with a further early-evening reminder if it remains unrecorded. Reminder checks survive app closure and phone restart, but Android may delay or suppress notifications: they are a helpful aid, not a guaranteed or sole medicine reminder.
 
-### Health log
+### SOMA
 
 Record simple health-related observations such as symptoms, blood-pressure measurements and similar information. How this develops will be determined by actual use rather than by attempting to design every possible feature in advance.
 
-### To do
+### TASK
 
 A lightweight place for things that need doing, including simple dependencies where one action is waiting on another. This is intentionally not intended to become a project-management system.
 
-### Research
+### ASK
 
 A place to record questions that need further investigation. Items can be entered by typing or speech, marked complete and hidden from the active list. Follow-on notes and deletion are not yet implemented.
 
@@ -116,7 +116,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 - complete local erasure of records and reminder state; and
 - one compact `*` settings sheet for reminders, XLSX export and a plain-English privacy and safety notice.
 
-The Payments circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
+The SPEND circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
 
 The ASK circuit supports typed or spoken items, persistent open/done state, checkbox completion and hiding completed items.
 
