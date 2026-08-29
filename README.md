@@ -136,6 +136,18 @@ The current development APK is published as a GitHub pre-release:
 
 Near-term work is practical rather than expansive: test receipt extraction, notification privacy, reminder timing and complete erasure on real devices; verify exports in common spreadsheet applications; and complete release-candidate publication details. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
 
+## Testing
+
+Nota Bene has a focused regression suite rather than a large testing framework: **23 fast JVM tests** protect MEDS rules, receipt parsing, reminder decisions and XLSX integrity; **8 opt-in Android tests** protect Room persistence/migration, complete erasure and essential live interface paths. Ordinary APK assembly does not run or package either suite.
+
+Run the practical local gate with:
+
+```powershell
+.\gradlew.bat testDebugUnitTest assembleDebug lintDebug
+```
+
+The Android suite is compiled separately and run on a connected phone or emulator before releases or after tricky platform work. Commands, scope and deliberate manual checks are documented in [TESTING.md](TESTING.md).
+
 ## Build
 
 Open the repository in Android Studio, or run on Windows:

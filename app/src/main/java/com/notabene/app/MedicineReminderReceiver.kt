@@ -18,7 +18,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZoneId
 
 private const val ReminderChannel = "meds_reminders"
 private const val ReminderRequest = 7401
@@ -101,25 +100,27 @@ class MedicineReminderReceiver : BroadcastReceiver() {
         val logs = dao.observeDoseLogs().first()
         val today = LocalDate.now()
         val todayText = today.toString()
-        val now = System.currentTimeMillis()
-        val evening = LocalTime.of(18, 0)
         val preferences = context.getSharedPreferences("meds_reminders", Context.MODE_PRIVATE)
         val notificationManager = context.getSystemService(NotificationManager::class.java)
 
         medications.forEach { medication ->
-            val taken = logs.any { it.medicationId == medication.id && it.doseDate == todayText }
-            if (taken) {
+            val doseRecorded = logs.any { it.medicationId == medication.id && it.doseDate == todayText }
+            if (doseRecorded) {
                 notificationManager.cancel(MedicineReminderScheduler.idFor(medication.id))
                 return@forEach
             }
 
             val doseTime = runCatching { LocalTime.parse(medication.doseTime) }.getOrNull() ?: return@forEach
-            val scheduled = today.atTime(doseTime).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            if (now < scheduled) return@forEach
-
-            val stage = if (!LocalTime.now().isBefore(evening)) "evening" else "due"
-            val key = "${medication.id}:$todayText:$stage"
-            if (preferences.getBoolean(key, false)) return@forEach
+            val dueKey = "${medication.id}:$todayText:${ReminderStage.DUE.keyPart}"
+            val eveningKey = "${medication.id}:$todayText:${ReminderStage.EVENING.keyPart}"
+            val stage = reminderStage(
+                scheduledTime = doseTime,
+                currentTime = LocalTime.now(),
+                doseRecordedToday = doseRecorded,
+                dueAlreadyNotified = preferences.getBoolean(dueKey, false),
+                eveningAlreadyNotified = preferences.getBoolean(eveningKey, false)
+            ) ?: return@forEach
+            val key = "${medication.id}:$todayText:${stage.keyPart}"
 
             val openApp = PendingIntent.getActivity(
                 context,
@@ -127,7 +128,7 @@ class MedicineReminderReceiver : BroadcastReceiver() {
                 Intent(context, MainActivity::class.java),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            val message = if (stage == "evening") {
+            val message = if (stage == ReminderStage.EVENING) {
                 "No dose has been recorded today for ${medication.name}."
             } else {
                 "${medication.name} ${medication.dosage} was due at ${medication.doseTime}."
@@ -142,7 +143,7 @@ class MedicineReminderReceiver : BroadcastReceiver() {
                 .build()
             val notification = NotificationCompat.Builder(context, ReminderChannel)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle(if (stage == "evening") "MEDS still needs attention" else "MEDS reminder")
+                .setContentTitle(if (stage == ReminderStage.EVENING) "MEDS still needs attention" else "MEDS reminder")
                 .setContentText(message)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setContentIntent(openApp)

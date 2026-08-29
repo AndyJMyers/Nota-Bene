@@ -27,7 +27,6 @@ Updated for **Alpha 26**.
 - [ ] ASK: add follow-on notes to an item.
 - [ ] ASK: add deliberate item deletion with a suitable confirmation or undo path.
 - [ ] TASK: decide whether individual deletion is needed after real use; retain the present done/hide-completed workflow unless deletion proves useful.
-- [ ] Add a second, compact ambience slider for sound mood/volume, with offline wind chime, slow fountain, nature and wind choices ranging from sombre to mildly elated. It must be easy to silence, respect app lifecycle and audio routing, and avoid cluttering the instrument row.
 - [ ] Review accessibility on a real phone: TalkBack labels, contrast, text scaling, touch-target size and reduced-motion behaviour.
 
 ## Google Play preparation

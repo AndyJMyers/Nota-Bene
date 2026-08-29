@@ -10,34 +10,51 @@ import java.util.zip.ZipOutputStream
 
 private data class ExportSheet(val name: String, val rows: List<List<Any?>>)
 
+internal data class WorkbookSnapshot(
+    val payments: List<PaymentRecord> = emptyList(),
+    val asks: List<AskItem> = emptyList(),
+    val tasks: List<TaskItem> = emptyList(),
+    val body: List<BodyItem> = emptyList(),
+    val medicines: List<Medication> = emptyList(),
+    val doses: List<DoseLog> = emptyList()
+)
+
 suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
-    val payments = database.paymentDao().observeAll().first()
-    val asks = database.askDao().observeAll().first()
-    val tasks = database.taskDao().observeAll().first()
-    val body = database.bodyDao().observeAll().first()
-    val medicines = database.medicationDao().observeMedications().first()
-    val doses = database.medicationDao().observeDoseLogs().first()
-    val medicineNames = medicines.associate { it.id to it.name }
+    writeWorkbook(
+        WorkbookSnapshot(
+            payments = database.paymentDao().observeAll().first(),
+            asks = database.askDao().observeAll().first(),
+            tasks = database.taskDao().observeAll().first(),
+            body = database.bodyDao().observeAll().first(),
+            medicines = database.medicationDao().observeMedications().first(),
+            doses = database.medicationDao().observeDoseLogs().first()
+        ),
+        output
+    )
+}
+
+internal fun writeWorkbook(snapshot: WorkbookSnapshot, output: OutputStream) {
+    val medicineNames = snapshot.medicines.associate { it.id to it.name }
 
     val sheets = listOf(
-        ExportSheet("SPEND", listOf(listOf("Date", "Merchant", "Amount", "Note", "Captured from")) + payments.map {
+        ExportSheet("SPEND", listOf(listOf("Date", "Merchant", "Amount", "Note", "Captured from")) + snapshot.payments.map {
             listOf(exportDate(it.createdAt), it.merchant, it.amount, it.note, it.capturedFrom)
         }),
-        ExportSheet("ASK", listOf(listOf("Date", "Question", "Completed")) + asks.map {
+        ExportSheet("ASK", listOf(listOf("Date", "Question", "Completed")) + snapshot.asks.map {
             listOf(exportDate(it.createdAt), it.text, yesNo(it.done))
         }),
-        ExportSheet("TASK", listOf(listOf("Date", "Task", "Waiting on", "Completed")) + tasks.map {
+        ExportSheet("TASK", listOf(listOf("Date", "Task", "Waiting on", "Completed")) + snapshot.tasks.map {
             listOf(exportDate(it.createdAt), it.text, it.waitingOn, yesNo(it.done))
         }),
-        ExportSheet("SOMA", listOf(listOf("Date", "Observation", "Measurement")) + body.map {
+        ExportSheet("SOMA", listOf(listOf("Date", "Observation", "Measurement")) + snapshot.body.map {
             listOf(exportDate(it.createdAt), it.observation, it.measurement)
         }),
         ExportSheet(
             "MEDS",
             listOf(listOf("Record type", "Medicine", "Dosage / dose date", "First reminder / scheduled", "Usual per day", "Stock / taken", "Reorder at", "Status")) +
-                medicines.map {
+                snapshot.medicines.map {
                     listOf("Medicine", it.name, it.dosage, it.doseTime, it.dailyTarget, it.startingDoses, it.reorderAt, if (it.active) "Active" else "Halted")
-                } + doses.map {
+                } + snapshot.doses.map {
                     listOf("Dose taken", medicineNames[it.medicationId] ?: "Medicine #${it.medicationId}", it.doseDate, exportDate(it.scheduledFor), "", exportDate(it.takenAt), "", "Taken")
                 }
         )

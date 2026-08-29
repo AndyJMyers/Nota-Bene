@@ -198,7 +198,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
             }
         }
 
-        private val MIGRATION_5_6 = object : Migration(5, 6) {
+        internal val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `medications` ADD COLUMN `dailyTarget` INTEGER NOT NULL DEFAULT 1")
                 db.execSQL("DROP INDEX IF EXISTS `index_dose_logs_medicationId_doseDate`")

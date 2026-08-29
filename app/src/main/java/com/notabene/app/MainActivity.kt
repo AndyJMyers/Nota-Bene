@@ -107,7 +107,6 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 import java.util.Date
 import java.util.Locale
 import kotlin.math.PI
@@ -924,7 +923,7 @@ private fun MedicationRow(
     val today = LocalDate.now().toString()
     val todayLogs = logs.filter { it.doseDate == today }
     val latestTodayLog = todayLogs.maxByOrNull { it.takenAt }
-    val remaining = (medication.startingDoses - logs.size).coerceAtLeast(0)
+    val remaining = remainingDoses(medication.startingDoses, logs.size)
     val scheduled = scheduledForToday(medication.doseTime)
     val clockFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
     var takenTime by remember(medication.id) { mutableStateOf(LocalTime.now().format(clockFormat)) }
@@ -946,11 +945,11 @@ private fun MedicationRow(
         now > scheduled -> Crimson
         else -> accent
     }
-    val consumptionColor = when {
-        todayLogs.isEmpty() -> Color(0xFFE9E9E9)
-        todayLogs.size <= medication.dailyTarget -> Color(0xFF73B58A)
-        todayLogs.size == medication.dailyTarget + 1 -> Color(0xFFD59A3A)
-        else -> Color(0xFFD44747)
+    val consumptionColor = when (consumptionBand(todayLogs.size, medication.dailyTarget)) {
+        ConsumptionBand.NONE -> Color(0xFFE9E9E9)
+        ConsumptionBand.WITHIN_USUAL -> Color(0xFF73B58A)
+        ConsumptionBand.ONE_OVER -> Color(0xFFD59A3A)
+        ConsumptionBand.FURTHER_OVER -> Color(0xFFD44747)
     }
     val reorder = remaining <= medication.reorderAt
 
@@ -1260,23 +1259,6 @@ private fun CalmBackground(effect: Effect, accent: Color, mood: Float) {
             }
         }
     }
-}
-
-private fun parseCapture(text: String): Pair<String, String> {
-    val lines = text.lines().map { it.trim() }.filter { it.isNotBlank() }
-    val amountPattern = Regex("(?:£|GBP\\s*)?([0-9]+[.,][0-9]{2})(?![0-9])", RegexOption.IGNORE_CASE)
-    val amounts = amountPattern.findAll(text).mapNotNull { match ->
-        match.groupValues.getOrNull(1)?.replace(',', '.')?.toDoubleOrNull()?.let { it to match.value.trim() }
-    }.toList()
-    val amount = amounts.maxByOrNull { it.first }?.second.orEmpty()
-    val merchant = lines.firstOrNull { line -> !amountPattern.containsMatchIn(line) && line.any(Char::isLetter) }?.take(60).orEmpty()
-    return merchant to amount
-}
-
-private fun parseDoseTime(value: String): LocalTime? = try {
-    LocalTime.parse(value.trim(), DateTimeFormatter.ofPattern("H:mm"))
-} catch (_: DateTimeParseException) {
-    null
 }
 
 private fun scheduledForToday(value: String): Long {
