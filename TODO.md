@@ -49,7 +49,7 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - Any account, cloud sync, analytics, remote processing, clinician sharing or clinical inference requires a fresh privacy and regulatory review before implementation.
 # Visual styles
 
-- [x] Add a persistent `>` next-style control.
-- [x] Add Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris treatments.
+- [x] Add a persistent `MOOD >` next-style control with a generous touch target.
+- [x] Add distinct palettes, type character, tab artwork, panel frames and backdrop ornament for Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris.
 - [x] Glow the selected style name into view and fade it away without interrupting the current task.
 - [ ] Refine each treatment on a physical phone after side-by-side use.

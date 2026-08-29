@@ -24,6 +24,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,6 +35,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -64,6 +66,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -77,6 +80,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -200,6 +204,7 @@ private fun NotaBeneApp() {
         }
     }
 
+    CompositionLocalProvider(LocalNotaStyle provides appStyle) {
     MaterialTheme(
         colorScheme = darkColorScheme(
             primary = accent,
@@ -244,8 +249,9 @@ private fun NotaBeneApp() {
                     onMoodChange = { mood = it },
                     onCycleEffect = { effect = effect.next() },
                     onCycleStyle = {
-                        appStyle = appStyle.next()
-                        uiPreferences.edit().putString("style", appStyle.name).apply()
+                        val nextStyle = appStyle.next()
+                        appStyle = nextStyle
+                        uiPreferences.edit().putString("style", nextStyle.name).apply()
                         styleChangeCount += 1
                     },
                     onSettings = {
@@ -259,7 +265,7 @@ private fun NotaBeneApp() {
                     transitionSpec = { fadeIn(tween(450)) togetherWith fadeOut(tween(1100)) },
                     label = "tab title"
                 ) { tab ->
-                    Text(tab.title.uppercase(), color = accent, fontSize = 23.sp, fontWeight = FontWeight.Light, letterSpacing = 3.sp)
+                    Text(tab.title.uppercase(), color = accent, fontSize = 23.sp, fontWeight = FontWeight.Light, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
                 }
                 when (selected) {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
@@ -307,6 +313,7 @@ private fun NotaBeneApp() {
                     color = styleSpec.text,
                     fontSize = 25.sp,
                     fontWeight = FontWeight.Light,
+                    fontFamily = styleSpec.titleFamily,
                     letterSpacing = 4.sp,
                     style = TextStyle(shadow = Shadow(accent, Offset.Zero, 22f)),
                     modifier = Modifier
@@ -316,6 +323,7 @@ private fun NotaBeneApp() {
                 )
             }
         }
+    }
     }
 }
 
@@ -343,8 +351,16 @@ private fun Header(
                 .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-            Text("NOTA BENE", color = styleSpec.text, fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-            Text("PERSONAL OPERATIONS LOG", color = styleSpec.muted, fontSize = 9.sp, letterSpacing = 2.sp)
+            Text("NOTA BENE", color = styleSpec.text, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
+            Box(
+                Modifier
+                    .height(22.dp)
+                    .semantics { contentDescription = "Next mood style, currently ${appStyle.displayName}" }
+                    .clickable(onClick = onCycleStyle),
+                contentAlignment = Alignment.CenterStart
+            ) {
+                Text("MOOD  >", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.5.sp)
+            }
         }
         Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
             Slider(
@@ -360,14 +376,6 @@ private fun Header(
                 contentAlignment = Alignment.Center
             ) {
                 Text(effect.label, color = styleSpec.muted, fontSize = 8.sp, maxLines = 1)
-            }
-            Box(
-                Modifier.width(25.dp).height(40.dp)
-                    .semantics { contentDescription = "Next style, currently ${appStyle.displayName}" }
-                    .clickable(onClick = onCycleStyle),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(">", color = accent, fontSize = 21.sp, fontWeight = FontWeight.Bold)
             }
             Box(
                 Modifier.width(25.dp).height(40.dp)
@@ -493,10 +501,116 @@ private fun InstrumentTabs(selected: Tab, accent: Color, appStyle: NotaStyle, on
                     .clickable { onSelect(tab) },
                 contentAlignment = Alignment.Center
             ) {
-                Text(tab.shortLabel, color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow), fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                TabArtwork(appStyle, accent, active)
+                Text(tab.shortLabel, color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow), fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.sp)
             }
         }
     }
+}
+
+@Composable
+private fun TabArtwork(style: NotaStyle, accent: Color, active: Boolean) {
+    val spec = style.spec
+    Canvas(Modifier.fillMaxSize().alpha(if (active) .58f else .24f)) {
+        val edge = if (active) accent else spec.frame
+        when (style) {
+            NotaStyle.RETRO_FUTURIST -> {
+                drawLine(edge, Offset(8f, size.height - 6f), Offset(size.width - 8f, size.height - 6f), 2f)
+            }
+            NotaStyle.STEAMPUNK -> {
+                listOf(Offset(7f, 7f), Offset(size.width - 7f, 7f), Offset(7f, size.height - 7f), Offset(size.width - 7f, size.height - 7f)).forEach {
+                    drawCircle(edge, 3.5f, it)
+                    drawCircle(spec.ink, 1.2f, it)
+                }
+            }
+            NotaStyle.ECCLESIASTIC -> {
+                drawArc(edge, 180f, 180f, false, Offset(size.width * .2f, 5f), androidx.compose.ui.geometry.Size(size.width * .6f, size.height * 1.05f), style = Stroke(2f))
+                drawLine(edge, Offset(size.width / 2f, 6f), Offset(size.width / 2f, 15f), 2f)
+            }
+            NotaStyle.COSMIC_FUNK -> {
+                drawLine(Color(0xFFE51B48), Offset(6f, size.height - 5f), Offset(size.width * .36f, size.height - 5f), 4f)
+                drawLine(Color(0xFFFFB000), Offset(size.width * .36f, size.height - 5f), Offset(size.width * .68f, size.height - 5f), 4f)
+                drawLine(Color(0xFF145CFF), Offset(size.width * .68f, size.height - 5f), Offset(size.width - 6f, size.height - 5f), 4f)
+            }
+            NotaStyle.ORBITAL_DECO -> {
+                drawLine(edge, Offset(6f, 12f), Offset(18f, 4f), 2f)
+                drawLine(edge, Offset(size.width - 6f, 12f), Offset(size.width - 18f, 4f), 2f)
+                drawCircle(edge, 2.5f, Offset(size.width / 2f, size.height - 6f))
+            }
+            NotaStyle.ART_NOUVEAU -> {
+                val flourish = Path().apply {
+                    moveTo(4f, size.height - 5f)
+                    cubicTo(size.width * .18f, size.height * .55f, size.width * .3f, size.height, size.width * .43f, size.height - 5f)
+                }
+                drawPath(flourish, edge, style = Stroke(2f))
+            }
+            NotaStyle.WILLIAM_MORRIS -> {
+                drawOval(edge, Offset(6f, 6f), androidx.compose.ui.geometry.Size(12f, 7f))
+                drawOval(edge, Offset(size.width - 18f, size.height - 13f), androidx.compose.ui.geometry.Size(12f, 7f))
+                drawLine(edge, Offset(8f, size.height - 6f), Offset(size.width - 8f, 6f), 1.2f)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotaCard(
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val style = LocalNotaStyle.current
+    val spec = style.spec
+    val accent = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(if (compact) (spec.corner * .72f).dp else spec.corner.dp)
+    Card(
+        modifier = modifier.drawWithContent {
+            drawContent()
+            val inset = if (compact) 5f else 8f
+            when (style) {
+                NotaStyle.RETRO_FUTURIST -> drawLine(accent.copy(alpha = .22f), Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset), 2f)
+                NotaStyle.STEAMPUNK -> listOf(
+                    Offset(inset, inset), Offset(size.width - inset, inset),
+                    Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset)
+                ).forEach { drawCircle(spec.glow.copy(alpha = .72f), if (compact) 2.5f else 4f, it) }
+                NotaStyle.ECCLESIASTIC -> {
+                    drawArc(spec.glow.copy(alpha = .42f), 180f, 180f, false, Offset(size.width * .34f, 4f), androidx.compose.ui.geometry.Size(size.width * .32f, size.height * .46f), style = Stroke(2f))
+                    drawCircle(spec.secondary.copy(alpha = .5f), 3f, Offset(size.width / 2f, 7f))
+                }
+                NotaStyle.COSMIC_FUNK -> {
+                    drawLine(Color(0xFFE51B48).copy(alpha = .62f), Offset(inset, size.height - 5f), Offset(size.width * .34f, size.height - 5f), 5f)
+                    drawLine(Color(0xFFFFB000).copy(alpha = .62f), Offset(size.width * .34f, size.height - 5f), Offset(size.width * .67f, size.height - 5f), 5f)
+                    drawLine(Color(0xFF145CFF).copy(alpha = .62f), Offset(size.width * .67f, size.height - 5f), Offset(size.width - inset, size.height - 5f), 5f)
+                }
+                NotaStyle.ORBITAL_DECO -> {
+                    val line = spec.glow.copy(alpha = .44f)
+                    drawLine(line, Offset(inset, 18f), Offset(25f, inset), 2f)
+                    drawLine(line, Offset(size.width - inset, 18f), Offset(size.width - 25f, inset), 2f)
+                    drawLine(line, Offset(inset, size.height - 18f), Offset(25f, size.height - inset), 2f)
+                    drawLine(line, Offset(size.width - inset, size.height - 18f), Offset(size.width - 25f, size.height - inset), 2f)
+                }
+                NotaStyle.ART_NOUVEAU -> {
+                    val vine = Path().apply {
+                        moveTo(inset, size.height - inset)
+                        cubicTo(size.width * .18f, size.height * .64f, size.width * .1f, size.height * .3f, size.width * .29f, inset)
+                    }
+                    drawPath(vine, spec.glow.copy(alpha = .34f), style = Stroke(2.5f))
+                }
+                NotaStyle.WILLIAM_MORRIS -> {
+                    val colour = spec.glow.copy(alpha = .32f)
+                    repeat(4) { index ->
+                        val x = inset + index * 15f
+                        drawOval(colour, Offset(x, 5f + (index % 2) * 5f), androidx.compose.ui.geometry.Size(10f, 6f))
+                        drawOval(colour, Offset(size.width - x - 10f, size.height - 11f - (index % 2) * 5f), androidx.compose.ui.geometry.Size(10f, 6f))
+                    }
+                }
+            }
+        },
+        colors = CardDefaults.cardColors(containerColor = spec.panel.copy(alpha = .94f)),
+        shape = shape,
+        border = BorderStroke(spec.border.dp, spec.frame.copy(alpha = .78f)),
+        content = content
+    )
 }
 
 @Composable
@@ -551,7 +665,7 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("CAPTURE / REVIEW", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -610,7 +724,7 @@ private fun PaymentField(label: String, value: String, onChange: (String) -> Uni
 
 @Composable
 private fun PaymentRow(payment: PaymentRecord, accent: Color, onDelete: () -> Unit) {
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(payment.merchant.ifBlank { "Unlabelled payment" }, color = Color(0xFFE6DEE6), fontWeight = FontWeight.SemiBold)
@@ -645,7 +759,7 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("NEW QUESTION / TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("What needs looking into?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
@@ -686,7 +800,7 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 visibleItems.forEach { item ->
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -730,7 +844,7 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("NEW TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("What needs doing?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
@@ -772,7 +886,7 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 visibleTasks.forEach { task ->
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = task.done, onCheckedChange = { done -> scope.launch { dao.setDone(task.id, done) } })
                             Column(Modifier.weight(1f)) {
@@ -815,7 +929,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
                 Text("NEW SOMA RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("Symptom or observation", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
@@ -852,7 +966,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 observations.forEach { item ->
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 if (item.observation.isNotBlank()) Text(item.observation, color = Color(0xFFE6DEE6), fontSize = 14.sp)
@@ -901,7 +1015,7 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     val validReorder = reorderAt.toIntOrNull()?.takeIf { it >= 0 }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 Text("NEW MEDICATION SCHEDULE", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -1032,7 +1146,7 @@ private fun MedicationRow(
     }
     val reorder = remaining <= medication.reorderAt
 
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.fillMaxWidth().clickable { expanded = !expanded },
@@ -1116,7 +1230,7 @@ private fun MedicationRow(
 
 @Composable
 private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modifier) {
-    Card(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(12.dp)) {
+    NotaCard(modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(tab.prompt, color = Color(0xFFCFC5CE), fontSize = 15.sp)
             Spacer(Modifier.height(9.dp))
