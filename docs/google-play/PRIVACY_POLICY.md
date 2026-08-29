@@ -1,6 +1,6 @@
 # Privacy Policy for Nota Bene
 
-Effective date: **29 August 2026**
+Effective date: **27 August 2026**
 
 Nota Bene is a personal record-keeping Android application developed and published by **Andy J Myers**. This policy explains plainly what the app handles, what stays on the phone and the limited circumstances in which another service may receive information.
 
@@ -27,10 +27,6 @@ When you choose speech input, Nota Bene launches the speech-recognition service 
 Reminder checks compare user-entered schedules and dose records locally. No medicine information is sent to a reminder server. Android may delay or suppress notifications because of battery management, permissions or device settings. Reminders are a helpful aid, not a guaranteed service or a substitute for paying attention to prescriptions and professional medical advice.
 
 Medicine details in notifications are marked private. Nota Bene supplies a generic public version for a locked screen, while Android and your chosen lock-screen settings make the final display decision. Protect the phone with an appropriate screen lock.
-
-## Ambient sound
-
-Nota Bene’s wind, fountain, nature and chime soundscapes are bundled with the app and played locally. They do not use the microphone, download audio or transmit information. Playback begins only when the user raises the ambient-volume slider and pauses when the app leaves the foreground.
 
 ## Explicit export
 

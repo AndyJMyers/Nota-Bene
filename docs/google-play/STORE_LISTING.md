@@ -1,6 +1,6 @@
 # Nota Bene — Google Play listing draft
 
-Status: working draft aligned with Alpha 27. Copy must be checked against the release candidate before submission.
+Status: working draft aligned with Alpha 26. Copy must be checked against the release candidate before submission.
 
 ## Product details
 
@@ -34,7 +34,7 @@ TASK provides a lightweight checklist with optional “waiting on” dependencie
 
 Your records are stored locally on your device and Android backup is disabled. Nota Bene has no developer-operated account, advertising or behavioural analytics service. The `*` settings control provides a dated Excel workbook containing SPEND, MEDS, SOMA, TASK and ASK worksheets through Android’s standard save picker. Records leave the app only when you explicitly export them. Bundled receipt recognition may send Google limited technical diagnostics, but not receipt images, recognised text or your Nota Bene records.
 
-The interface is designed to be clear without being clinical. Large illuminated controls, a four-colour mood slider, restrained animated backgrounds and a default-silent offline ambience slider give Nota Bene a distinctive retro-futurist character. Colour mood moves the optional soundscape from sombre wind through fountain and nature to lightly elated chimes. Useful software need not be ugly.
+The interface is designed to be clear without being clinical. Large illuminated controls, a four-colour mood slider and restrained animated backgrounds give Nota Bene a distinctive retro-futurist character. Useful software need not be ugly.
 
 Nota Bene is a personal recording and organisation tool, not a medical device. It does not diagnose, treat, cure or prevent any medical condition, calculate doses or recommend treatment. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.
 

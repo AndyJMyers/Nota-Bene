@@ -156,7 +156,6 @@ private fun NotaBeneApp() {
     val database = remember { NotaBeneDatabase.get(context) }
     var selected by rememberSaveable { mutableStateOf(Tab.PAYMENTS) }
     var mood by rememberSaveable { mutableFloatStateOf(.42f) }
-    var ambientVolume by rememberSaveable { mutableFloatStateOf(0f) }
     var effect by rememberSaveable { mutableStateOf(Effect.STARS) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var remindersGranted by remember {
@@ -166,7 +165,6 @@ private fun NotaBeneApp() {
         )
     }
     val accent = moodColour(mood)
-    AmbientSoundscape(mood, ambientVolume)
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> remindersGranted = granted }
@@ -212,9 +210,7 @@ private fun NotaBeneApp() {
                     mood = mood,
                     accent = accent,
                     effect = effect,
-                    ambientVolume = ambientVolume,
                     onMoodChange = { mood = it },
-                    onAmbientVolumeChange = { ambientVolume = it },
                     onCycleEffect = { effect = effect.next() },
                     onSettings = {
                         remindersGranted = MedicineReminderScheduler.notificationsEnabled(context)
@@ -273,9 +269,7 @@ private fun Header(
     mood: Float,
     accent: Color,
     effect: Effect,
-    ambientVolume: Float,
     onMoodChange: (Float) -> Unit,
-    onAmbientVolumeChange: (Float) -> Unit,
     onCycleEffect: () -> Unit,
     onSettings: () -> Unit
 ) {
@@ -295,40 +289,14 @@ private fun Header(
             Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp)
         }
         Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f).height(52.dp)) {
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Slider(
-                        value = mood,
-                        onValueChange = onMoodChange,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(26.dp)
-                            .semantics { contentDescription = "Colour and ambient mood" },
-                        colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
-                    )
-                    Text(
-                        effect.label,
-                        color = Color(0xFFC8BDC8),
-                        fontSize = 8.sp,
-                        modifier = Modifier.clickable(onClick = onCycleEffect).padding(horizontal = 4.dp, vertical = 5.dp)
-                    )
-                }
-                Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                    Slider(
-                        value = ambientVolume,
-                        onValueChange = onAmbientVolumeChange,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(26.dp)
-                            .semantics { contentDescription = "Ambient sound volume" },
-                        colors = SliderDefaults.colors(
-                            thumbColor = Color(0xFFD6CFD8),
-                            activeTrackColor = accent,
-                            inactiveTrackColor = Color(0xFF4C454F)
-                        )
-                    )
-                    Text("♪ ${ambientToneForMood(mood).label}", color = Color(0xFFAFA6B0), fontSize = 8.sp, modifier = Modifier.padding(horizontal = 4.dp))
-                }
+            Slider(
+                value = mood,
+                onValueChange = onMoodChange,
+                modifier = Modifier.weight(1f).height(48.dp),
+                colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
+            )
+            TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                Text(effect.label, color = Color(0xFFC8BDC8), fontSize = 9.sp)
             }
             TextButton(onClick = onSettings, modifier = Modifier.width(30.dp).semantics { contentDescription = "Settings" }, contentPadding = ButtonDefaults.TextButtonContentPadding) {
                 Text("*", color = Color(0xFFE9E0D2), fontSize = 22.sp, fontWeight = FontWeight.Bold)
@@ -404,11 +372,6 @@ private fun SettingsDialog(
                 )
                 Text(
                     "RECEIPTS & SPEECH\nReceipt images and recognised text are processed on-device and the image is not retained. Google's bundled ML Kit may send limited app, device, performance and installation diagnostics—not the receipt image or recognised text. Speech is handled by the recognition service installed on your phone; its provider may process audio under its own policy. Nota Bene keeps only text you accept.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Text(
-                    "AMBIENCE\nWind, fountain, nature and chime sounds are bundled in Nota Bene and played entirely on the phone. They do not use the microphone or a network service. Sound starts only when you raise its slider and pauses when the app leaves the foreground.",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
