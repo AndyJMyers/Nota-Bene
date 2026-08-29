@@ -77,6 +77,8 @@ The `*` settings control contains the export action. It opens Android's standard
 
 ## Design
 
+The complete interface can be cycled through seven persistent visual treatments using the compact `>` control: Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris. Changing style never changes the layout, behaviour or stored records. The newly selected style name glows briefly into view and then fades away.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">

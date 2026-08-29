@@ -47,3 +47,9 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - Reminders are helpful aids, never guaranteed delivery or a substitute for attention, prescriptions or professional advice.
 - Nota Bene does not diagnose, interpret measurements clinically, calculate doses or recommend treatment.
 - Any account, cloud sync, analytics, remote processing, clinician sharing or clinical inference requires a fresh privacy and regulatory review before implementation.
+# Visual styles
+
+- [x] Add a persistent `>` next-style control.
+- [x] Add Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris treatments.
+- [x] Glow the selected style name into view and fade it away without interrupting the current task.
+- [ ] Refine each treatment on a physical phone after side-by-side use.

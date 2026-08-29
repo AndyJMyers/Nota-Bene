@@ -13,8 +13,8 @@ android {
         applicationId = "com.notabene.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "0.9.0-alpha26"
+        versionCode = 27
+        versionName = "0.9.0-alpha27"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
