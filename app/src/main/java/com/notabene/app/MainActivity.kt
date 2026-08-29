@@ -34,6 +34,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -348,53 +349,68 @@ private fun Header(
     onSettings: () -> Unit
 ) {
     val styleSpec = appStyle.spec
-    Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        if (appStyle != NotaStyle.ART_NOUVEAU) {
-            Image(
-                painter = painterResource(id = R.drawable.nb_fountain_icon),
-                contentDescription = "Nota Bene",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(46.dp)
-                    .height(46.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
-            )
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-            Text("NOTA BENE", color = styleSpec.text, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
-            Box(
-                Modifier
-                    .height(22.dp)
-                    .semantics { contentDescription = "Next mood style, currently ${appStyle.displayName}" }
-                    .clickable(onClick = onCycleStyle),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                Text("MOOD  >", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.5.sp)
+    BoxWithConstraints(Modifier.fillMaxWidth().height(58.dp)) {
+        val compact = maxWidth < 500.dp
+        val gap = if (compact) 6.dp else 12.dp
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
+            if (appStyle != NotaStyle.ART_NOUVEAU) {
+                val markSize = if (compact) 40.dp else 46.dp
+                Image(
+                    painter = painterResource(id = R.drawable.nb_fountain_icon),
+                    contentDescription = "Nota Bene",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(markSize)
+                        .clip(RoundedCornerShape(11.dp))
+                        .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
+                )
             }
-        }
-        Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
-            Slider(
-                value = mood,
-                onValueChange = onMoodChange,
-                modifier = Modifier.weight(1f).height(48.dp),
-                colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
-            )
-            Box(
-                Modifier.width(43.dp).height(40.dp)
-                    .semantics { contentDescription = "Next background, currently ${effect.label}" }
-                    .clickable(onClick = onCycleEffect),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(effect.label, color = styleSpec.muted, fontSize = 8.sp, maxLines = 1)
+            val titleModifier = if (compact) Modifier.width(if (appStyle == NotaStyle.ART_NOUVEAU) 122.dp else 108.dp) else Modifier.weight(1f)
+            Column(titleModifier, verticalArrangement = Arrangement.Center) {
+                Text(
+                    "NOTA BENE",
+                    color = styleSpec.text,
+                    fontSize = if (compact) 18.sp else 26.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = styleSpec.titleFamily,
+                    letterSpacing = if (compact) 1.5.sp else 3.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(25.dp)
+                        .semantics { contentDescription = "Next mood style, currently ${appStyle.displayName}" }
+                        .clickable(onClick = onCycleStyle),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Text("MOOD  >", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.5.sp)
+                }
             }
-            Box(
-                Modifier.width(25.dp).height(40.dp)
-                    .semantics { contentDescription = "Settings" }
-                    .clickable(onClick = onSettings),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("*", color = styleSpec.text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
+                Slider(
+                    value = mood,
+                    onValueChange = onMoodChange,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
+                )
+                Box(
+                    Modifier.width(if (compact) 38.dp else 43.dp).height(40.dp)
+                        .semantics { contentDescription = "Next background, currently ${effect.label}" }
+                        .clickable(onClick = onCycleEffect),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(effect.label, color = styleSpec.muted, fontSize = 8.sp, maxLines = 1)
+                }
+                Box(
+                    Modifier.width(28.dp).height(40.dp)
+                        .semantics { contentDescription = "Settings" }
+                        .clickable(onClick = onSettings),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("*", color = styleSpec.text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
