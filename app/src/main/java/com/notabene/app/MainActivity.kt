@@ -233,13 +233,25 @@ private fun NotaBeneApp() {
                 }
         ) {
             CalmBackground(effect, accent, mood)
-            StyleBackdrop(appStyle, accent)
-            if (appStyle == NotaStyle.ART_NOUVEAU) {
+            if (appStyle == NotaStyle.WILLIAM_MORRIS) {
                 Image(
-                    painter = painterResource(R.drawable.art_nouveau_frame),
+                    painter = painterResource(R.drawable.william_morris_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .26f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            StyleBackdrop(appStyle, accent)
+            if (appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) {
+                Image(
+                    painter = painterResource(
+                        if (appStyle == NotaStyle.ART_NOUVEAU) R.drawable.art_nouveau_frame
+                        else R.drawable.william_morris_frame
+                    ),
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
-                    alpha = .72f,
+                    alpha = if (appStyle == NotaStyle.ART_NOUVEAU) .72f else .82f,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -353,7 +365,7 @@ private fun Header(
         val compact = maxWidth < 500.dp
         val gap = if (compact) 6.dp else 12.dp
         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
-            if (appStyle != NotaStyle.ART_NOUVEAU) {
+            if (appStyle != NotaStyle.ART_NOUVEAU && appStyle != NotaStyle.WILLIAM_MORRIS) {
                 val markSize = if (compact) 40.dp else 46.dp
                 Image(
                     painter = painterResource(id = R.drawable.nb_fountain_icon),
@@ -641,6 +653,12 @@ private fun NotaCard(
 }
 
 @Composable
+private fun panelAccent(accent: Color): Color = when (LocalNotaStyle.current) {
+    NotaStyle.ART_NOUVEAU, NotaStyle.WILLIAM_MORRIS -> MaterialTheme.colorScheme.secondary
+    else -> accent
+}
+
+@Composable
 private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).paymentDao() }
@@ -694,7 +712,7 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("CAPTURE / REVIEW", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("CAPTURE / REVIEW", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaymentField("Merchant", merchant, { merchant = it }, Modifier.weight(1.35f), accent)
                     PaymentField("Amount", amount, { amount = it }, Modifier.weight(.8f), accent)
@@ -764,7 +782,7 @@ private fun PaymentRow(payment: PaymentRecord, accent: Color, onDelete: () -> Un
                 Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(payment.createdAt)) + "  ·  " + payment.capturedFrom.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 if (payment.note.isNotBlank()) Text(payment.note.replace('\n', ' '), color = MaterialTheme.colorScheme.onSurface.copy(alpha = .72f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            if (payment.amount.isNotBlank()) Text(payment.amount, color = accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            if (payment.amount.isNotBlank()) Text(payment.amount, color = panelAccent(accent), fontSize = 18.sp, fontWeight = FontWeight.Bold)
             TextButton(onClick = onDelete) { Text("×", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f), fontSize = 20.sp) }
         }
     }
@@ -794,7 +812,7 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW QUESTION / TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW QUESTION / TASK", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("What needs looking into?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
@@ -879,7 +897,7 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW TASK", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("What needs doing?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 PaymentField("Waiting on… (optional)", waitingOn, { waitingOn = it }, Modifier.fillMaxWidth(), accent)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -964,7 +982,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW SOMA RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW SOMA RECORD", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("Symptom or observation", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 PaymentField("Measurement (optional)", measurement, { measurement = it }, Modifier.fillMaxWidth(), accent)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -1003,7 +1021,7 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
                                 if (item.observation.isNotBlank()) Text(item.observation, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
-                                if (item.measurement.isNotBlank()) Text(item.measurement, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                if (item.measurement.isNotBlank()) Text(item.measurement, color = panelAccent(accent), fontSize = 16.sp, fontWeight = FontWeight.Bold)
                                 Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                             }
                             TextButton(onClick = { scope.launch { dao.delete(item.id) } }) { Text("×", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f), fontSize = 20.sp) }
@@ -1050,7 +1068,7 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(9.dp)) {
         NotaCard {
             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text("NEW MEDICATION SCHEDULE", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW MEDICATION SCHEDULE", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     PaymentField("Medication", name, { name = it }, Modifier.weight(1.25f), accent)
                     PaymentField("Dosage", dosage, { dosage = it }, Modifier.weight(.9f), accent)
@@ -1198,7 +1216,7 @@ private fun MedicationRow(
                 )
                 Text(" ${todayLogs.size}/${medication.dailyTarget} ", color = consumptionColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Text(stateText, color = stateColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(if (expanded) "  ▲" else "  ▼", color = accent, fontSize = 9.sp)
+                Text(if (expanded) "  ▲" else "  ▼", color = panelAccent(accent), fontSize = 9.sp)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("$remaining DOSES LEFT", color = if (reorder) Crimson else MaterialTheme.colorScheme.onSurface.copy(alpha = .76f), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
@@ -1221,7 +1239,7 @@ private fun MedicationRow(
                 }
                 if (expanded) {
                     HorizontalDivider(color = Color(0xFF4B424D))
-                    Text("STOCK", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Text("STOCK", color = panelAccent(accent), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         PaymentField(
                             "Amount on hand",
@@ -1237,7 +1255,7 @@ private fun MedicationRow(
                         ) { Text("SET STOCK", color = Ink, fontWeight = FontWeight.Black) }
                     }
                     HorizontalDivider(color = Color(0xFF4B424D))
-                    Text("DOSE HISTORY", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Text("DOSE HISTORY", color = panelAccent(accent), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     if (logs.isEmpty()) {
                         Text("No doses recorded", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f), fontSize = 11.sp)
                     } else {
@@ -1267,7 +1285,7 @@ private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modif
         Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
             Text(tab.prompt, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
             Spacer(Modifier.height(9.dp))
-            HorizontalDivider(Modifier.width(44.dp), color = accent)
+            HorizontalDivider(Modifier.width(44.dp), color = panelAccent(accent))
             Spacer(Modifier.height(9.dp))
             Text("Scheduled for a later working circuit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
         }

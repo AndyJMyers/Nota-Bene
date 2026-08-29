@@ -54,4 +54,5 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - [x] Glow the selected style name into view and fade it away without interrupting the current task.
 - [ ] Refine each treatment on a physical phone after side-by-side use.
 - [x] Complete the first production artwork pass for Art Nouveau, including the transparent ginkgo frame and light enamel work surfaces.
-- [ ] Bring Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco and William Morris to the same artwork standard.
+- [x] Complete the full-blooded William Morris treatment with saturated textile field, illustrated border and light book-paper work surfaces.
+- [ ] Bring Steampunk, Ecclesiastic, Cosmic Funk and Orbital Deco to the same artwork standard.

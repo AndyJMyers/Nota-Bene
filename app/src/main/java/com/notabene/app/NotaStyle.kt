@@ -69,9 +69,9 @@ internal val NotaStyle.spec: NotaStyleSpec
             glow = Color(0xFFE4BC68), secondary = Color(0xFF8F2532), titleFamily = FontFamily.Serif, corner = 20, border = 2
         )
         NotaStyle.WILLIAM_MORRIS -> NotaStyleSpec(
-            ink = Color(0xFF0B1718), surface = Color(0xFF172522), panel = Color(0xFF24352D),
-            text = Color(0xFFF0E5C9), muted = Color(0xFFB8B49D), panelText = Color(0xFFF0E5C9), panelMuted = Color(0xFFB8B49D), frame = Color(0xFF716641),
-            glow = Color(0xFFC6A052), secondary = Color(0xFF873C31), titleFamily = FontFamily.Serif, corner = 5, border = 2
+            ink = Color(0xFF071315), surface = Color(0xFF142622), panel = Color(0xFFEDE0BC),
+            text = Color(0xFFF3E7C8), muted = Color(0xFFB9B397), panelText = Color(0xFF122522), panelMuted = Color(0xFF5B6657), frame = Color(0xFF9A7735),
+            glow = Color(0xFFD0A646), secondary = Color(0xFF8C342B), titleFamily = FontFamily.Serif, corner = 4, border = 2
         )
     }
 

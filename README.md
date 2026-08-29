@@ -81,6 +81,8 @@ The complete interface can be cycled through seven persistent visual treatments 
 
 Art Nouveau is the first fully realised artwork treatment: a transparent, hand-finished ginkgo-and-whiplash frame surrounds dark peacock enamel controls and warm ivory working panels. The remaining treatments are being completed to the same standard one at a time.
 
+William Morris is the second completed artwork treatment and deliberately uses the full force of the late textiles: a dense indigo field, large winding foliage, madder flowers, strawberries, thrushes and concealed medieval beasts surround warm book-paper work panels. The pattern remains atmospheric and never carries operational text.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">
