@@ -26,6 +26,8 @@ internal data class NotaStyleSpec(
     val panel: Color,
     val text: Color,
     val muted: Color,
+    val panelText: Color,
+    val panelMuted: Color,
     val frame: Color,
     val glow: Color,
     val secondary: Color,
@@ -38,37 +40,37 @@ internal val NotaStyle.spec: NotaStyleSpec
     get() = when (this) {
         NotaStyle.RETRO_FUTURIST -> NotaStyleSpec(
             ink = Color(0xFF090812), surface = Color(0xFF17131B), panel = Color(0xFF211B24),
-            text = Color(0xFFE9E0E8), muted = Color(0xFFA79DA8), frame = Color(0xFF514653),
+            text = Color(0xFFE9E0E8), muted = Color(0xFFA79DA8), panelText = Color(0xFFE9E0E8), panelMuted = Color(0xFFA79DA8), frame = Color(0xFF514653),
             glow = Color(0xFFF2C94C), secondary = Color(0xFF9D174D), titleFamily = FontFamily.SansSerif, corner = 8, border = 2
         )
         NotaStyle.STEAMPUNK -> NotaStyleSpec(
             ink = Color(0xFF130D08), surface = Color(0xFF25180F), panel = Color(0xFF332216),
-            text = Color(0xFFF1DFC0), muted = Color(0xFFB8A17E), frame = Color(0xFF795329),
+            text = Color(0xFFF1DFC0), muted = Color(0xFFB8A17E), panelText = Color(0xFFF1DFC0), panelMuted = Color(0xFFB8A17E), frame = Color(0xFF795329),
             glow = Color(0xFFE8A735), secondary = Color(0xFF7C2E20), titleFamily = FontFamily.Serif, corner = 3, border = 3
         )
         NotaStyle.ECCLESIASTIC -> NotaStyleSpec(
             ink = Color(0xFF060C1B), surface = Color(0xFF101C35), panel = Color(0xFF172846),
-            text = Color(0xFFF1E7CE), muted = Color(0xFFA8B0C4), frame = Color(0xFF7D632F),
+            text = Color(0xFFF1E7CE), muted = Color(0xFFA8B0C4), panelText = Color(0xFFF1E7CE), panelMuted = Color(0xFFA8B0C4), frame = Color(0xFF7D632F),
             glow = Color(0xFFE8C459), secondary = Color(0xFF9E1734), titleFamily = FontFamily.Serif, corner = 4, border = 2
         )
         NotaStyle.COSMIC_FUNK -> NotaStyleSpec(
             ink = Color(0xFF030306), surface = Color(0xFF141019), panel = Color(0xFF211423),
-            text = Color(0xFFFFF0D2), muted = Color(0xFFC4AFC9), frame = Color(0xFF8F275E),
+            text = Color(0xFFFFF0D2), muted = Color(0xFFC4AFC9), panelText = Color(0xFFFFF0D2), panelMuted = Color(0xFFC4AFC9), frame = Color(0xFF8F275E),
             glow = Color(0xFFFFB000), secondary = Color(0xFFE51B48), titleFamily = FontFamily.SansSerif, corner = 18, border = 3
         )
         NotaStyle.ORBITAL_DECO -> NotaStyleSpec(
             ink = Color(0xFF070707), surface = Color(0xFF141311), panel = Color(0xFF201E1A),
-            text = Color(0xFFF2E7D4), muted = Color(0xFFB9AD9D), frame = Color(0xFF8A714B),
+            text = Color(0xFFF2E7D4), muted = Color(0xFFB9AD9D), panelText = Color(0xFFF2E7D4), panelMuted = Color(0xFFB9AD9D), frame = Color(0xFF8A714B),
             glow = Color(0xFFDDBB73), secondary = Color(0xFF8E1526), titleFamily = FontFamily.SansSerif, corner = 2, border = 2
         )
         NotaStyle.ART_NOUVEAU -> NotaStyleSpec(
-            ink = Color(0xFF061B1A), surface = Color(0xFF0C2C29), panel = Color(0xFF123B35),
-            text = Color(0xFFF4E8CD), muted = Color(0xFFB8C2AE), frame = Color(0xFF9A7539),
+            ink = Color(0xFF061B1A), surface = Color(0xFF0C2C29), panel = Color(0xFFF1E4C6),
+            text = Color(0xFFF4E8CD), muted = Color(0xFFB8C2AE), panelText = Color(0xFF082725), panelMuted = Color(0xFF536861), frame = Color(0xFFB5893E),
             glow = Color(0xFFE4BC68), secondary = Color(0xFF8F2532), titleFamily = FontFamily.Serif, corner = 20, border = 2
         )
         NotaStyle.WILLIAM_MORRIS -> NotaStyleSpec(
             ink = Color(0xFF0B1718), surface = Color(0xFF172522), panel = Color(0xFF24352D),
-            text = Color(0xFFF0E5C9), muted = Color(0xFFB8B49D), frame = Color(0xFF716641),
+            text = Color(0xFFF0E5C9), muted = Color(0xFFB8B49D), panelText = Color(0xFFF0E5C9), panelMuted = Color(0xFFB8B49D), frame = Color(0xFF716641),
             glow = Color(0xFFC6A052), secondary = Color(0xFF873C31), titleFamily = FontFamily.Serif, corner = 5, border = 2
         )
     }

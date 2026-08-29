@@ -53,3 +53,5 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - [x] Add distinct palettes, type character, tab artwork, panel frames and backdrop ornament for Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris.
 - [x] Glow the selected style name into view and fade it away without interrupting the current task.
 - [ ] Refine each treatment on a physical phone after side-by-side use.
+- [x] Complete the first production artwork pass for Art Nouveau, including the transparent ginkgo frame and light enamel work surfaces.
+- [ ] Bring Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco and William Morris to the same artwork standard.

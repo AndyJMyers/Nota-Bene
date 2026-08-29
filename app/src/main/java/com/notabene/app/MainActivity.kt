@@ -213,8 +213,8 @@ private fun NotaBeneApp() {
             surface = styleSpec.panel,
             surfaceVariant = styleSpec.surface,
             onBackground = styleSpec.text,
-            onSurface = styleSpec.text,
-            onSurfaceVariant = styleSpec.muted,
+            onSurface = styleSpec.panelText,
+            onSurfaceVariant = styleSpec.panelMuted,
             outline = styleSpec.frame,
             outlineVariant = styleSpec.frame.copy(alpha = .62f)
         )
@@ -233,6 +233,15 @@ private fun NotaBeneApp() {
         ) {
             CalmBackground(effect, accent, mood)
             StyleBackdrop(appStyle, accent)
+            if (appStyle == NotaStyle.ART_NOUVEAU) {
+                Image(
+                    painter = painterResource(R.drawable.art_nouveau_frame),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    alpha = .72f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             Column(
                 Modifier
                     .fillMaxSize()
@@ -340,16 +349,18 @@ private fun Header(
 ) {
     val styleSpec = appStyle.spec
     Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Image(
-            painter = painterResource(id = R.drawable.nb_fountain_icon),
-            contentDescription = "Nota Bene",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .width(46.dp)
-                .height(46.dp)
-                .clip(RoundedCornerShape(11.dp))
-                .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
-        )
+        if (appStyle != NotaStyle.ART_NOUVEAU) {
+            Image(
+                painter = painterResource(id = R.drawable.nb_fountain_icon),
+                contentDescription = "Nota Bene",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .width(46.dp)
+                    .height(46.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
+            )
+        }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text("NOTA BENE", color = styleSpec.text, fontSize = 26.sp, fontWeight = FontWeight.Black, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
             Box(
@@ -695,13 +706,13 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
                     }) { Text("LISTEN") }
                     OutlinedButton(onClick = { imageLauncher.launch("image/*") }, enabled = !busy) { Text(if (busy) "READING" else "RECEIPT") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
-        Text("KEPT PAYMENTS  ${payments.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+        Text("KEPT PAYMENTS  ${payments.size}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp)
         if (payments.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text("Nothing kept yet", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text("Nothing kept yet", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -718,7 +729,13 @@ private fun PaymentField(label: String, value: String, onChange: (String) -> Uni
     OutlinedTextField(
         value = value, onValueChange = onChange, modifier = modifier, minLines = minLines,
         label = { Text(label) },
-        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = accent, cursorColor = accent, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = accent,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            cursorColor = accent,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+        )
     )
 }
 
@@ -727,12 +744,12 @@ private fun PaymentRow(payment: PaymentRecord, accent: Color, onDelete: () -> Un
                     NotaCard(compact = true) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(payment.merchant.ifBlank { "Unlabelled payment" }, color = Color(0xFFE6DEE6), fontWeight = FontWeight.SemiBold)
-                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(payment.createdAt)) + "  ·  " + payment.capturedFrom.uppercase(), color = Color(0xFF847C86), fontSize = 10.sp)
-                if (payment.note.isNotBlank()) Text(payment.note.replace('\n', ' '), color = Color(0xFFAFA5AF), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(payment.merchant.ifBlank { "Unlabelled payment" }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(payment.createdAt)) + "  ·  " + payment.capturedFrom.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                if (payment.note.isNotBlank()) Text(payment.note.replace('\n', ' '), color = MaterialTheme.colorScheme.onSurface.copy(alpha = .72f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             if (payment.amount.isNotBlank()) Text(payment.amount, color = accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            TextButton(onClick = onDelete) { Text("×", color = Color(0xFF817781), fontSize = 20.sp) }
+            TextButton(onClick = onDelete) { Text("×", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f), fontSize = 20.sp) }
         }
     }
 }
@@ -784,18 +801,18 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
                         runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
                     }) { Text("LISTEN") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("ASK ITEMS  ${items.count { !it.done }} OPEN", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text("ASK ITEMS  ${items.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
             TextButton(onClick = { hideCompleted = !hideCompleted }) {
                 Text(if (hideCompleted) "SHOW COMPLETED" else "HIDE COMPLETED", color = accent, fontSize = 10.sp)
             }
         }
         if (visibleItems.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text(if (items.isEmpty()) "Nothing waiting to be investigated" else "All completed items are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text(if (items.isEmpty()) "Nothing waiting to be investigated" else "All completed items are hidden", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -808,7 +825,7 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
                             Checkbox(checked = item.done, onCheckedChange = { done -> scope.launch { dao.setDone(item.id, done) } })
                             Text(
                                 item.text,
-                                color = if (item.done) Color(0xFF777078) else Color(0xFFE6DEE6),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (item.done) .45f else 1f),
                                 fontSize = 14.sp,
                                 textDecoration = if (item.done) TextDecoration.LineThrough else TextDecoration.None,
                                 modifier = Modifier.weight(1f)
@@ -870,18 +887,18 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
                         runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
                     }) { Text("LISTEN") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("TASKS  ${tasks.count { !it.done }} OPEN", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text("TASKS  ${tasks.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
             TextButton(onClick = { hideCompleted = !hideCompleted }) {
                 Text(if (hideCompleted) "SHOW COMPLETED" else "HIDE COMPLETED", color = accent, fontSize = 10.sp)
             }
         }
         if (visibleTasks.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text(if (tasks.isEmpty()) "Nothing waiting to be done" else "All completed tasks are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text(if (tasks.isEmpty()) "Nothing waiting to be done" else "All completed tasks are hidden", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -892,12 +909,12 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     task.text,
-                                    color = if (task.done) Color(0xFF777078) else Color(0xFFE6DEE6),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (task.done) .45f else 1f),
                                     fontSize = 14.sp,
                                     textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                                 )
                                 if (task.waitingOn.isNotBlank()) {
-                                    Text("WAITING ON  ${task.waitingOn}", color = if (task.done) Color(0xFF655F66) else accent, fontSize = 10.sp, letterSpacing = 1.sp)
+                                    Text("WAITING ON  ${task.waitingOn}", color = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = .38f) else accent, fontSize = 10.sp, letterSpacing = 1.sp)
                                 }
                             }
                         }
@@ -955,13 +972,13 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
                         runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
                     }) { Text("LISTEN") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
-        Text("SOMA HISTORY  ${observations.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+        Text("SOMA HISTORY  ${observations.size}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp)
         if (observations.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text("No observations recorded", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text("No observations recorded", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -969,11 +986,11 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
                     NotaCard(compact = true) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                if (item.observation.isNotBlank()) Text(item.observation, color = Color(0xFFE6DEE6), fontSize = 14.sp)
+                                if (item.observation.isNotBlank()) Text(item.observation, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
                                 if (item.measurement.isNotBlank()) Text(item.measurement, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt)), color = Color(0xFF847C86), fontSize = 10.sp)
+                                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                             }
-                            TextButton(onClick = { scope.launch { dao.delete(item.id) } }) { Text("×", color = Color(0xFF817781), fontSize = 20.sp) }
+                            TextButton(onClick = { scope.launch { dao.delete(item.id) } }) { Text("×", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f), fontSize = 20.sp) }
                         }
                     }
                 }
@@ -1048,22 +1065,22 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
                         enabled = name.isNotBlank() && dosage.isNotBlank() && validTime != null && validTarget != null && validStock != null && validReorder != null,
                         colors = ButtonDefaults.buttonColors(containerColor = accent)
                     ) { Text("ADD", color = Ink, fontWeight = FontWeight.Black) }
-                    Text(status, color = Color(0xFFA79DA8), fontSize = 10.sp, modifier = Modifier.weight(1f))
+                    Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, modifier = Modifier.weight(1f))
                 }
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("MEDICINES", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text("MEDICINES", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = !showHalted, onClick = { showHalted = false })
-                Text("ACTIVE", color = if (!showHalted) accent else Color(0xFF777078), fontSize = 9.sp)
+                Text("ACTIVE", color = if (!showHalted) accent else MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 9.sp)
                 RadioButton(selected = showHalted, onClick = { showHalted = true })
-                Text("WITH HALTED", color = if (showHalted) accent else Color(0xFF777078), fontSize = 9.sp)
+                Text("WITH HALTED", color = if (showHalted) accent else MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 9.sp)
             }
         }
         if (visibleMedications.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text("No medication schedules to show", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text("No medication schedules to show", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -1133,7 +1150,7 @@ private fun MedicationRow(
         else -> "DUE ${medication.doseTime}"
     }
     val stateColor = when {
-        !medication.active -> Color(0xFF777078)
+        !medication.active -> MaterialTheme.colorScheme.onSurface.copy(alpha = .45f)
         latestTodayLog != null -> Color(0xFFC7BDC7)
         now > scheduled -> Crimson
         else -> accent
@@ -1153,8 +1170,8 @@ private fun MedicationRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(medication.name, color = if (medication.active) Color(0xFFE6DEE6) else Color(0xFF777078), fontWeight = FontWeight.SemiBold)
-                    Text("${medication.dosage}  ·  USUAL ${medication.dailyTarget}/DAY  ·  FIRST ${medication.doseTime}", color = Color(0xFF9A919B), fontSize = 10.sp)
+                    Text(medication.name, color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (medication.active) 1f else .45f), fontWeight = FontWeight.SemiBold)
+                    Text("${medication.dosage}  ·  USUAL ${medication.dailyTarget}/DAY  ·  FIRST ${medication.doseTime}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 }
                 Box(
                     Modifier
@@ -1168,7 +1185,7 @@ private fun MedicationRow(
                 Text(if (expanded) "  ▲" else "  ▼", color = accent, fontSize = 9.sp)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("$remaining DOSES LEFT", color = if (reorder) Crimson else Color(0xFFC5BBC5), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("$remaining DOSES LEFT", color = if (reorder) Crimson else MaterialTheme.colorScheme.onSurface.copy(alpha = .76f), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (reorder && medication.active) Text("APPLY FOR MORE", color = Crimson, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1206,14 +1223,14 @@ private fun MedicationRow(
                     HorizontalDivider(color = Color(0xFF4B424D))
                     Text("DOSE HISTORY", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     if (logs.isEmpty()) {
-                        Text("No doses recorded", color = Color(0xFF817881), fontSize = 11.sp)
+                        Text("No doses recorded", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f), fontSize = 11.sp)
                     } else {
                         logs.sortedByDescending { it.takenAt }.forEach { log ->
                             val taken = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(log.takenAt))
                             val planned = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(log.scheduledFor))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(taken, color = Color(0xFFD4CCD4), fontSize = 11.sp)
-                                Text("due $planned", color = Color(0xFF8F8790), fontSize = 10.sp)
+                                Text(taken, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .82f), fontSize = 11.sp)
+                                Text("due $planned", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                             }
                         }
                     }
@@ -1232,11 +1249,11 @@ private fun MedicationRow(
 private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modifier) {
     NotaCard(modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(tab.prompt, color = Color(0xFFCFC5CE), fontSize = 15.sp)
+            Text(tab.prompt, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
             Spacer(Modifier.height(9.dp))
             HorizontalDivider(Modifier.width(44.dp), color = accent)
             Spacer(Modifier.height(9.dp))
-            Text("Scheduled for a later working circuit", color = Color(0xFF756D77), fontSize = 11.sp)
+            Text("Scheduled for a later working circuit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
         }
     }
 }

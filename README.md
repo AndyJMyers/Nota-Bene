@@ -79,6 +79,8 @@ The `*` settings control contains the export action. It opens Android's standard
 
 The complete interface can be cycled through seven persistent visual treatments using the prominent `MOOD >` control: Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris. Each treatment has its own palette, type character, instrument contours, panel ornament and atmospheric backdrop while preserving the same controls and workflows. Changing style never changes the layout, behaviour or stored records. The newly selected style name glows briefly into view and then fades away.
 
+Art Nouveau is the first fully realised artwork treatment: a transparent, hand-finished ginkgo-and-whiplash frame surrounds dark peacock enamel controls and warm ivory working panels. The remaining treatments are being completed to the same standard one at a time.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">
