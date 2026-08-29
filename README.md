@@ -10,10 +10,10 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_25-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_26-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.8.1-alpha25/nota-bene-dev.apk)
+[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
@@ -47,7 +47,9 @@ Captured payment data is stored locally. Receipt photographs are an input mechan
 
 ### MEDS
 
-Record medicines and prescriptions with enough information to make everyday management easier. Each medicine has a daily dose time, remaining-dose count and reorder threshold. A dose can be recorded with its actual taken time; halted medicines and their histories remain available when a dosage changes.
+Record medicines and other user-defined consumables with enough information to make everyday management easier. Each entry has a first reminder time, a user-stated usual daily count, remaining-dose count and reorder threshold. Every actual dose can be recorded—even after another has already been logged that day—and halted entries retain their histories when a dosage changes.
+
+A discreet `today/usual` indicator moves from white to green, amber and red as the recorded count passes the user’s own usual count. It is a factual personal reference, not a clinical limit or dose recommendation.
 
 The app shows due, overdue and reorder states and provides local Android notifications after a dose becomes overdue, with a further early-evening reminder if it remains unrecorded. Reminder checks survive app closure and phone restart, but Android may delay or suppress notifications: they are a helpful aid, not a guaranteed or sole medicine reminder.
 
@@ -98,7 +100,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Alpha 25 (`v0.8.1-alpha25`)** provides:
+**Alpha 26 (`v0.9.0-alpha26`)** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - the consistent five-tab shell and instrument-panel visual language;
@@ -107,6 +109,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 - a five-sheet XLSX export through Android's save picker;
 - tap-away keyboard dismissal throughout the app;
 - expandable medicine dose histories;
+- repeat same-day MEDS logging with a discreet user-referenced consumption indicator;
 - the new N.B. fountain-pen identity in the launcher, app header and project page;
 - reliable sensor-driven rotation with system-bar-safe content;
 - continuous vertical scrolling through every instrument panel;
@@ -124,12 +127,12 @@ The TASK circuit provides the same persistent spoken-or-typed checklist, with an
 
 The SOMA circuit records typed or spoken symptoms and observations, optional measurements and automatic timestamps in a persistent history.
 
-The MEDS circuit manages one daily scheduled dose per medication record, records an explicit taken time, retains the log below the top-level view, counts remaining stock, signals reorder time and preserves halted medication histories when dosage changes.
+The MEDS circuit records every dose at an explicit taken time, compares the day’s count discreetly with a user-stated usual count, retains the full expandable history, counts remaining stock, signals reorder time and preserves halted histories when dosage changes. It does not prevent or prescribe what the user records.
 
 The current development APK is published as a GitHub pre-release:
 
-- [Download `nota-bene-dev.apk` (Alpha 25)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.8.1-alpha25/nota-bene-dev.apk)
-- SHA-256: `D6F6D0501FF46360A4DB071DE7C79C21512EA44FDEE9B88225879BC68145F6E4`
+- [Download `nota-bene-dev.apk` (Alpha 26)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
+- SHA-256: `08DB2A601BC31BD1E0FA31D17887F83A7B36C04187CDFE72E31FDD7EB9C51FA6`
 
 Near-term work is practical rather than expansive: test receipt extraction, notification privacy, reminder timing and complete erasure on real devices; verify exports in common spreadsheet applications; and complete release-candidate publication details. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
 

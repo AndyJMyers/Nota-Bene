@@ -1,6 +1,6 @@
 # Nota Bene TODO
 
-Updated for **Alpha 25 — compliance build**.
+Updated for **Alpha 26**.
 
 ## Current UI baseline — do not drift
 
@@ -18,7 +18,7 @@ Updated for **Alpha 25 — compliance build**.
 - [ ] Test SPEND speech capture and receipt selection with varied real receipts; confirm every proposed field remains editable before saving.
 - [ ] Test MEDS reminders across app closure, phone restart, battery-saving modes and notification permission changes.
 - [ ] Confirm the locked-screen MEDS notification is generic and medicine details appear only after the phone is unlocked, subject to Android settings.
-- [ ] Test dose logging, stock correction, reorder state, halted medicines and expandable dose history with realistic fictitious schedules.
+- [ ] Test repeated same-day logging, the white/green/amber/red `today/usual` indicator, stock correction, reorder state, halted entries and expandable history with realistic fictitious records.
 - [ ] Verify **Erase all local data** removes SPEND, MEDS, SOMA, TASK and ASK records plus MEDS reminder state and visible notifications.
 - [ ] Open exported five-sheet XLSX files in Excel, Google Sheets and LibreOffice and compare every record type and dose history with the app.
 
@@ -27,6 +27,7 @@ Updated for **Alpha 25 — compliance build**.
 - [ ] ASK: add follow-on notes to an item.
 - [ ] ASK: add deliberate item deletion with a suitable confirmation or undo path.
 - [ ] TASK: decide whether individual deletion is needed after real use; retain the present done/hide-completed workflow unless deletion proves useful.
+- [ ] Add a second, compact ambience slider for sound mood/volume, with offline wind chime, slow fountain, nature and wind choices ranging from sombre to mildly elated. It must be easy to silence, respect app lifecycle and audio routing, and avoid cluttering the instrument row.
 - [ ] Review accessibility on a real phone: TalkBack labels, contrast, text scaling, touch-target size and reduced-motion behaviour.
 
 ## Google Play preparation

@@ -1,6 +1,6 @@
 # Nota Bene — Google Play listing draft
 
-Status: working draft aligned with Alpha 25. Copy must be checked against the release candidate before submission.
+Status: working draft aligned with Alpha 26. Copy must be checked against the release candidate before submission.
 
 ## Product details
 
@@ -26,7 +26,7 @@ Nota Bene is a small personal operations log for the everyday details that are u
 
 SPEND records card payments by manual entry, speech or on-device receipt text recognition. Receipt photographs are used as input and are not kept by Nota Bene.
 
-MEDS keeps a simple record of medicines, daily dose times, doses taken, remaining stock and reorder thresholds. Local notifications can flag an overdue dose and repeat in the early evening if it remains unrecorded. Android can delay or suppress notifications, so they are a helpful aid rather than a guaranteed or sole medicine reminder. Medicines can be halted without losing their history when a prescription or dosage changes.
+MEDS keeps a simple record of medicines and other user-defined consumables, first reminder times, every dose taken, remaining stock and reorder thresholds. It permits repeated same-day entries and shows a discreet count against the user’s own stated usual daily count; this is not a clinical limit or recommendation. Local notifications can flag an unrecorded first dose and repeat in the early evening. Android can delay or suppress notifications, so they are a helpful aid rather than a guaranteed or sole medicine reminder. Entries can be halted without losing their history when a prescription or dosage changes.
 
 SOMA records symptoms, blood-pressure readings and other health observations in a dated local history.
 

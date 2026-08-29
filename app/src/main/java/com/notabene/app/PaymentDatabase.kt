@@ -6,7 +6,6 @@ import androidx.room.Database
 import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.Index
-import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
@@ -104,6 +103,7 @@ data class Medication(
     val name: String,
     val dosage: String,
     val doseTime: String,
+    val dailyTarget: Int = 1,
     val startingDoses: Int,
     val reorderAt: Int,
     val active: Boolean = true,
@@ -112,7 +112,7 @@ data class Medication(
 
 @Entity(
     tableName = "dose_logs",
-    indices = [Index(value = ["medicationId", "doseDate"], unique = true)]
+    indices = [Index(value = ["medicationId", "doseDate"])]
 )
 data class DoseLog(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -133,7 +133,7 @@ interface MedicationDao {
     @Insert
     suspend fun insertMedication(item: Medication): Long
 
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert
     suspend fun insertDoseLog(item: DoseLog): Long
 
     @Query("UPDATE medications SET active = :active WHERE id = :id")
@@ -143,7 +143,7 @@ interface MedicationDao {
     suspend fun setStartingDoses(id: Long, startingDoses: Int)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class], version = 5, exportSchema = false)
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class], version = 6, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
@@ -159,7 +159,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -195,6 +195,14 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                     "CREATE TABLE IF NOT EXISTS `dose_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `medicationId` INTEGER NOT NULL, `doseDate` TEXT NOT NULL, `scheduledFor` INTEGER NOT NULL, `takenAt` INTEGER NOT NULL)"
                 )
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_dose_logs_medicationId_doseDate` ON `dose_logs` (`medicationId`, `doseDate`)")
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `medications` ADD COLUMN `dailyTarget` INTEGER NOT NULL DEFAULT 1")
+                db.execSQL("DROP INDEX IF EXISTS `index_dose_logs_medicationId_doseDate`")
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_dose_logs_medicationId_doseDate` ON `dose_logs` (`medicationId`, `doseDate`)")
             }
         }
     }

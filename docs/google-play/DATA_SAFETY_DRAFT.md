@@ -1,6 +1,6 @@
 # Google Play Data Safety draft
 
-Status: working answers for Alpha 25. Recheck the final Android App Bundle, merged manifest, Play Console wording and every dependency immediately before submission.
+Status: working answers for Alpha 26. Recheck the final Android App Bundle, merged manifest, Play Console wording and every dependency immediately before submission.
 
 ## Preliminary answers
 

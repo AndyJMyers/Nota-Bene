@@ -46,6 +46,8 @@ Nota Bene relies on Android’s application sandbox and the security of your pho
 
 Nota Bene is a personal recording and organisation tool, not a medical device. It does not diagnose, treat, cure or prevent any medical condition, calculate doses or recommend treatment. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.
 
+The MEDS colour indicator compares the number of entries recorded today only with the usual daily count entered by the user. It is not a medically derived safety or overdose threshold.
+
 ## Children
 
 Nota Bene is intended for adults and is not directed at children. The developer does not knowingly collect children’s information through a developer-operated service.

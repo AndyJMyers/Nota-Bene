@@ -34,11 +34,11 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
         }),
         ExportSheet(
             "MEDS",
-            listOf(listOf("Record type", "Medicine", "Dosage / dose date", "Dose time / scheduled", "Stock / taken", "Reorder at", "Status")) +
+            listOf(listOf("Record type", "Medicine", "Dosage / dose date", "First reminder / scheduled", "Usual per day", "Stock / taken", "Reorder at", "Status")) +
                 medicines.map {
-                    listOf("Medicine", it.name, it.dosage, it.doseTime, it.startingDoses, it.reorderAt, if (it.active) "Active" else "Halted")
+                    listOf("Medicine", it.name, it.dosage, it.doseTime, it.dailyTarget, it.startingDoses, it.reorderAt, if (it.active) "Active" else "Halted")
                 } + doses.map {
-                    listOf("Dose taken", medicineNames[it.medicationId] ?: "Medicine #${it.medicationId}", it.doseDate, exportDate(it.scheduledFor), exportDate(it.takenAt), "", "Taken")
+                    listOf("Dose taken", medicineNames[it.medicationId] ?: "Medicine #${it.medicationId}", it.doseDate, exportDate(it.scheduledFor), "", exportDate(it.takenAt), "", "Taken")
                 }
         )
     )

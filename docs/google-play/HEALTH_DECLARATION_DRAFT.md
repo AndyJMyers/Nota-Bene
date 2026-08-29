@@ -8,7 +8,7 @@ The recommended Play Store category is **Lifestyle**, but category selection doe
 
 ### Medication and Treatment Management
 
-**Yes.** Nota Bene records medicines, dosages, daily dose times, doses taken, remaining stock, reorder thresholds and halted medication histories.
+**Yes.** Nota Bene records medicines or other user-defined consumables, dosages, first reminder times, every dose taken, a user-stated usual daily count, remaining stock, reorder thresholds and halted histories. Its colour indicator compares recorded count only with that user-stated count and is not a clinical safety threshold.
 
 ### Healthcare Services and Management
 

@@ -41,7 +41,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -384,7 +386,7 @@ private fun SettingsDialog(
                     fontSize = 12.sp
                 )
                 Text(
-                    "MEDICAL LIMITS\nNota Bene is a personal recording and organisation tool, not a medical device. It does not diagnose, treat, cure or prevent any medical condition and does not give dose advice. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.",
+                    "MEDICAL LIMITS\nNota Bene is a personal recording and organisation tool, not a medical device. The MEDS colour compares your recorded count only with the usual count you entered; it is not a safe-consumption threshold. Nota Bene does not diagnose, treat, cure or prevent any medical condition and does not give dose advice. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.",
                     color = Color(0xFFE0D5DF),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
@@ -798,10 +800,11 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     var name by remember { mutableStateOf("") }
     var dosage by remember { mutableStateOf("") }
     var doseTime by remember { mutableStateOf("08:00") }
+    var dailyTarget by remember { mutableStateOf("1") }
     var startingDoses by remember { mutableStateOf("") }
     var reorderAt by remember { mutableStateOf("7") }
     var showHalted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("One schedule represents one daily dose") }
+    var status by remember { mutableStateOf("Set your usual daily count; every entry can still be logged") }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -815,6 +818,7 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
         if (showHalted) medications else medications.filter { it.active }
     }
     val validTime = parseDoseTime(doseTime)
+    val validTarget = dailyTarget.toIntOrNull()?.takeIf { it > 0 }
     val validStock = startingDoses.toIntOrNull()?.takeIf { it >= 0 }
     val validReorder = reorderAt.toIntOrNull()?.takeIf { it >= 0 }
 
@@ -827,7 +831,10 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
                     PaymentField("Dosage", dosage, { dosage = it }, Modifier.weight(.9f), accent)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                    PaymentField("Daily time", doseTime, { doseTime = it }, Modifier.weight(1f), accent)
+                    PaymentField("First reminder", doseTime, { doseTime = it }, Modifier.weight(1f), accent)
+                    PaymentField("Usual / day", dailyTarget, { dailyTarget = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     PaymentField("Doses left", startingDoses, { startingDoses = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
                     PaymentField("Reorder at", reorderAt, { reorderAt = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
                 }
@@ -839,13 +846,14 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
                                     Medication(
                                         name = name.trim(), dosage = dosage.trim(),
                                         doseTime = validTime!!.format(DateTimeFormatter.ofPattern("HH:mm")),
+                                        dailyTarget = validTarget!!,
                                         startingDoses = validStock!!, reorderAt = validReorder!!
                                     )
                                 )
-                                name = ""; dosage = ""; startingDoses = ""; status = "Medication schedule saved locally"
+                                name = ""; dosage = ""; dailyTarget = "1"; startingDoses = ""; status = "MEDS entry saved locally"
                             }
                         },
-                        enabled = name.isNotBlank() && dosage.isNotBlank() && validTime != null && validStock != null && validReorder != null,
+                        enabled = name.isNotBlank() && dosage.isNotBlank() && validTime != null && validTarget != null && validStock != null && validReorder != null,
                         colors = ButtonDefaults.buttonColors(containerColor = accent)
                     ) { Text("ADD", color = Ink, fontWeight = FontWeight.Black) }
                     Text(status, color = Color(0xFFA79DA8), fontSize = 10.sp, modifier = Modifier.weight(1f))
@@ -914,7 +922,8 @@ private fun MedicationRow(
     onSetStock: (Int) -> Unit
 ) {
     val today = LocalDate.now().toString()
-    val todayLog = logs.firstOrNull { it.doseDate == today }
+    val todayLogs = logs.filter { it.doseDate == today }
+    val latestTodayLog = todayLogs.maxByOrNull { it.takenAt }
     val remaining = (medication.startingDoses - logs.size).coerceAtLeast(0)
     val scheduled = scheduledForToday(medication.doseTime)
     val clockFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
@@ -922,21 +931,26 @@ private fun MedicationRow(
     var expanded by remember(medication.id) { mutableStateOf(false) }
     var stockOnHand by remember(medication.id, remaining) { mutableStateOf(remaining.toString()) }
     val parsedTakenTime = parseDoseTime(takenTime)
-    val recordedTime = todayLog?.takenAt?.let {
+    val recordedTime = latestTodayLog?.takenAt?.let {
         DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(it))
     }
     val stateText = when {
         !medication.active -> "HALTED"
-        todayLog != null && todayLog.takenAt <= scheduled + 60 * 60 * 1000 -> "TAKEN $recordedTime"
-        todayLog != null -> "TAKEN LATE $recordedTime"
+        latestTodayLog != null -> "LAST $recordedTime"
         now > scheduled -> "OVERDUE"
         else -> "DUE ${medication.doseTime}"
     }
     val stateColor = when {
         !medication.active -> Color(0xFF777078)
-        todayLog != null -> Color(0xFF73B58A)
+        latestTodayLog != null -> Color(0xFFC7BDC7)
         now > scheduled -> Crimson
         else -> accent
+    }
+    val consumptionColor = when {
+        todayLogs.isEmpty() -> Color(0xFFE9E9E9)
+        todayLogs.size <= medication.dailyTarget -> Color(0xFF73B58A)
+        todayLogs.size == medication.dailyTarget + 1 -> Color(0xFFD59A3A)
+        else -> Color(0xFFD44747)
     }
     val reorder = remaining <= medication.reorderAt
 
@@ -948,8 +962,16 @@ private fun MedicationRow(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(medication.name, color = if (medication.active) Color(0xFFE6DEE6) else Color(0xFF777078), fontWeight = FontWeight.SemiBold)
-                    Text("${medication.dosage}  ·  DAILY ${medication.doseTime}", color = Color(0xFF9A919B), fontSize = 10.sp)
+                    Text("${medication.dosage}  ·  USUAL ${medication.dailyTarget}/DAY  ·  FIRST ${medication.doseTime}", color = Color(0xFF9A919B), fontSize = 10.sp)
                 }
+                Box(
+                    Modifier
+                        .size(9.dp)
+                        .clip(CircleShape)
+                        .background(consumptionColor)
+                        .semantics { contentDescription = "${todayLogs.size} logged today; usual count ${medication.dailyTarget}" }
+                )
+                Text(" ${todayLogs.size}/${medication.dailyTarget} ", color = consumptionColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Text(stateText, color = stateColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 Text(if (expanded) "  ▲" else "  ▼", color = accent, fontSize = 9.sp)
             }
@@ -958,13 +980,14 @@ private fun MedicationRow(
                 if (reorder && medication.active) Text("APPLY FOR MORE", color = Crimson, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                if (medication.active && todayLog == null) {
+                if (medication.active) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         PaymentField("Taken at", takenTime, { takenTime = it }, Modifier.weight(1f), accent)
                         Button(
                             onClick = {
                                 val takenAt = LocalDate.now().atTime(parsedTakenTime!!).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                                 onTaken(takenAt)
+                                takenTime = LocalTime.now().format(clockFormat)
                             },
                             enabled = parsedTakenTime != null && remaining > 0,
                             colors = ButtonDefaults.buttonColors(containerColor = accent)

@@ -1,12 +1,12 @@
 # Nota Bene compliance position
 
-Status: engineering and publication record for Alpha 25; review again before Google Play submission and whenever the app’s purpose or data flows change. This is a practical compliance position, not legal advice.
+Status: engineering and publication record for Alpha 26; review again before Google Play submission and whenever the app’s purpose or data flows change. This is a practical compliance position, not legal advice.
 
 ## Intended purpose
 
-Nota Bene is a lifestyle recording and organisation tool. It lets an adult manually record payments, medicine schedules and doses taken, medicine stock, health observations, tasks and research notes. It displays administrative states derived directly from that user-entered information and provides local reminders.
+Nota Bene is a lifestyle recording and organisation tool. It lets an adult manually record payments, medicine or other consumable schedules and every dose taken, stock, health observations, tasks and research notes. It displays administrative states derived directly from that user-entered information and provides local reminders. Its discreet daily consumption colour compares only the recorded count with the user’s own stated usual count; it is not a medically derived threshold.
 
-It does not diagnose, monitor or predict a disease; interpret measurements clinically; calculate or recommend doses; recommend treatment; connect to a medical device; provide emergency care; or send records to clinicians. On that intended purpose, it is not presented as medical-device software. Any future clinical inference, dose calculation, treatment recommendation or medical-device connection requires a fresh regulatory assessment before implementation or publication.
+It does not diagnose, monitor or predict a disease; interpret measurements clinically; calculate safe consumption or recommend doses; recommend treatment; connect to a medical device; provide emergency care; or send records to clinicians. On that intended purpose, it is not presented as medical-device software. Any future clinical inference, medically derived risk threshold, dose calculation, treatment recommendation or medical-device connection requires a fresh regulatory assessment before implementation or publication.
 
 ## Data-flow record
 
