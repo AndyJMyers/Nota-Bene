@@ -1,13 +1,14 @@
 # Nota Bene TODO
 
-Updated for **Alpha 26**.
+Updated for **Alpha 27**.
 
 ## Current UI baseline — do not drift
 
 - The top-level instruments are, in this order: **SPEND · MEDS · SOMA · TASK · ASK**.
 - The five large industrial radio controls remain on one line and use the same interface language throughout.
-- The header contains the Nota Bene identity, the unlabeled mood slider, the background selector and one small `*` settings control in the same vertical band.
+- The header contains the Nota Bene identity, stacked colour-mood and ambient-volume sliders, the background selector, current sound name and one small `*` settings control in the same vertical band.
 - Mood and background animation remain atmospheric but clearly visible; the current backgrounds are sky, snow, oil and waves.
+- Ambient sound starts silent, is bundled offline, follows colour mood through wind, fountain, nature and chimes, and pauses outside the foreground.
 - Every instrument panel scrolls vertically and remains usable after phone rotation.
 - Tapping outside an input dismisses the keyboard.
 - Administrative controls stay one level down under `*` Settings. Do not add export, compliance or configuration clutter to the main instrument row.
@@ -15,6 +16,7 @@ Updated for **Alpha 26**.
 ## Product-test priorities
 
 - [ ] Test all five instruments repeatedly on the intended phone in portrait and landscape, including small-screen scrolling and keyboard dismissal.
+- [ ] Test ambient volume, colour-linked sound changes, crossfades, mute, app background/foreground behaviour, phone audio routing and interruptions on the intended phone.
 - [ ] Test SPEND speech capture and receipt selection with varied real receipts; confirm every proposed field remains editable before saving.
 - [ ] Test MEDS reminders across app closure, phone restart, battery-saving modes and notification permission changes.
 - [ ] Confirm the locked-screen MEDS notification is generic and medicine details appear only after the phone is unlocked, subject to Android settings.
@@ -27,7 +29,6 @@ Updated for **Alpha 26**.
 - [ ] ASK: add follow-on notes to an item.
 - [ ] ASK: add deliberate item deletion with a suitable confirmation or undo path.
 - [ ] TASK: decide whether individual deletion is needed after real use; retain the present done/hide-completed workflow unless deletion proves useful.
-- [ ] Add a second, compact ambience slider for sound mood/volume, with offline wind chime, slow fountain, nature and wind choices ranging from sombre to mildly elated. It must be easy to silence, respect app lifecycle and audio routing, and avoid cluttering the instrument row.
 - [ ] Review accessibility on a real phone: TalkBack labels, contrast, text scaling, touch-target size and reduced-motion behaviour.
 
 ## Google Play preparation

@@ -1,6 +1,6 @@
 # Nota Bene compliance position
 
-Status: engineering and publication record for Alpha 26; review again before Google Play submission and whenever the app’s purpose or data flows change. This is a practical compliance position, not legal advice.
+Status: engineering and publication record for Alpha 27; review again before Google Play submission and whenever the app’s purpose or data flows change. This is a practical compliance position, not legal advice.
 
 ## Intended purpose
 
@@ -18,6 +18,7 @@ It does not diagnose, monitor or predict a disease; interpret measurements clini
 | XLSX export | Created only on request; saved to a destination explicitly selected by the user |
 | Receipt OCR | Image/text processed on-device; receipt image not retained; ML Kit may send limited app/device/performance/installation diagnostics to Google |
 | Speech | Audio handled by the installed system recognition provider when the user invokes it; Nota Bene stores only accepted returned text |
+| Ambient sound | Four bundled offline audio loops; no microphone, network service or user data |
 | Ads, developer analytics, accounts, cloud sync | None |
 
 ## UK GDPR position

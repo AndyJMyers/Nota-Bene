@@ -10,10 +10,10 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_26-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_27-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
+[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.1-alpha27/nota-bene-dev.apk)
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
@@ -98,9 +98,11 @@ A mood control moves through **dark purple · blue · yellow fusion · quinacrid
 
 A single control cycles forward through the effects. Nota Bene is a utility, not a visualisation application.
 
+Beside the colour control is a second, default-silent ambience slider. Colour mood selects a restrained offline soundscape—**wind · fountain · nature · chimes**—while the second slider controls its volume. Sounds crossfade as the colour mood changes and pause when the app leaves the foreground.
+
 ## Current milestone
 
-**Alpha 26 (`v0.9.0-alpha26`)** provides:
+**Alpha 27 (`v0.9.1-alpha27`)** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - the consistent five-tab shell and instrument-panel visual language;
@@ -110,6 +112,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 - tap-away keyboard dismissal throughout the app;
 - expandable medicine dose histories;
 - repeat same-day MEDS logging with a discreet user-referenced consumption indicator;
+- a colour-linked offline ambience slider with wind, fountain, nature and chime soundscapes;
 - the new N.B. fountain-pen identity in the launcher, app header and project page;
 - reliable sensor-driven rotation with system-bar-safe content;
 - continuous vertical scrolling through every instrument panel;
@@ -131,8 +134,8 @@ The MEDS circuit records every dose at an explicit taken time, compares the day�
 
 The current development APK is published as a GitHub pre-release:
 
-- [Download `nota-bene-dev.apk` (Alpha 26)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
-- SHA-256: `08DB2A601BC31BD1E0FA31D17887F83A7B36C04187CDFE72E31FDD7EB9C51FA6`
+- [Download `nota-bene-dev.apk` (Alpha 27)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.1-alpha27/nota-bene-dev.apk)
+- SHA-256: `8A8E5491183F0F9BD223A9D5BBEB9510B6EA828A1AFB1D67C9DD92B6F23F0DDB`
 
 Near-term work is practical rather than expansive: test receipt extraction, notification privacy, reminder timing and complete erasure on real devices; verify exports in common spreadsheet applications; and complete release-candidate publication details. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
 
