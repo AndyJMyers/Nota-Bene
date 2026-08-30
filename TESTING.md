@@ -8,7 +8,7 @@ The suite is intentionally small and risk-led. It protects data, repeated MEDS l
 .\gradlew.bat testDebugUnitTest
 ```
 
-The 23 local JVM tests cover:
+The 25 local JVM tests cover:
 
 - MEDS white/green/amber/red count boundaries;
 - stock arithmetic, including exhaustion without negative display;
@@ -36,16 +36,18 @@ Run it on a connected phone or emulator:
 .\gradlew.bat connectedDebugAndroidTest
 ```
 
-The 8 Android tests cover:
+The 10 Android tests cover:
 
 - two same-day dose rows in a real Room database;
 - persistent stock correction and halted state;
 - erasure of all five instruments and dose history;
 - erasure of reminder-state preferences;
+- persistence of both MEDS reminder-toggle states;
 - migration from database version 5 to 6, including preserved history and removal of the one-dose-per-day constraint;
 - navigation to all five working instrument panels;
-- the `*` Settings boundary and its export/privacy controls; and
-- two consecutive presses of the live MEDS **LOG TAKEN** control.
+- the `*` Settings boundary and its export/privacy controls;
+- two consecutive presses of the live MEDS **LOG TAKEN** control; and
+- preservation of unfinished TASK text through Android activity recreation (the mechanism used during rotation).
 
 This layer is opt-in because installing and driving an Android test APK is inherently slower than the JVM suite. Merely compiling it catches dependency and source drift without requiring a device.
 

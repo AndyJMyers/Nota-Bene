@@ -70,6 +70,16 @@ class InterfaceSmokeTest {
         waitForText("2/1")
     }
 
+    @Test
+    fun unfinishedTaskSurvivesActivityRecreation() {
+        compose.onNodeWithText("TASK").performClick()
+        compose.onNode(hasText("What needs doing?") and hasSetTextAction()).performTextInput("Survive rotation")
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNode(hasText("Survive rotation") and hasSetTextAction()).assertIsDisplayed()
+    }
+
     private fun waitForText(text: String) {
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()

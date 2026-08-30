@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -63,6 +64,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
@@ -171,6 +173,9 @@ private fun NotaBeneApp() {
     var styleChangeCount by rememberSaveable { mutableStateOf(0) }
     var showStyleName by remember { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var remindersEnabled by remember {
+        mutableStateOf(MedicineReminderScheduler.remindersEnabled(context))
+    }
     var remindersGranted by remember {
         mutableStateOf(
             Build.VERSION.SDK_INT < 33 ||
@@ -188,7 +193,13 @@ private fun NotaBeneApp() {
     }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> remindersGranted = granted }
+    ) { granted ->
+        remindersGranted = granted
+        if (granted) {
+            MedicineReminderScheduler.setRemindersEnabled(context, true)
+            remindersEnabled = true
+        }
+    }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
@@ -277,6 +288,7 @@ private fun NotaBeneApp() {
                         styleChangeCount += 1
                     },
                     onSettings = {
+                        remindersEnabled = MedicineReminderScheduler.remindersEnabled(context)
                         remindersGranted = MedicineReminderScheduler.notificationsEnabled(context)
                         showSettings = true
                     }
@@ -301,13 +313,15 @@ private fun NotaBeneApp() {
             if (showSettings) {
                 SettingsDialog(
                     accent = accent,
+                    remindersEnabled = remindersEnabled,
                     remindersGranted = remindersGranted,
                     onDismiss = { showSettings = false },
-                    onRequestReminders = {
-                        if (Build.VERSION.SDK_INT >= 33) {
+                    onRemindersChanged = { enabled ->
+                        if (enabled && !remindersGranted && Build.VERSION.SDK_INT >= 33) {
                             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {
-                            remindersGranted = true
+                            MedicineReminderScheduler.setRemindersEnabled(context, enabled)
+                            remindersEnabled = enabled
                         }
                     },
                     onExport = {
@@ -361,7 +375,7 @@ private fun Header(
     onSettings: () -> Unit
 ) {
     val styleSpec = appStyle.spec
-    BoxWithConstraints(Modifier.fillMaxWidth().height(58.dp)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().height(68.dp)) {
         val compact = maxWidth < 500.dp
         val gap = if (compact) 6.dp else 12.dp
         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
@@ -377,7 +391,11 @@ private fun Header(
                         .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
                 )
             }
-            val titleModifier = if (compact) Modifier.width(if (appStyle == NotaStyle.ART_NOUVEAU) 122.dp else 108.dp) else Modifier.weight(1f)
+            val titleModifier = if (compact) {
+                Modifier.width(if (appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 108.dp else 92.dp)
+            } else {
+                Modifier.weight(1f)
+            }
             Column(titleModifier, verticalArrangement = Arrangement.Center) {
                 Text(
                     "NOTA BENE",
@@ -389,39 +407,37 @@ private fun Header(
                     maxLines = 1,
                     overflow = TextOverflow.Clip
                 )
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(25.dp)
-                        .semantics { contentDescription = "Next mood style, currently ${appStyle.displayName}" }
-                        .clickable(onClick = onCycleStyle),
-                    contentAlignment = Alignment.CenterStart
-                ) {
-                    Text("MOOD  >", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.5.sp)
-                }
+                Text("PERSONAL LOG", color = styleSpec.muted, fontSize = 8.sp, fontFamily = styleSpec.titleFamily, letterSpacing = 1.2.sp, maxLines = 1)
             }
-            Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).height(66.dp), verticalArrangement = Arrangement.Center) {
                 Slider(
                     value = mood,
                     onValueChange = onMoodChange,
-                    modifier = Modifier.weight(1f).height(48.dp),
+                    modifier = Modifier.fillMaxWidth().height(31.dp),
                     colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
                 )
-                Box(
-                    Modifier.width(if (compact) 38.dp else 43.dp).height(40.dp)
-                        .semantics { contentDescription = "Next background, currently ${effect.label}" }
-                        .clickable(onClick = onCycleEffect),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(effect.label, color = styleSpec.muted, fontSize = 8.sp, maxLines = 1)
-                }
-                Box(
-                    Modifier.width(28.dp).height(40.dp)
-                        .semantics { contentDescription = "Settings" }
-                        .clickable(onClick = onSettings),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("*", color = styleSpec.text, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Row(Modifier.fillMaxWidth().height(31.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    HeaderButton(
+                        label = "MOOD >",
+                        contentDescription = "Next mood style, currently ${appStyle.displayName}",
+                        accent = accent,
+                        modifier = Modifier.width(if (compact) 60.dp else 74.dp),
+                        onClick = onCycleStyle
+                    )
+                    HeaderButton(
+                        label = effect.label.substringAfter(' ') + " >",
+                        contentDescription = "Next animation, currently ${effect.label}",
+                        accent = styleSpec.frame,
+                        modifier = Modifier.weight(1f),
+                        onClick = onCycleEffect
+                    )
+                    HeaderButton(
+                        label = "*",
+                        contentDescription = "Settings",
+                        accent = styleSpec.frame,
+                        modifier = Modifier.width(30.dp),
+                        onClick = onSettings
+                    )
                 }
             }
         }
@@ -429,11 +445,36 @@ private fun Header(
 }
 
 @Composable
+private fun HeaderButton(
+    label: String,
+    contentDescription: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val style = LocalNotaStyle.current
+    val spec = style.spec
+    val shape = RoundedCornerShape((spec.corner.coerceAtLeast(5) * .72f).dp)
+    Box(
+        modifier
+            .fillMaxHeight()
+            .background(Brush.verticalGradient(listOf(spec.surface, spec.ink)), shape)
+            .border(1.dp, accent.copy(alpha = .88f), shape)
+            .semantics { this.contentDescription = contentDescription }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(label, color = spec.text, fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = spec.titleFamily, letterSpacing = .6.sp, maxLines = 1)
+    }
+}
+
+@Composable
 private fun SettingsDialog(
     accent: Color,
+    remindersEnabled: Boolean,
     remindersGranted: Boolean,
     onDismiss: () -> Unit,
-    onRequestReminders: () -> Unit,
+    onRemindersChanged: (Boolean) -> Unit,
     onExport: () -> Unit,
     onErase: () -> Unit
 ) {
@@ -455,13 +496,25 @@ private fun SettingsDialog(
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
-                Button(
-                    onClick = onRequestReminders,
-                    enabled = !remindersGranted,
-                    colors = ButtonDefaults.buttonColors(containerColor = accent),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (remindersGranted) "REMINDERS ON" else "ENABLE REMINDERS", color = Ink, fontWeight = FontWeight.Black)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (remindersEnabled) "APP REMINDERS ON" else "APP REMINDERS OFF",
+                            color = if (remindersEnabled) accent else Color(0xFFC7BDC7),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            if (remindersGranted) "Android notifications permitted" else "Android notification permission is off",
+                            color = Color(0xFFA79DA8),
+                            fontSize = 10.sp
+                        )
+                    }
+                    Switch(
+                        checked = remindersEnabled,
+                        onCheckedChange = onRemindersChanged,
+                        modifier = Modifier.semantics { contentDescription = "MEDS reminder toggle" }
+                    )
                 }
                 HorizontalDivider(color = Color(0xFF4B424D))
                 Text("DATA", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
@@ -664,11 +717,11 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).paymentDao() }
     val payments by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var merchant by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var source by remember { mutableStateOf("manual") }
-    var status by remember { mutableStateOf("Ready for manual, voice or receipt capture") }
+    var merchant by rememberSaveable { mutableStateOf("") }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var source by rememberSaveable { mutableStateOf("manual") }
+    var status by rememberSaveable { mutableStateOf("Ready for manual, voice or receipt capture") }
     var busy by remember { mutableStateOf(false) }
 
     fun absorb(text: String, captureSource: String) {
@@ -794,9 +847,9 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).askDao() }
     val items by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var draft by remember { mutableStateOf("") }
-    var hideCompleted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Type or speak something to investigate") }
+    var draft by rememberSaveable { mutableStateOf("") }
+    var hideCompleted by rememberSaveable { mutableStateOf(false) }
+    var status by rememberSaveable { mutableStateOf("Type or speak something to investigate") }
     val visibleItems = remember(items, hideCompleted) { if (hideCompleted) items.filterNot { it.done } else items }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -878,10 +931,10 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).taskDao() }
     val tasks by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var draft by remember { mutableStateOf("") }
-    var waitingOn by remember { mutableStateOf("") }
-    var hideCompleted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Type or speak a task") }
+    var draft by rememberSaveable { mutableStateOf("") }
+    var waitingOn by rememberSaveable { mutableStateOf("") }
+    var hideCompleted by rememberSaveable { mutableStateOf(false) }
+    var status by rememberSaveable { mutableStateOf("Type or speak a task") }
     val visibleTasks = remember(tasks, hideCompleted) { if (hideCompleted) tasks.filterNot { it.done } else tasks }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -965,9 +1018,9 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).bodyDao() }
     val observations by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var draft by remember { mutableStateOf("") }
-    var measurement by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf("Type or speak an observation") }
+    var draft by rememberSaveable { mutableStateOf("") }
+    var measurement by rememberSaveable { mutableStateOf("") }
+    var status by rememberSaveable { mutableStateOf("Type or speak an observation") }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -1040,14 +1093,14 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     val medications by dao.observeMedications().collectAsState(initial = emptyList())
     val logs by dao.observeDoseLogs().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var name by remember { mutableStateOf("") }
-    var dosage by remember { mutableStateOf("") }
-    var doseTime by remember { mutableStateOf("08:00") }
-    var dailyTarget by remember { mutableStateOf("1") }
-    var startingDoses by remember { mutableStateOf("") }
-    var reorderAt by remember { mutableStateOf("7") }
-    var showHalted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Set your usual daily count; every entry can still be logged") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var dosage by rememberSaveable { mutableStateOf("") }
+    var doseTime by rememberSaveable { mutableStateOf("08:00") }
+    var dailyTarget by rememberSaveable { mutableStateOf("1") }
+    var startingDoses by rememberSaveable { mutableStateOf("") }
+    var reorderAt by rememberSaveable { mutableStateOf("7") }
+    var showHalted by rememberSaveable { mutableStateOf(false) }
+    var status by rememberSaveable { mutableStateOf("Set your usual daily count; every entry can still be logged") }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {

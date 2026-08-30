@@ -1,12 +1,12 @@
 # Nota Bene TODO
 
-Updated for **Alpha 26**.
+Updated for **Alpha 32**.
 
 ## Current UI baseline — do not drift
 
 - The top-level instruments are, in this order: **SPEND · MEDS · SOMA · TASK · ASK**.
 - The five large industrial radio controls remain on one line and use the same interface language throughout.
-- The header contains the Nota Bene identity, the unlabeled mood slider, the background selector and one small `*` settings control in the same vertical band.
+- The header contains the Nota Bene identity and unlabeled colour slider, with adjacent, visibly framed `MOOD >`, animation and `*` settings buttons on the right.
 - Mood and background animation remain atmospheric but clearly visible; the current backgrounds are sky, snow, oil and waves.
 - Every instrument panel scrolls vertically and remains usable after phone rotation.
 - Tapping outside an input dismisses the keyboard.
@@ -16,7 +16,7 @@ Updated for **Alpha 26**.
 
 - [ ] Test all five instruments repeatedly on the intended phone in portrait and landscape, including small-screen scrolling and keyboard dismissal.
 - [ ] Test SPEND speech capture and receipt selection with varied real receipts; confirm every proposed field remains editable before saving.
-- [ ] Test MEDS reminders across app closure, phone restart, battery-saving modes and notification permission changes.
+- [ ] Test the MEDS reminder on/off switch across app closure, phone restart, battery-saving modes and Android notification permission changes.
 - [ ] Confirm the locked-screen MEDS notification is generic and medicine details appear only after the phone is unlocked, subject to Android settings.
 - [ ] Test repeated same-day logging, the white/green/amber/red `today/usual` indicator, stock correction, reorder state, halted entries and expandable history with realistic fictitious records.
 - [ ] Verify **Erase all local data** removes SPEND, MEDS, SOMA, TASK and ASK records plus MEDS reminder state and visible notifications.

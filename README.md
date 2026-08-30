@@ -119,7 +119,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 - the new N.B. fountain-pen identity in the launcher, app header and project page;
 - reliable sensor-driven rotation with system-bar-safe content;
 - continuous vertical scrolling through every instrument panel;
-- persistent local MEDS reminders across app closure and phone restart; and
+- persistent, user-switchable local MEDS reminders across app closure and phone restart; and
 - private-detail MEDS notifications with a generic locked-screen message;
 - disabled cloud and device-transfer backup;
 - complete local erasure of records and reminder state; and
@@ -144,7 +144,7 @@ Near-term work is practical rather than expansive: test receipt extraction, noti
 
 ## Testing
 
-Nota Bene has a focused regression suite rather than a large testing framework: **23 fast JVM tests** protect MEDS rules, receipt parsing, reminder decisions and XLSX integrity; **8 opt-in Android tests** protect Room persistence/migration, complete erasure and essential live interface paths. Ordinary APK assembly does not run or package either suite.
+Nota Bene has a focused regression suite rather than a large testing framework: **25 fast JVM tests** protect MEDS rules, receipt parsing, reminder decisions and XLSX integrity; **10 opt-in Android tests** protect Room persistence/migration, reminder settings, rotation-safe drafts, complete erasure and essential live interface paths. Ordinary APK assembly does not run or package either suite.
 
 Run the practical local gate with:
 
