@@ -87,6 +87,8 @@ Cosmic Funk is the third completed artwork treatment: lacquer-black working surf
 
 Ecclesiastic is the fourth completed artwork treatment: midnight cathedral blue, Gothic vaults, aged-gold manuscript tracery, ruby-and-cobalt glass and small pools of candlelight surround warm ivory working panels. It suggests an instrument made for a technologically advanced monastery, without turning the app into a sermon.
 
+Orbital Deco is the fifth completed artwork treatment: black enamel, champagne-gold geometry, silver moons, crimson signal jewels and quiet star maps frame ivory working panels. It is the observation lounge of a luxury interplanetary liner, made functional.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">

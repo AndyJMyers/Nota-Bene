@@ -59,8 +59,8 @@ internal val NotaStyle.spec: NotaStyleSpec
             glow = Color(0xFFFFB000), secondary = Color(0xFFE51B48), titleFamily = FontFamily.SansSerif, corner = 18, border = 3
         )
         NotaStyle.ORBITAL_DECO -> NotaStyleSpec(
-            ink = Color(0xFF070707), surface = Color(0xFF141311), panel = Color(0xFF201E1A),
-            text = Color(0xFFF2E7D4), muted = Color(0xFFB9AD9D), panelText = Color(0xFFF2E7D4), panelMuted = Color(0xFFB9AD9D), frame = Color(0xFF8A714B),
+            ink = Color(0xFF040404), surface = Color(0xFF11100F), panel = Color(0xFFF0E5CF),
+            text = Color(0xFFF2E7D4), muted = Color(0xFFBAB0A2), panelText = Color(0xFF11100F), panelMuted = Color(0xFF5B554C), frame = Color(0xFFAA8B5A),
             glow = Color(0xFFDDBB73), secondary = Color(0xFF8E1526), titleFamily = FontFamily.SansSerif, corner = 2, border = 2
         )
         NotaStyle.ART_NOUVEAU -> NotaStyleSpec(

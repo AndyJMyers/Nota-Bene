@@ -1,6 +1,6 @@
 # Nota Bene TODO
 
-Updated for **Alpha 34**.
+Updated for **Alpha 35**.
 
 ## Current UI baseline — do not drift
 
@@ -57,4 +57,5 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - [x] Complete the full-blooded William Morris treatment with saturated textile field, illustrated border and light book-paper work surfaces.
 - [x] Complete the Cosmic Funk treatment with lacquer black, chrome, coloured orbital ribbons and a restrained starfield.
 - [x] Complete the Ecclesiastic treatment with midnight-blue Gothic architecture, gold tracery, jewel glass and warm ivory work surfaces.
-- [ ] Bring Steampunk and Orbital Deco to the same artwork standard.
+- [x] Complete the Orbital Deco treatment with black enamel, champagne-gold geometry, crimson signal jewels and celestial navigation detail.
+- [ ] Bring Steampunk to the same artwork standard.
