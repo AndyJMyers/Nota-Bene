@@ -244,6 +244,15 @@ private fun NotaBeneApp() {
                 }
         ) {
             CalmBackground(effect, accent, mood)
+            if (appStyle == NotaStyle.ECCLESIASTIC) {
+                Image(
+                    painter = painterResource(R.drawable.ecclesiastic_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .4f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             if (appStyle == NotaStyle.COSMIC_FUNK) {
                 Image(
                     painter = painterResource(R.drawable.cosmic_funk_field),
@@ -263,10 +272,11 @@ private fun NotaBeneApp() {
                 )
             }
             StyleBackdrop(appStyle, accent)
-            if (appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) {
+            if (appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) {
                 Image(
                     painter = painterResource(
                         when (appStyle) {
+                            NotaStyle.ECCLESIASTIC -> R.drawable.ecclesiastic_frame
                             NotaStyle.COSMIC_FUNK -> R.drawable.cosmic_funk_frame
                             NotaStyle.ART_NOUVEAU -> R.drawable.art_nouveau_frame
                             else -> R.drawable.william_morris_frame
@@ -275,6 +285,7 @@ private fun NotaBeneApp() {
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     alpha = when (appStyle) {
+                        NotaStyle.ECCLESIASTIC -> .84f
                         NotaStyle.COSMIC_FUNK -> .9f
                         NotaStyle.ART_NOUVEAU -> .72f
                         else -> .82f
@@ -395,7 +406,7 @@ private fun Header(
         val compact = maxWidth < 500.dp
         val gap = if (compact) 6.dp else 12.dp
         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
-            if (appStyle != NotaStyle.COSMIC_FUNK && appStyle != NotaStyle.ART_NOUVEAU && appStyle != NotaStyle.WILLIAM_MORRIS) {
+            if (appStyle != NotaStyle.ECCLESIASTIC && appStyle != NotaStyle.COSMIC_FUNK && appStyle != NotaStyle.ART_NOUVEAU && appStyle != NotaStyle.WILLIAM_MORRIS) {
                 val markSize = if (compact) 40.dp else 46.dp
                 Image(
                     painter = painterResource(id = R.drawable.nb_fountain_icon),
@@ -408,7 +419,7 @@ private fun Header(
                 )
             }
             val titleModifier = if (compact) {
-                Modifier.width(if (appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 108.dp else 92.dp)
+                Modifier.width(if (appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 108.dp else 92.dp)
             } else {
                 Modifier.weight(1f)
             }
@@ -723,7 +734,7 @@ private fun NotaCard(
 
 @Composable
 private fun panelAccent(accent: Color): Color = when (LocalNotaStyle.current) {
-    NotaStyle.ART_NOUVEAU, NotaStyle.WILLIAM_MORRIS -> MaterialTheme.colorScheme.secondary
+    NotaStyle.ECCLESIASTIC, NotaStyle.ART_NOUVEAU, NotaStyle.WILLIAM_MORRIS -> MaterialTheme.colorScheme.secondary
     else -> accent
 }
 

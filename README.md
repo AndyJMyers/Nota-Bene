@@ -85,6 +85,8 @@ William Morris is the second completed artwork treatment and deliberately uses t
 
 Cosmic Funk is the third completed artwork treatment: lacquer-black working surfaces, polished chrome piping, signal-red, cobalt and solar-gold orbital ribbons, starbursts and distant planets give the app the confidence of a 1970s hi-fi control deck while leaving its operational centre calm and legible.
 
+Ecclesiastic is the fourth completed artwork treatment: midnight cathedral blue, Gothic vaults, aged-gold manuscript tracery, ruby-and-cobalt glass and small pools of candlelight surround warm ivory working panels. It suggests an instrument made for a technologically advanced monastery, without turning the app into a sermon.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">

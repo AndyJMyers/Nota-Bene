@@ -1,6 +1,6 @@
 # Nota Bene TODO
 
-Updated for **Alpha 33**.
+Updated for **Alpha 34**.
 
 ## Current UI baseline — do not drift
 
@@ -56,4 +56,5 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - [x] Complete the first production artwork pass for Art Nouveau, including the transparent ginkgo frame and light enamel work surfaces.
 - [x] Complete the full-blooded William Morris treatment with saturated textile field, illustrated border and light book-paper work surfaces.
 - [x] Complete the Cosmic Funk treatment with lacquer black, chrome, coloured orbital ribbons and a restrained starfield.
-- [ ] Bring Steampunk, Ecclesiastic and Orbital Deco to the same artwork standard.
+- [x] Complete the Ecclesiastic treatment with midnight-blue Gothic architecture, gold tracery, jewel glass and warm ivory work surfaces.
+- [ ] Bring Steampunk and Orbital Deco to the same artwork standard.
