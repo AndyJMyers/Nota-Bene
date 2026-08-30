@@ -44,8 +44,8 @@ internal val NotaStyle.spec: NotaStyleSpec
             glow = Color(0xFFF2C94C), secondary = Color(0xFF9D174D), titleFamily = FontFamily.SansSerif, corner = 8, border = 2
         )
         NotaStyle.STEAMPUNK -> NotaStyleSpec(
-            ink = Color(0xFF130D08), surface = Color(0xFF25180F), panel = Color(0xFF332216),
-            text = Color(0xFFF1DFC0), muted = Color(0xFFB8A17E), panelText = Color(0xFFF1DFC0), panelMuted = Color(0xFFB8A17E), frame = Color(0xFF795329),
+            ink = Color(0xFF100A06), surface = Color(0xFF24170E), panel = Color(0xFFF0DEC0),
+            text = Color(0xFFF1DFC0), muted = Color(0xFFB8A17E), panelText = Color(0xFF21140C), panelMuted = Color(0xFF6C5840), frame = Color(0xFF8A632E),
             glow = Color(0xFFE8A735), secondary = Color(0xFF7C2E20), titleFamily = FontFamily.Serif, corner = 3, border = 3
         )
         NotaStyle.ECCLESIASTIC -> NotaStyleSpec(

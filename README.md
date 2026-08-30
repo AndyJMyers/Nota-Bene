@@ -89,6 +89,10 @@ Ecclesiastic is the fourth completed artwork treatment: midnight cathedral blue,
 
 Orbital Deco is the fifth completed artwork treatment: black enamel, champagne-gold geometry, silver moons, crimson signal jewels and quiet star maps frame ivory working panels. It is the observation lounge of a luxury interplanetary liner, made functional.
 
+Steampunk is the sixth completed artwork treatment: oil-black iron, aged brass, copper joints, careful gauge work and warm filament lamps form a practical alternate-future cabinet around parchment working panels. It is deliberately engineered rather than whimsical.
+
+Retro Futurist is the seventh completed artwork treatment and Nota Bene's home ground: smoked-violet instrument glass, brushed gunmetal, deep blue and quinacridone-crimson stained light, plus glowing amber filaments turn the original industrial-radio idea into a finished machine.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">
