@@ -83,6 +83,8 @@ Art Nouveau is the first fully realised artwork treatment: a transparent, hand-f
 
 William Morris is the second completed artwork treatment and deliberately uses the full force of the late textiles: a dense indigo field, large winding foliage, madder flowers, strawberries, thrushes and concealed medieval beasts surround warm book-paper work panels. The pattern remains atmospheric and never carries operational text.
 
+Cosmic Funk is the third completed artwork treatment: lacquer-black working surfaces, polished chrome piping, signal-red, cobalt and solar-gold orbital ribbons, starbursts and distant planets give the app the confidence of a 1970s hi-fi control deck while leaving its operational centre calm and legible.
+
 Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
 
 <div align="center">

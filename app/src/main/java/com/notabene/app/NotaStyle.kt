@@ -54,8 +54,8 @@ internal val NotaStyle.spec: NotaStyleSpec
             glow = Color(0xFFE8C459), secondary = Color(0xFF9E1734), titleFamily = FontFamily.Serif, corner = 4, border = 2
         )
         NotaStyle.COSMIC_FUNK -> NotaStyleSpec(
-            ink = Color(0xFF030306), surface = Color(0xFF141019), panel = Color(0xFF211423),
-            text = Color(0xFFFFF0D2), muted = Color(0xFFC4AFC9), panelText = Color(0xFFFFF0D2), panelMuted = Color(0xFFC4AFC9), frame = Color(0xFF8F275E),
+            ink = Color(0xFF010104), surface = Color(0xFF0A0A10), panel = Color(0xFF120A0D),
+            text = Color(0xFFFFEAC2), muted = Color(0xFFC7BBA8), panelText = Color(0xFFFFEAC2), panelMuted = Color(0xFFC7BBA8), frame = Color(0xFFB8B4B8),
             glow = Color(0xFFFFB000), secondary = Color(0xFFE51B48), titleFamily = FontFamily.SansSerif, corner = 18, border = 3
         )
         NotaStyle.ORBITAL_DECO -> NotaStyleSpec(
