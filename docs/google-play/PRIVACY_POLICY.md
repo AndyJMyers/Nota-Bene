@@ -1,6 +1,6 @@
 # Privacy Policy for Nota Bene
 
-Effective date: **27 August 2026**
+Effective date: **4 September 2026**
 
 Nota Bene is a personal record-keeping Android application developed and published by **Andy J Myers**. This policy explains plainly what the app handles, what stays on the phone and the limited circumstances in which another service may receive information.
 
@@ -58,6 +58,8 @@ This policy will be updated when Nota Bene’s functionality or data handling ch
 
 ## Contact
 
-Project and support page: **https://github.com/AndyJMyers/Nota-Bene**
+Privacy and support: **andyjmyers@gmail.com**
 
-A public privacy contact email and stable public HTML copy of this policy must be added before Google Play submission.
+Project page: **https://github.com/AndyJMyers/Nota-Bene**
+
+Public HTML policy: **https://andyjmyers.github.io/Nota-Bene/privacy/**

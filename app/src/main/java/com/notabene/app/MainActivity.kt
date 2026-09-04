@@ -95,6 +95,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -124,6 +125,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private val Ink = Color(0xFF090812)
+private const val PrivacyPolicyUrl = "https://andyjmyers.github.io/Nota-Bene/privacy/"
 private val Glass = Color(0xFF28212B)
 private val Purple = Color(0xFF321052)
 private val Blue = Color(0xFF164B89)
@@ -538,6 +540,7 @@ private fun SettingsDialog(
     onExport: () -> Unit,
     onErase: () -> Unit
 ) {
+    val uriHandler = LocalUriHandler.current
     var confirmErase by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -628,10 +631,13 @@ private fun SettingsDialog(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "PUBLISHER\nDeveloped and published by Andy J Myers. Project and support: github.com/AndyJMyers/Nota-Bene",
+                    "PUBLISHER\nDeveloped and published by Andy J Myers. Privacy and support: andyjmyers@gmail.com",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
+                TextButton(onClick = { uriHandler.openUri(PrivacyPolicyUrl) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("OPEN PRIVACY POLICY", color = accent)
+                }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("DONE", color = accent) } }

@@ -186,9 +186,9 @@ First-draft publication documents are kept in [`docs/google-play`](docs/google-p
 
 The current data flows, UK GDPR position, reminder limitations and medical-purpose boundary are recorded in the [compliance position](docs/google-play/COMPLIANCE_POSITION.md).
 
-The current engineering/publication state is recorded in the [Alpha 36 Google Play readiness pass](docs/google-play/ALPHA36_READINESS.md).
+The current engineering/publication state is recorded in the [Alpha 36 Google Play readiness pass](docs/google-play/ALPHA36_READINESS.md). The public [Privacy Policy](https://andyjmyers.github.io/Nota-Bene/privacy/) is hosted as a static GitHub Pages document.
 
-These remain working drafts until the release candidate, public privacy contact and hosted privacy-policy URL are final.
+These remain working drafts until the release candidate and final Play Console review are complete.
 
 ## Development approach
 
