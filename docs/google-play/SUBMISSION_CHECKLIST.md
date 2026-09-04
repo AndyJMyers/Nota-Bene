@@ -2,8 +2,8 @@
 
 ## Blocking product and policy work
 
-- [ ] Add the public privacy contact email to `PRIVACY_POLICY.md` (developer name and publication date are present).
-- [ ] Publish the privacy policy as a stable public HTML page (not a PDF, not geofenced, no login required).
+- [x] Add the public privacy contact email to `PRIVACY_POLICY.md`: andyjmyers@gmail.com.
+- [x] Publish the privacy policy as a stable public HTML page: https://andyjmyers.github.io/Nota-Bene/privacy/
 - [x] Add clear privacy and safety disclosure text inside Nota Bene under `*` settings.
 - [x] Add an in-app medical disclaimer stating that Nota Bene is not a medical device, does not diagnose or recommend treatment, and is not for emergencies.
 - [x] Disable Android cloud backup and device-transfer backup, with explicit exclusion rules for all app-data domains.

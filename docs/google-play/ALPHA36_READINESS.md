@@ -20,11 +20,10 @@ This is an engineering and publication readiness record, not legal advice. It re
 
 ## What requires a final decision or action
 
-1. **Public contact and privacy URL.** Choose a public support/privacy email, put it into `PRIVACY_POLICY.md`, publish the policy as a stable, public, non-geofenced HTML page, and link to it from the final app and Play Console.
-2. **Final signed bundle.** Create or select the final upload key, configure Play App Signing, build a signed `.aab`, then inspect that exact artefact and its merged manifest. The locally generated Alpha 36 bundle is not signed and must not be uploaded.
-3. **Console declarations.** Complete App access, ads, Data Safety, Health Apps, content rating, target audience, category and support-contact questions using the accompanying drafts and the live wording.
-4. **Release evidence.** Test a Play-delivered build on real phones: rotation/scrolling, input drafts, receipt OCR, speech recognition, local persistence, repeat MEDS logging, reorder state, notification privacy, delayed/suppressed reminders, export and full erasure.
-5. **Listing assets.** Produce the Play icon, feature graphic and screenshots with entirely fictitious payment and medical records. Keep the release copy and the actual app in agreement.
+1. **Final signed bundle.** Create or select the final upload key, configure Play App Signing, build a signed `.aab`, then inspect that exact artefact and its merged manifest. The locally generated Alpha 36 bundle is not signed and must not be uploaded.
+2. **Console declarations.** Complete App access, ads, Data Safety, Health Apps, content rating, target audience, category and support-contact questions using the accompanying drafts and the live wording.
+3. **Release evidence.** Test a Play-delivered build on real phones: rotation/scrolling, input drafts, receipt OCR, speech recognition, local persistence, repeat MEDS logging, reorder state, notification privacy, delayed/suppressed reminders, export and full erasure.
+4. **Listing assets.** Produce the Play icon, feature graphic and screenshots with entirely fictitious payment and medical records. Keep the release copy and the actual app in agreement.
 
 ## Data Safety position
 
@@ -38,4 +37,4 @@ Select the Health Apps declaration accurately. Nota Bene is a local lifestyle re
 
 ## Current blocker summary
 
-There is no source-level policy blocker identified by this pass. Production is blocked only by the deliberate release work: public privacy contact and hosted policy, final signed bundle/Play App Signing, Console declarations, release-assets/screenshots and real-device Play-track testing.
+The public privacy contact and hosted policy are complete: the app links to https://andyjmyers.github.io/Nota-Bene/privacy/ and the policy is published from the repository's `main` / `docs` GitHub Pages source. There is no remaining source-level policy blocker identified by this pass. Production is blocked only by the deliberate release work: final signed bundle/Play App Signing, Console declarations, release-assets/screenshots and real-device Play-track testing.
