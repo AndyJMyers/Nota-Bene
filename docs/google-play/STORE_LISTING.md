@@ -2,7 +2,7 @@
 
 Status: listing copy aligned with Alpha 38, updated 5 September 2026. Check against the final release candidate before submission.
 
-Console status: full and short descriptions, existing icon, new feature graphic and eight screenshots saved on 5 September 2026. Console confirmed: “Change saved. Send for review in Publishing overview.” AI artwork labels applied to all ten visual assets, including actual screenshots containing generated theme artwork. Not sent for review. Public support email still requires saving; the attempted entry was blocked by the tool's confirmation safeguard.
+Console status: full and short descriptions, existing icon, new feature graphic and eight screenshots saved on 5 September 2026. Console confirmed: “Change saved. Send for review in Publishing overview.” AI artwork labels applied to all ten visual assets, including actual screenshots containing generated theme artwork. Not sent for review. Public support email andyjmyers@gmail.com was saved and published on 5 September after explicit confirmation from the creator; Console confirmed “Change published”. This contact-only publication did not submit the app or listing for production review.
 
 ## Product details
 
