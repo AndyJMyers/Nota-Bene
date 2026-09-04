@@ -27,7 +27,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.notabene.app"
+        applicationId = "com.andyjmyers.notabene"
         minSdk = 26
         targetSdk = 36
         versionCode = 36

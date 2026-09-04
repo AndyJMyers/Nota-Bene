@@ -34,7 +34,7 @@
 
 ## Release engineering
 
-- [x] Build and inspect a signed Android App Bundle (`.aab`), not the development APK. Alpha 36's signed bundle is at `app/build/outputs/bundle/release/app-release.aab`; its SHA-256 is `A8516A22F0D68B6F10D747AFA03D0C2596CDF0D43B9B1E23240612C3075DD119`.
+- [x] Build and inspect a signed Android App Bundle (`.aab`), not the development APK. Alpha 36's signed bundle is at `app/build/outputs/bundle/release/app-release.aab`; its SHA-256 is `0ED5052D540255359F414602ED4EF7C10C6990C340B28B1933E7408E9A4836CE`.
 - [ ] Enrol in Play App Signing and upload a current signed `.aab` to the selected testing track.
 - [ ] Ensure the application ID and signing key are final before production.
 - [ ] Run lint, unit/instrumentation tests and a clean-install/upgrade test on supported Android versions.

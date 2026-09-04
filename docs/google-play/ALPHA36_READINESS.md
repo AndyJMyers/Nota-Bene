@@ -6,7 +6,7 @@ This is an engineering and publication readiness record, not legal advice. It re
 
 ## What is ready
 
-- Application ID: `com.notabene.app`.
+- Application ID: `com.andyjmyers.notabene`.
 - Version: `0.9.0-alpha36` / version code `36`.
 - Compile and target SDK: Android 16 / API 36.
 - The app source declares `POST_NOTIFICATIONS` and `RECEIVE_BOOT_COMPLETED`. The inspected release merged manifest also contains `INTERNET` and `ACCESS_NETWORK_STATE`, inherited through the bundled ML Kit/data-transport stack, plus an app-private dynamic-receiver permission.
@@ -16,7 +16,7 @@ This is an engineering and publication readiness record, not legal advice. It re
 - The `*` Settings sheet contains privacy, export, speech, receipt, reminder, deletion and medical-limit notices.
 - The focused JVM suite, debug APK and Android-test APK compile successfully.
 - `lint` passes after the Alpha 36 review fixed one misleading MEDS-card indentation issue.
-- A signed release `.aab` was built and inspected at `app/build/outputs/bundle/release/app-release.aab`. Its SHA-256 is `A8516A22F0D68B6F10D747AFA03D0C2596CDF0D43B9B1E23240612C3075DD119`; it is signed by the dedicated 4096-bit RSA upload certificate whose SHA-256 fingerprint is `18:EE:1F:44:26:35:31:84:E2:BD:4B:19:E4:DA:34:66:7F:9F:52:7D:98:D1:06:89:9E:C0:C8:0F:4E:73:BE:49`.
+- A signed release `.aab` was built and inspected at `app/build/outputs/bundle/release/app-release.aab`. Its SHA-256 is `0ED5052D540255359F414602ED4EF7C10C6990C340B28B1933E7408E9A4836CE`; it is signed by the dedicated 4096-bit RSA upload certificate whose SHA-256 fingerprint is `18:EE:1F:44:26:35:31:84:E2:BD:4B:19:E4:DA:34:66:7F:9F:52:7D:98:D1:06:89:9E:C0:C8:0F:4E:73:BE:49`.
 
 ## What requires a final decision or action
 
