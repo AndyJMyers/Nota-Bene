@@ -186,6 +186,8 @@ First-draft publication documents are kept in [`docs/google-play`](docs/google-p
 
 The current data flows, UK GDPR position, reminder limitations and medical-purpose boundary are recorded in the [compliance position](docs/google-play/COMPLIANCE_POSITION.md).
 
+The current engineering/publication state is recorded in the [Alpha 36 Google Play readiness pass](docs/google-play/ALPHA36_READINESS.md).
+
 These remain working drafts until the release candidate, public privacy contact and hosted privacy-policy URL are final.
 
 ## Development approach

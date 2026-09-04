@@ -888,7 +888,7 @@ private fun PaymentField(label: String, value: String, onChange: (String) -> Uni
 
 @Composable
 private fun PaymentRow(payment: PaymentRecord, accent: Color, onDelete: () -> Unit) {
-                    NotaCard(compact = true) {
+    NotaCard(compact = true) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(payment.merchant.ifBlank { "Unlabelled payment" }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
@@ -1310,7 +1310,7 @@ private fun MedicationRow(
     }
     val reorder = remaining <= medication.reorderAt
 
-                    NotaCard(compact = true) {
+    NotaCard(compact = true) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.fillMaxWidth().clickable { expanded = !expanded },

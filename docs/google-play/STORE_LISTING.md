@@ -1,6 +1,6 @@
 # Nota Bene — Google Play listing draft
 
-Status: working draft aligned with Alpha 26. Copy must be checked against the release candidate before submission.
+Status: working draft aligned with Alpha 36. Copy must be checked against the final release candidate before submission.
 
 ## Product details
 

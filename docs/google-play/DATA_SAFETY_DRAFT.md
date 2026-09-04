@@ -1,12 +1,12 @@
 # Google Play Data Safety draft
 
-Status: working answers for Alpha 26. Recheck the final Android App Bundle, merged manifest, Play Console wording and every dependency immediately before submission.
+Status: Alpha 36 release-readiness draft, reviewed 4 September 2026. These are proposed Play Console answers, not a substitute for checking the final signed App Bundle and live Console wording immediately before submission.
 
 ## Preliminary answers
 
 | Play Console question | Draft answer | Basis |
 | --- | --- | --- |
-| Does the app collect any required user-data types? | **Yes — limited SDK diagnostics only** | Bundled Google ML Kit may transmit app/device information, performance metrics and a per-installation identifier. User-entered Nota Bene records, receipt images and recognised receipt text are not transmitted by ML Kit. |
+| Does the app collect any required user-data types? | **Yes — limited ML Kit diagnostics and usage telemetry only** | Bundled Google ML Kit may transmit device and app information, performance metrics, a per-installation identifier, feature/configuration and event/error metadata. User-entered Nota Bene records, receipt images and recognised receipt text are not transmitted by ML Kit. |
 | Does the app share user data? | **No, provisionally** | Nota Bene has no developer backend, advertising or analytics service. Google documents ML Kit’s diagnostic data as not shared with third parties. Confirm the final Console treatment of Google acting as the SDK service provider. |
 | Is collected data encrypted in transit? | **Yes** | Google documents ML Kit data as encrypted in transit. Nota Bene itself does not transmit its records. |
 | Can users request deletion? | **Yes, without an account request** | There is no account or developer-held record store. **Erase all local data**, Android clear-storage and uninstall provide device-side deletion. ML Kit diagnostic retention is governed by Google. |
@@ -16,11 +16,11 @@ Status: working answers for Alpha 26. Recheck the final Android App Bundle, merg
 
 Map Google’s final ML Kit SDK disclosure onto the current Play Console choices. The likely declarations are:
 
-- **App info and performance** — app/version information and performance metrics; collected for analytics and diagnostics;
-- **Device or other identifiers** — per-installation identifier; collected for analytics and diagnostics; and
-- device information where the live form places it, following Google’s current ML Kit guidance.
+- **App info and performance** — package/version information, performance metrics, feature configuration, input/output-size metadata, feature events and error codes; collected for diagnostics and usage analytics;
+- **Device or other identifiers** — per-installation identifier, not intended to uniquely identify a user or physical device; collected for diagnostics and usage analytics; and
+- **Device information** — manufacturer, model, OS/build and available ML hardware accelerators; collected for diagnostics and usage analytics, where the live form places it.
 
-These data are not used for advertising or marketing and are not the user’s Nota Bene records. Do not submit a blanket **No data collected** answer while this dependency is present.
+These data are encrypted in transit by ML Kit, are not used for advertising or marketing and are not the user’s Nota Bene records. ML Kit’s published disclosure says this data is not transferred to third parties. Do not submit a blanket **No data collected** answer while this dependency is present.
 
 ## Personal records stored locally
 
@@ -50,7 +50,7 @@ The user chooses the destination through Android’s save picker. A selected clo
 
 ## Before submission
 
-- Inspect the final App Bundle and merged manifest, not only source files.
+- Inspect the final signed App Bundle and merged manifest, not only source files.
 - Recheck Google’s current ML Kit Data Safety guidance and all dependency disclosures.
 - Test **Erase all local data** and confirm Room data and reminder-state preferences are removed.
 - Keep the Play answers, privacy policy, store listing and in-app notice consistent.
