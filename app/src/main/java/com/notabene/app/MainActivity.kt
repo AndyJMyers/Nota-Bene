@@ -202,6 +202,22 @@ private fun NotaBeneApp() {
             remindersEnabled = true
         }
     }
+    var pendingImport by remember { mutableStateOf<WorkbookSnapshot?>(null) }
+    var importBusy by remember { mutableStateOf(false) }
+    var importMessage by remember { mutableStateOf<String?>(null) }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && !importBusy) scope.launch {
+            importBusy = true
+            try {
+                pendingImport = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use { readWorkbook(it) }
+                        ?: error("Could not open the selected file")
+                }
+            } catch (e: Exception) {
+                importMessage = "Unable to read this export. ${e.message.orEmpty()}\nNo records were imported."
+            } finally { importBusy = false }
+        }
+    }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
@@ -372,6 +388,39 @@ private fun NotaBeneApp() {
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
             }
+            if (importBusy) {
+                AlertDialog(onDismissRequest = {}, title = { Text("IMPORTING") },
+                    text = { Text("Please wait…") }, confirmButton = {})
+            } else if (pendingImport != null) {
+                val snapshot = pendingImport!!
+                AlertDialog(
+                    onDismissRequest = { pendingImport = null },
+                    title = { Text("IMPORT XLSX") },
+                    text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+                        Text(snapshot.importSummary())
+                        Text("\nThese records will be added to this app. Existing records stay as they are. Importing the same file twice creates duplicates.\n\nOlder exports contain dates to the minute in the exporting phone's time zone, and do not include medicine creation dates or interface settings. Check medicine schedules and stock after importing.")
+                    } },
+                    confirmButton = { TextButton(onClick = {
+                        pendingImport = null
+                        importBusy = true
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { importWorkbook(database, snapshot) }
+                                importMessage = "Records imported.\n${snapshot.importSummary()}"
+                            } catch (_: Exception) {
+                                importMessage = "Import failed. No records were added."
+                            } finally { importBusy = false }
+                        }
+                    }) { Text("IMPORT RECORDS") } },
+                    dismissButton = { TextButton(onClick = { pendingImport = null }) { Text("CANCEL") } }
+                )
+            }
+            importMessage?.let { message ->
+                AlertDialog(onDismissRequest = { importMessage = null }, title = { Text("IMPORT") },
+                    text = { Text(message) }, confirmButton = {
+                        TextButton(onClick = { importMessage = null }) { Text("OK") }
+                    })
+            }
             if (showSettings) {
                 SettingsDialog(
                     accent = accent,
@@ -389,6 +438,10 @@ private fun NotaBeneApp() {
                     onExport = {
                         showSettings = false
                         exportLauncher.launch("nota-bene-${LocalDate.now()}.xlsx")
+                    },
+                    onImport = {
+                        showSettings = false
+                        importLauncher.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                     },
                     onErase = {
                         scope.launch {
@@ -538,6 +591,7 @@ private fun SettingsDialog(
     onDismiss: () -> Unit,
     onRemindersChanged: (Boolean) -> Unit,
     onExport: () -> Unit,
+    onImport: () -> Unit,
     onErase: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
@@ -583,6 +637,9 @@ private fun SettingsDialog(
                 Text("DATA", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
                     Text("EXPORT XLSX")
+                }
+                OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
+                    Text("IMPORT XLSX")
                 }
                 if (confirmErase) {
                     Text("Erase every SPEND, MEDS, SOMA, TASK and ASK record on this device? Exported copies are not affected.", color = Color(0xFFE2B5C2), fontSize = 12.sp)

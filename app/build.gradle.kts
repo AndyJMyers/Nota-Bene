@@ -30,8 +30,8 @@ android {
         applicationId = "com.andyjmyers.notabene"
         minSdk = 26
         targetSdk = 36
-        versionCode = 36
-        versionName = "0.9.0-alpha36"
+        versionCode = 38
+        versionName = "0.9.0-alpha38"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -56,6 +56,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".dev"
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
         }
