@@ -12,14 +12,18 @@
 
 ## Play Console declarations
 
-- [ ] App access: no login or restricted area.
-- [ ] Ads: no ads.
-- [ ] Data Safety: complete using `DATA_SAFETY_DRAFT.md`, after inspecting the final bundle and SDK disclosures.
-- [ ] Health Apps: declare Medication and Treatment Management; assess Healthcare Services and Management using the live form wording.
-- [ ] Content rating questionnaire: complete accurately; the app contains no developer-supplied sexual, violent, gambling or drug-use content.
-- [ ] Target audience: adults; do not include child age groups.
+Saved/actioned in Console as at 5 September 2026; not yet sent for review or approved. No App content declarations need attention.
+
+- [x] App access: no login or restricted area.
+- [x] Ads: no ads.
+- [x] Advertising ID: no; current release merged manifest has no AD_ID permission.
+- [x] Data Safety: limited ML Kit diagnostics, app interactions and installation identifiers; exact saved answers in `DATA_SAFETY_DRAFT.md`.
+- [x] Health Apps: Medication and Treatment Management; no medical-device intention.
+- [x] Content rating questionnaire completed and actioned.
+- [x] Financial features and government-app declarations actioned.
+- [x] Target audience: adults; no child age groups.
 - [ ] Category and tags: start with Lifestyle while completing the Health Apps declaration accurately; reassess after testing.
-- [ ] Provide a support email and, if available, a support website.
+- [x] Support email: andyjmyers@gmail.com, saved and published.
 
 ## Store listing
 
@@ -46,3 +50,5 @@
 ## Personal developer account consideration
 
 If the Google Play developer account is a personal account created after 13 November 2023, check the current closed-testing requirements before applying for production access.
+
+Nota Bene's dashboard currently requires 12 opted-in closed testers for 14 continuous days. See `CLOSED_TESTING_PLAN.md` for the verified 32 Visualisations temporary zero-price sale approach. Do not permanently convert Nota Bene to Free.

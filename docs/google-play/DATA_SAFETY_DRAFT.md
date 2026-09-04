@@ -1,24 +1,28 @@
 # Google Play Data Safety draft
 
-Status: Alpha 36 release-readiness draft, reviewed 4 September 2026. These are proposed Play Console answers, not a substitute for checking the final signed App Bundle and live Console wording immediately before submission.
+Status: Answers saved in Play Console on 5 September 2026 for the current Alpha 38 app. All ten App content declarations are actioned. Saved changes have not been sent for review. Recheck these answers whenever dependencies or data handling change.
 
 ## Preliminary answers
 
 | Play Console question | Draft answer | Basis |
 | --- | --- | --- |
 | Does the app collect any required user-data types? | **Yes — limited ML Kit diagnostics and usage telemetry only** | Bundled Google ML Kit may transmit device and app information, performance metrics, a per-installation identifier, feature/configuration and event/error metadata. User-entered Nota Bene records, receipt images and recognised receipt text are not transmitted by ML Kit. |
-| Does the app share user data? | **No, provisionally** | Nota Bene has no developer backend, advertising or analytics service. Google documents ML Kit’s diagnostic data as not shared with third parties. Confirm the final Console treatment of Google acting as the SDK service provider. |
+| Does the app share user data? | **No** | No developer backend or advertising; Google's ML Kit disclosure says its diagnostic data is not transferred to third parties. User-directed exports are distinct from SDK telemetry. |
 | Is collected data encrypted in transit? | **Yes** | Google documents ML Kit data as encrypted in transit. Nota Bene itself does not transmit its records. |
-| Can users request deletion? | **Yes, without an account request** | There is no account or developer-held record store. **Erase all local data**, Android clear-storage and uninstall provide device-side deletion. ML Kit diagnostic retention is governed by Google. |
+| Can users request deletion of collected data? | **No** | Do not promise deletion of Google's remotely collected SDK diagnostics. **Erase all local data**, Android clear-storage and uninstall still provide device-side deletion of the user's records; that is not a remote diagnostic-deletion service. No automatic 90-day deletion claim is made. |
 | Does the app provide accounts? | **No** | No registration, login or developer backend. |
 
 ## Data types to declare for ML Kit
 
-Map Google’s final ML Kit SDK disclosure onto the current Play Console choices. The likely declarations are:
+The saved live form contains these three types:
 
-- **App info and performance** — package/version information, performance metrics, feature configuration, input/output-size metadata, feature events and error codes; collected for diagnostics and usage analytics;
-- **Device or other identifiers** — per-installation identifier, not intended to uniquely identify a user or physical device; collected for diagnostics and usage analytics; and
-- **Device information** — manufacturer, model, OS/build and available ML hardware accelerators; collected for diagnostics and usage analytics, where the live form places it.
+- **App info and performance > Diagnostics** — performance, device/app technical information, configuration, size and error metadata.
+- **App activity > App interactions** — SDK feature usage/event telemetry, not note contents or a developer-operated activity tracker.
+- **Device or other IDs** — the bundled SDK's per-installation identifier.
+
+All three are marked collected (not shared), non-ephemeral, required (no verified telemetry opt-out), and used for Analytics. No advertising purpose, crash-log collection, location, health records or receipt contents is declared. Technical device metadata is covered by Diagnostics; there is no separate Device information category in this form.
+
+Evidence: bundled `com.google.mlkit:text-recognition:16.0.1`, current release merged manifest (no Advertising ID permission), [ML Kit disclosure](https://developers.google.com/ml-kit/android-data-disclosure), and [Play data definitions](https://support.google.com/googleplay/android-developer/answer/10787469?hl=en-GB), checked 5 September 2026.
 
 These data are encrypted in transit by ML Kit, are not used for advertising or marketing and are not the user’s Nota Bene records. ML Kit’s published disclosure says this data is not transferred to third parties. Do not submit a blanket **No data collected** answer while this dependency is present.
 
@@ -38,7 +42,7 @@ The developer has no Nota Bene account or server and cannot access these records
 
 ### Speech recognition
 
-Nota Bene launches Android’s `RecognizerIntent`. The installed speech-recognition service may process audio remotely under its provider’s settings and privacy policy. Nota Bene receives the returned text and retains only text the user accepts; it does not retain audio. Confirm whether the final Play form requires additional disclosure for this user-initiated system service.
+Nota Bene launches Android’s `RecognizerIntent`. The external speech-recognition activity collects audio directly under its provider's settings and privacy policy. Nota Bene receives returned text and retains only text the user accepts; it neither accesses nor transmits audio. The declaration does not count that external activity as an embedded audio-collection SDK. Reassess if speech is moved into the app or any recording/upload path is added.
 
 ### Receipt selection and OCR
 
