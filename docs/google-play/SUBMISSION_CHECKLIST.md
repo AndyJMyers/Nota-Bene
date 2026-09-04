@@ -34,8 +34,8 @@
 
 ## Release engineering
 
-- [ ] Build and upload a signed Android App Bundle (`.aab`), not the development APK. Alpha 36 release bundle inspection confirms the current local `.aab` is unsigned.
-- [ ] Enrol in or configure Play App Signing.
+- [x] Build and inspect a signed Android App Bundle (`.aab`), not the development APK. Alpha 36's signed bundle is at `app/build/outputs/bundle/release/app-release.aab`; its SHA-256 is `A8516A22F0D68B6F10D747AFA03D0C2596CDF0D43B9B1E23240612C3075DD119`.
+- [ ] Enrol in Play App Signing and upload a current signed `.aab` to the selected testing track.
 - [ ] Ensure the application ID and signing key are final before production.
 - [ ] Run lint, unit/instrumentation tests and a clean-install/upgrade test on supported Android versions.
 - [x] Alpha 36 targets Android 16 / API 36, meeting the current new-app Play requirement as at 4 September 2026. Reconfirm against Play Console on upload.

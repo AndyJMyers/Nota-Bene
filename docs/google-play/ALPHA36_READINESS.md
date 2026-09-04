@@ -16,11 +16,11 @@ This is an engineering and publication readiness record, not legal advice. It re
 - The `*` Settings sheet contains privacy, export, speech, receipt, reminder, deletion and medical-limit notices.
 - The focused JVM suite, debug APK and Android-test APK compile successfully.
 - `lint` passes after the Alpha 36 review fixed one misleading MEDS-card indentation issue.
-- A release `.aab` was built and its merged manifest inspected. It is intentionally unsigned and therefore not uploadable until the final upload-key/Play App Signing work is done.
+- A signed release `.aab` was built and inspected at `app/build/outputs/bundle/release/app-release.aab`. Its SHA-256 is `A8516A22F0D68B6F10D747AFA03D0C2596CDF0D43B9B1E23240612C3075DD119`; it is signed by the dedicated 4096-bit RSA upload certificate whose SHA-256 fingerprint is `18:EE:1F:44:26:35:31:84:E2:BD:4B:19:E4:DA:34:66:7F:9F:52:7D:98:D1:06:89:9E:C0:C8:0F:4E:73:BE:49`.
 
 ## What requires a final decision or action
 
-1. **Final signed bundle.** Create or select the final upload key, configure Play App Signing, build a signed `.aab`, then inspect that exact artefact and its merged manifest. The locally generated Alpha 36 bundle is not signed and must not be uploaded.
+1. **Play App Signing upload.** In Play Console, enrol in Play App Signing and upload a current signed `.aab` to the selected test track. Preserve an encrypted offline backup of the local upload-key material; it signs later uploads, even though Google retains the app-signing key.
 2. **Console declarations.** Complete App access, ads, Data Safety, Health Apps, content rating, target audience, category and support-contact questions using the accompanying drafts and the live wording.
 3. **Release evidence.** Test a Play-delivered build on real phones: rotation/scrolling, input drafts, receipt OCR, speech recognition, local persistence, repeat MEDS logging, reorder state, notification privacy, delayed/suppressed reminders, export and full erasure.
 4. **Listing assets.** Produce the Play icon, feature graphic and screenshots with entirely fictitious payment and medical records. Keep the release copy and the actual app in agreement.
@@ -37,4 +37,4 @@ Select the Health Apps declaration accurately. Nota Bene is a local lifestyle re
 
 ## Current blocker summary
 
-The public privacy contact and hosted policy are complete: the app links to https://andyjmyers.github.io/Nota-Bene/privacy/ and the policy is published from the repository's `main` / `docs` GitHub Pages source. There is no remaining source-level policy blocker identified by this pass. Production is blocked only by the deliberate release work: final signed bundle/Play App Signing, Console declarations, release-assets/screenshots and real-device Play-track testing.
+The public privacy contact and hosted policy are complete: the app links to https://andyjmyers.github.io/Nota-Bene/privacy/ and the policy is published from the repository's `main` / `docs` GitHub Pages source. The dedicated upload key and a signed Alpha 36 bundle are ready. There is no remaining source-level policy blocker identified by this pass. Production is blocked only by Play App Signing/test-track upload, Console declarations, release-assets/screenshots and real-device Play-track testing.
