@@ -1,6 +1,8 @@
 # Nota Bene — Google Play listing draft
 
-Status: working draft aligned with Alpha 36. Copy must be checked against the final release candidate before submission.
+Status: listing copy aligned with Alpha 38, updated 5 September 2026. Check against the final release candidate before submission.
+
+Console status: full and short descriptions, existing icon, new feature graphic and eight screenshots saved on 5 September 2026. Console confirmed: “Change saved. Send for review in Publishing overview.” AI artwork labels applied to all ten visual assets, including actual screenshots containing generated theme artwork. Not sent for review. Public support email still requires saving; the attempted entry was blocked by the tool's confirmation safeguard.
 
 ## Product details
 
@@ -10,7 +12,7 @@ Nota Bene
 
 **Short description** (80 characters maximum)
 
-A calm, stylish personal log for payments, medicines, tasks and health.
+A personal log with character. Spending, medicines, health, tasks and questions.
 
 **Suggested category**
 
@@ -32,32 +34,35 @@ SOMA records symptoms, blood-pressure readings and other health observations in 
 
 TASK provides a lightweight checklist with optional “waiting on” dependencies. ASK keeps questions and research prompts, with completion tracking and the option to hide finished items.
 
-Your records are stored locally on your device and Android backup is disabled. Nota Bene has no developer-operated account, advertising or behavioural analytics service. The `*` settings control provides a dated Excel workbook containing SPEND, MEDS, SOMA, TASK and ASK worksheets through Android’s standard save picker. Records leave the app only when you explicitly export them. Bundled receipt recognition may send Google limited technical diagnostics, but not receipt images, recognised text or your Nota Bene records.
+Your records are stored locally on your device and Android backup is disabled. Nota Bene has no developer-operated account, advertising or behavioural analytics service. Under the * settings control, export all five areas to an Excel workbook or import an unedited Nota Bene export. Import adds records without replacing existing entries; importing the same file again can create duplicates. Keep your exports somewhere safe: losing the phone or uninstalling the app can mean losing local records.
 
-The interface is designed to be clear without being clinical. Large illuminated controls, a four-colour mood slider and restrained animated backgrounds give Nota Bene a distinctive retro-futurist character. Useful software need not be ugly.
+Nota Bene does not upload your record database. Exports go to the location you choose through Android's save picker. Optional speech input uses your phone's speech service, which may process audio under its provider's settings and privacy policy; Nota Bene does not retain audio. Bundled receipt recognition may send Google limited technical diagnostics, but not receipt images, recognised text or your Nota Bene records.
+
+The interface is designed to be clear without being clinical. Cycle between seven visual moods: Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris. Large illuminated controls, a colour slider and animated sky, snow, oil and waves let you make it your own. Useful software need not be ugly.
 
 Nota Bene is a personal recording and organisation tool, not a medical device. It does not diagnose, treat, cure or prevent any medical condition, calculate doses or recommend treatment. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.
 
 ## Suggested screenshot sequence
 
-Use current, unaltered in-app screens with realistic fictitious data. Remove personal notifications and identifying status-bar details.
+The creator selected his own real entries and approved the unedited phone captures for GitHub and Play. See screenshots/README.md for the eight selected assets and three alternatives. No record content was changed for capture.
 
 1. SPEND — manual entry and recent payment history.
 2. MEDS — an active medicine showing dose time, stock and reorder state.
-3. MEDS — explicit “taken at” entry and dose history.
-4. SOMA — an observation with an optional blood-pressure measurement.
-5. TASK — open/completed tasks and a “waiting on” dependency.
-6. ASK — spoken-or-typed research questions.
-7. Export — Android save picker with the dated XLSX filename.
-8. Interface — one atmospheric background and the mood control.
+3. SOMA — recorded observations.
+4. TASK — existing tasks.
+5. ASK — research questions, Art Nouveau.
+6. ASK — Steampunk.
+7. ASK — William Morris.
+8. ASK — Cosmic Funk.
 
 Recommended caption language: factual and brief, such as “Record the dose you actually took” or “Five useful records, one calm interface.”
 
-## Graphic assets still required
+## Graphic assets
 
-- Play Store icon: 512 × 512 px, 32-bit PNG with alpha, no store badges or promotional text.
-- Feature graphic: 1024 × 500 px, JPEG or 24-bit PNG without alpha.
-- At least two phone screenshots; four or more portrait screenshots at 1080 × 1920 px are preferable.
-- Alt text of no more than 140 characters for each uploaded graphic.
+- Icon: ../assets/nb-fountain-icon-512.png — existing 512 × 512 PNG.
+- Feature graphic: ../assets/nota-bene-feature-1024x500.png — opaque 24-bit PNG.
+- Screenshots: screenshots/ — eleven original 1080 × 2400 PNGs; eight selected for Play.
+- Suggested icon alt text: Gold N.B. lettering and a fountain pen on black leather.
+- Suggested feature alt text: Nota Bene. Note well. A black-and-gold mechanical cat writes in a notebook.
 
 The public listing must remain suitable for a general audience. The internal thought behind the product can be cheeky; the public proposition is that ageing does not cancel taste, agency or an appreciation of good design.

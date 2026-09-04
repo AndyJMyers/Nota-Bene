@@ -19,4 +19,4 @@ Play Console permits eight phone screenshots. Ecclesiastic, Orbital Deco and Ret
 
 All eight selected assets were uploaded and attached to the default English (United Kingdom) listing on 4 September 2026. Console confirmed “Your changes have been saved” after Save as draft. Nothing was submitted for production review.
 
-The batch uploader arranged the draft as SOMA, MEDS, SPEND, TASK, Cosmic Funk, Art Nouveau, Steampunk, William Morris. The numbered list above is the proposed editorial sequence, not the current Console order. Final ordering, listing text, icon and feature graphic remain to be completed before submission.
+The batch uploader arranged the draft as SOMA, MEDS, SPEND, TASK, Cosmic Funk, Art Nouveau, Steampunk, William Morris. The numbered list above is the proposed editorial sequence, not the current Console order. On 5 September, the listing text, icon and feature graphic were completed and saved ready for later review, with AI artwork declarations. Nothing was sent for review. Final ordering can be revisited before submission.
