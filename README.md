@@ -13,7 +13,9 @@
 [![Status](https://img.shields.io/badge/status-Alpha_26-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the current Android development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
+[**Download the archived Alpha 26 development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
+
+The link above is an older GitHub release, not the latest internal-testing build. From Alpha 39, Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist with the release app and have separate local records; do not uninstall them to resolve a version mismatch without exporting their data first.
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 

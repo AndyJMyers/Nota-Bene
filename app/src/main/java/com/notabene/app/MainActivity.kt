@@ -600,7 +600,15 @@ private fun SettingsDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surfaceVariant,
         title = {
-            Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text(
+                    "${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE} · " +
+                        if (BuildConfig.DEBUG) "Development" else "Release",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+            }
         },
         text = {
             Column(

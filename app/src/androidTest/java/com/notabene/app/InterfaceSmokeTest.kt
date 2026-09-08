@@ -51,7 +51,9 @@ class InterfaceSmokeTest {
     fun settingsKeepsAdministrativeControlsOneLevelDown() {
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("SETTINGS").assertIsDisplayed()
-        compose.onNodeWithText("EXPORT XLSX").assertIsDisplayed()
+        compose.onNodeWithText("${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE} · Development").assertIsDisplayed()
+        compose.onNodeWithText("EXPORT XLSX").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("IMPORT XLSX").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("PRIVACY & SAFETY").performScrollTo().assertIsDisplayed()
     }
 
