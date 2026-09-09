@@ -990,7 +990,8 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     var hideCompleted by rememberSaveable(collection.id) { mutableStateOf(false) }
     var captureStatus by rememberSaveable(collection.id) { mutableStateOf("") }
     var readingImage by remember { mutableStateOf(false) }
-    val shown = if (hideCompleted) entries.filterNot { it.done } else entries
+    var entryToEdit by remember { mutableStateOf<CollectionEntry?>(null) }
+    val shown = if (hideCompleted && kind != CollectionKind.REPEAT) entries.filterNot { it.done } else entries
 
     fun absorbCapture(captured: String, source: String) {
         val clean = captured.trim()
@@ -1145,7 +1146,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                 ) { Text("KEEP ITEM", fontWeight = FontWeight.Black) }
             }
         }
-        if (kind == CollectionKind.TODO || kind == CollectionKind.REPEAT) {
+        if (kind == CollectionKind.TODO) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("${shown.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { hideCompleted = !hideCompleted }) { Text(if (hideCompleted) "SHOW DONE" else "HIDE DONE", color = accent, fontSize = 10.sp) }
@@ -1157,14 +1158,34 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
         shown.forEach { entry ->
             CollectionEntryRow(entry, kind, accent,
                 onDone = { done -> scope.launch {
-                    dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null)
-                    if (done && kind == CollectionKind.REPEAT) RepeatReminderScheduler.cancelNotification(context, entry.id)
+                    if (kind == CollectionKind.REPEAT && done) {
+                        dao.recordRepeatEvent(entry.id, System.currentTimeMillis())
+                        RepeatReminderScheduler.cancelNotification(context, entry.id)
+                    } else {
+                        dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null)
+                    }
                 } },
                 onQuantity = { value -> scope.launch { dao.setQuantity(entry.id, value) } },
                 onDelete = { scope.launch {
-                    dao.deleteEntry(entry.id)
+                    dao.deleteEntryAndEvents(entry.id)
                     if (kind == CollectionKind.REPEAT) RepeatReminderScheduler.cancelNotification(context, entry.id)
-                } }
+                } },
+                onEdit = { entryToEdit = entry }
+            )
+        }
+        entryToEdit?.let { entry ->
+            EditEntryDialog(
+                entry = entry,
+                kind = kind,
+                accent = accent,
+                onDismiss = { entryToEdit = null },
+                onSave = { updated ->
+                    scope.launch {
+                        dao.updateEntry(updated)
+                        if (updated.notifyWhenDue) RepeatReminderScheduler.prepare(context)
+                        entryToEdit = null
+                    }
+                }
             )
         }
         Spacer(Modifier.height(20.dp))
@@ -1172,23 +1193,33 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun CollectionEntryRow(
     entry: CollectionEntry,
     kind: CollectionKind,
     accent: Color,
     onDone: (Boolean) -> Unit,
     onQuantity: (Int?) -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit
 ) {
     var showHistory by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
+    val events by dao.observeRepeatEvents(entry.id).collectAsState(initial = emptyList())
     NotaCard(Modifier.fillMaxWidth(), compact = true) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
             if (kind == CollectionKind.TODO || kind == CollectionKind.REPEAT) {
-                Checkbox(checked = entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
+                Checkbox(checked = if (kind == CollectionKind.REPEAT) false else entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(6.dp))
             }
-            Column(Modifier.weight(1f).clickable { showHistory = !showHistory }) {
-                Text(entry.text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, textDecoration = if (entry.done) TextDecoration.LineThrough else null)
+            Column(
+                Modifier.weight(1f).combinedClickable(
+                    onClick = { showHistory = !showHistory },
+                    onLongClick = onEdit
+                )
+            ) {
+                Text(entry.text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, textDecoration = if (kind != CollectionKind.REPEAT && entry.done) TextDecoration.LineThrough else null)
                 if (entry.detail.isNotBlank()) Text(entry.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 if (kind == CollectionKind.REPEAT) {
                     val next = entry.lastCompletedAt?.let { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it + entry.intervalDays.coerceAtLeast(1) * 86_400_000L)) }
@@ -1204,7 +1235,18 @@ private fun CollectionEntryRow(
                         fontSize = 11.sp
                     )
                 }
-                if (showHistory) Text("Created ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.createdAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                if (showHistory) {
+                    Text("Created ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.createdAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                    if (kind == CollectionKind.REPEAT) {
+                        if (events.isEmpty()) {
+                            Text("No completion events logged yet", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                        } else {
+                            events.forEach { event ->
+                                Text("Logged ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(event.occurredAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                            }
+                        }
+                    }
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
                 if (kind == CollectionKind.REPEAT && entry.quantity != null) {
@@ -1214,6 +1256,76 @@ private fun CollectionEntryRow(
             }
         }
     }
+}
+
+@Composable
+private fun EditEntryDialog(
+    entry: CollectionEntry,
+    kind: CollectionKind,
+    accent: Color,
+    onDismiss: () -> Unit,
+    onSave: (CollectionEntry) -> Unit
+) {
+    var text by remember(entry.id) { mutableStateOf(entry.text) }
+    var detail by remember(entry.id) { mutableStateOf(entry.detail) }
+    var repeatDays by remember(entry.id) { mutableStateOf(entry.intervalDays.coerceAtLeast(1)) }
+    var quantity by remember(entry.id) { mutableStateOf(entry.quantity?.toString().orEmpty()) }
+    var restockAt by remember(entry.id) { mutableStateOf(entry.restockAt?.toString().orEmpty()) }
+    var notifyWhenDue by remember(entry.id) { mutableStateOf(entry.notifyWhenDue) }
+    var notifyAt by remember(entry.id) { mutableStateOf(entry.notifyAt) }
+    val validTime = !notifyWhenDue || runCatching { LocalTime.parse(notifyAt) }.isSuccess
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = { Text("EDIT ${kind.label} ITEM", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PaymentField("Item", text, { text = it }, Modifier.fillMaxWidth(), accent)
+                PaymentField("Detail (optional)", detail, { detail = it }, Modifier.fillMaxWidth(), accent)
+                if (kind == CollectionKind.REPEAT) {
+                    Text("REPEAT", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        listOf(1 to "DAY", 7 to "WEEK", 30 to "MONTH", 365 to "YEAR").forEach { (days, label) ->
+                            Row(Modifier.weight(1f).clickable { repeatDays = days }, verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(selected = repeatDays == days, onClick = { repeatDays = days }, modifier = Modifier.size(24.dp))
+                                Text(label, color = accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    PaymentField("On hand (optional)", quantity, { quantity = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
+                    PaymentField("Restock at (optional)", restockAt, { restockAt = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
+                    Row(Modifier.fillMaxWidth().clickable { notifyWhenDue = !notifyWhenDue }, verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = notifyWhenDue, onCheckedChange = { notifyWhenDue = it })
+                        Text("NOTIFY WHEN DUE", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    if (notifyWhenDue) {
+                        PaymentField("Notify at (24-hour HH:MM)", notifyAt, { notifyAt = it.take(5) }, Modifier.fillMaxWidth(), accent)
+                        if (!validTime) Text("Use a time such as 09:00 or 17:30", color = Crimson, fontSize = 11.sp)
+                    }
+                    Text("Tap to show the completion log. Long-press any item to edit it.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onSave(
+                        entry.copy(
+                            text = text.trim(),
+                            detail = detail.trim(),
+                            intervalDays = if (kind == CollectionKind.REPEAT) repeatDays else entry.intervalDays,
+                            quantity = if (kind == CollectionKind.REPEAT) quantity.toIntOrNull() else entry.quantity,
+                            restockAt = if (kind == CollectionKind.REPEAT) restockAt.toIntOrNull() else entry.restockAt,
+                            notifyWhenDue = kind == CollectionKind.REPEAT && notifyWhenDue,
+                            notifyAt = notifyAt.ifBlank { "09:00" }
+                        )
+                    )
+                },
+                enabled = text.isNotBlank() && validTime
+            ) { Text("SAVE", color = accent) }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL") } }
+    )
 }
 
 private fun repeatIntervalLabel(days: Int): String = when (days) {

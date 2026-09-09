@@ -11,6 +11,7 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Transaction
+import androidx.room.Update
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
@@ -154,6 +155,13 @@ data class CollectionEntry(
     val createdAt: Long = System.currentTimeMillis()
 )
 
+@Entity(tableName = "repeat_events", indices = [Index(value = ["entryId", "occurredAt"])])
+data class RepeatEvent(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val entryId: Long,
+    val occurredAt: Long = System.currentTimeMillis()
+)
+
 @Dao
 interface CollectionDao {
     @Query("SELECT * FROM collections ORDER BY createdAt ASC")
@@ -174,8 +182,12 @@ interface CollectionDao {
     @Query("DELETE FROM collection_entries WHERE collectionId = :collectionId")
     suspend fun deleteEntriesForCollection(collectionId: Long)
 
+    @Query("DELETE FROM repeat_events WHERE entryId IN (SELECT id FROM collection_entries WHERE collectionId = :collectionId)")
+    suspend fun deleteRepeatEventsForCollection(collectionId: Long)
+
     @Transaction
     suspend fun deleteCollectionAndEntries(id: Long) {
+        deleteRepeatEventsForCollection(id)
         deleteEntriesForCollection(id)
         deleteCollection(id)
     }
@@ -186,14 +198,38 @@ interface CollectionDao {
     @Insert
     suspend fun insertEntry(entry: CollectionEntry)
 
+    @Update
+    suspend fun updateEntry(entry: CollectionEntry)
+
     @Query("UPDATE collection_entries SET done = :done, lastCompletedAt = :completedAt WHERE id = :id")
     suspend fun setDone(id: Long, done: Boolean, completedAt: Long?)
 
     @Query("UPDATE collection_entries SET quantity = :quantity WHERE id = :id")
     suspend fun setQuantity(id: Long, quantity: Int?)
 
+    @Insert
+    suspend fun insertRepeatEvent(event: RepeatEvent)
+
+    @Query("SELECT * FROM repeat_events WHERE entryId = :entryId ORDER BY occurredAt DESC")
+    fun observeRepeatEvents(entryId: Long): Flow<List<RepeatEvent>>
+
+    @Query("DELETE FROM repeat_events WHERE entryId = :entryId")
+    suspend fun deleteRepeatEvents(entryId: Long)
+
+    @Transaction
+    suspend fun recordRepeatEvent(entryId: Long, occurredAt: Long) {
+        insertRepeatEvent(RepeatEvent(entryId = entryId, occurredAt = occurredAt))
+        setDone(entryId, false, occurredAt)
+    }
+
     @Query("DELETE FROM collection_entries WHERE id = :id")
     suspend fun deleteEntry(id: Long)
+
+    @Transaction
+    suspend fun deleteEntryAndEvents(id: Long) {
+        deleteRepeatEvents(id)
+        deleteEntry(id)
+    }
 }
 
 @Dao
@@ -217,7 +253,7 @@ interface MedicationDao {
     suspend fun setStartingDoses(id: Long, startingDoses: Int)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class], version = 8, exportSchema = false)
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class, RepeatEvent::class], version = 9, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
@@ -234,7 +270,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -297,6 +333,15 @@ abstract class NotaBeneDatabase : RoomDatabase() {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `collection_entries` ADD COLUMN `notifyWhenDue` INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE `collection_entries` ADD COLUMN `notifyAt` TEXT NOT NULL DEFAULT '09:00'")
+            }
+        }
+
+        internal val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `repeat_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entryId` INTEGER NOT NULL, `occurredAt` INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_repeat_events_entryId_occurredAt` ON `repeat_events` (`entryId`, `occurredAt`)")
             }
         }
     }

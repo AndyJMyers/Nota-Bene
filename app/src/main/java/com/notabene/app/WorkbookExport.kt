@@ -24,16 +24,25 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
     val collections = dao.observeCollections().first()
     val sheets = collections.map { collection ->
         val entries = dao.observeEntries(collection.id).first()
+        val rows = entries.flatMap { entry ->
+            listOf(
+                listOf(
+                    exportDate(entry.createdAt), entry.text, entry.detail, collection.kind, yesNo(entry.done),
+                    entry.lastCompletedAt?.let(::exportDate).orEmpty(), entry.intervalDays, entry.quantity ?: "", entry.restockAt ?: "",
+                    yesNo(entry.notifyWhenDue), entry.notifyAt
+                )
+            ) + if (collection.kind == CollectionKind.REPEAT.name) {
+                dao.observeRepeatEvents(entry.id).first().map { event ->
+                    listOf(
+                        exportDate(event.occurredAt), entry.text, "Completion recorded", "REPEAT EVENT", "", "", "", "", "", "", ""
+                    )
+                }
+            } else emptyList()
+        }
         ExportSheet(
             safeSheetName(collection.title),
             listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at")) +
-                entries.map {
-                    listOf(
-                        exportDate(it.createdAt), it.text, it.detail, collection.kind, yesNo(it.done),
-                        it.lastCompletedAt?.let(::exportDate).orEmpty(), it.intervalDays, it.quantity ?: "", it.restockAt ?: "",
-                        yesNo(it.notifyWhenDue), it.notifyAt
-                    )
-                }
+                rows
         )
     }.ifEmpty { listOf(ExportSheet("TODO", listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at")))) }
     writeSheets(sheets, output)
