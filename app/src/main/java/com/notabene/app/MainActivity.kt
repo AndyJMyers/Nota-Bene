@@ -618,7 +618,7 @@ private fun SettingsDialog(
     var confirmErase by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
@@ -754,7 +754,7 @@ private fun NewCollectionDialog(
     var kind by remember { mutableStateOf(CollectionKind.LOG) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = { Text("NEW COLLECTION", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -793,7 +793,7 @@ private fun EditCollectionDialog(
     var confirmingDelete by remember(collection.id) { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Text(
                 if (confirmingDelete) "DELETE COLLECTION?" else "EDIT COLLECTION",
