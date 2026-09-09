@@ -13,16 +13,14 @@
 [![Status](https://img.shields.io/badge/status-Alpha_26-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
-[**Download the archived Alpha 26 development build**](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
-
-The link above is an older GitHub release, not the latest internal-testing build. From Alpha 39, Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist with the release app and have separate local records; do not uninstall them to resolve a version mismatch without exporting their data first.
+Development builds are released periodically while the configurable collection model is tested on real phones. Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist and have separate local records; export before removing an installation.
 
 > **Enter it. Keep it. Show it back. Remind me when necessary. Export it when asked.**
 
 </div>
 
 <p align="center">
-  <img src="docs/assets/nota-bene-rich-icon-1200.png" alt="Bastet recording a characteristically varied day in Nota Bene" width="720" />
+  <img src="docs/assets/nota-bene-collections-hero-v2.png" alt="Nota Bene as a celestial black-and-gold cabinet for personal collections" width="720" />
 </p>
 
 Nota Bene is being built first and foremost as a personal utility: fast to use, locally persistent, deliberately simple, and designed around information that is easy to forget but useful to have recorded.
@@ -54,7 +52,7 @@ The `*` settings control contains the export action. It opens Android's standard
 
 The complete interface can be cycled through seven persistent visual treatments using the prominent `MOOD >` control: Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris. Each treatment has its own palette, type character, instrument contours, panel ornament and atmospheric backdrop while preserving the same controls and workflows. Changing style never changes the layout, behaviour or stored records. The newly selected style name glows briefly into view and then fades away.
 
-Art Nouveau is the first fully realised artwork treatment: a transparent, hand-finished ginkgo-and-whiplash frame surrounds dark peacock enamel controls and warm ivory working panels. The remaining treatments are being completed to the same standard one at a time.
+Art Nouveau surrounds dark peacock enamel controls and warm ivory working panels with a hand-finished ginkgo-and-whiplash frame.
 
 William Morris is the second completed artwork treatment and deliberately uses the full force of the late textiles: a dense indigo field, large winding foliage, madder flowers, strawberries, thrushes and concealed medieval beasts surround warm book-paper work panels. The pattern remains atmospheric and never carries operational text.
 
@@ -68,11 +66,11 @@ Steampunk is the sixth completed artwork treatment: oil-black iron, aged brass, 
 
 Retro Futurist is the seventh completed artwork treatment and Nota Bene's home ground: smoked-violet instrument glass, brushed gunmetal, deep blue and quinacridone-crimson stained light, plus glowing amber filaments turn the original industrial-radio idea into a finished machine.
 
-Nota Bene uses the same interface language throughout. Its tabs are large industrial radio-style controls presented on a single line:
+Nota Bene uses the same interface language throughout. Its user-created collection tabs are large industrial radio-style controls presented on one scrolling line:
 
 <div align="center">
 
-`SPEND` · `MEDS` · `SOMA` · `TASK` · `ASK`
+`TODO` · `RECORDS` · `REPEATS` · `PROJECTS` · `+`
 
 </div>
 
@@ -91,45 +89,28 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Alpha 26 (`v0.9.0-alpha26`)** provides:
+**Generic collections development build** provides:
 
 - a native Kotlin and Jetpack Compose application;
-- the consistent five-tab shell and instrument-panel visual language;
+- a configurable collection shell and instrument-panel visual language;
 - the continuous four-colour mood control and four animated backgrounds;
 - local persistence through Room;
-- a five-sheet XLSX export through Android's save picker;
+- a collection-based XLSX export through Android's save picker;
 - tap-away keyboard dismissal throughout the app;
-- expandable medicine dose histories;
-- repeat same-day MEDS logging with a discreet user-referenced consumption indicator;
 - the new N.B. fountain-pen identity in the launcher, app header and project page;
 - reliable sensor-driven rotation with system-bar-safe content;
 - continuous vertical scrolling through every instrument panel;
-- persistent, user-switchable local MEDS reminders across app closure and phone restart; and
-- private-detail MEDS notifications with a generic locked-screen message;
 - disabled cloud and device-transfer backup;
-- complete local erasure of records and reminder state; and
-- one compact `*` settings sheet for reminders, XLSX export and a plain-English privacy and safety notice.
+- complete local erasure of collections and records; and
+- one compact `*` settings sheet for XLSX import, export and a plain-English privacy notice.
 
-The SPEND circuit supports manual entry, system speech recognition and on-device receipt OCR. Every captured result remains editable before it is stored in a Room database and shown in the payment history after restart.
+Every collection supports typed entry, system speech recognition and image-text capture; captured material remains editable before it is kept. A collection can be used to monitor anything from milk for kittens to a prescription for a problem panda—the app provides neutral tools, not a predefined category or recommendation.
 
-The ASK circuit supports typed or spoken items, persistent open/done state, checkbox completion and hiding completed items.
-
-The TASK circuit provides the same persistent spoken-or-typed checklist, with an optional lightweight “waiting on” dependency for each task.
-
-The SOMA circuit records typed or spoken symptoms and observations, optional measurements and automatic timestamps in a persistent history.
-
-The MEDS circuit records every dose at an explicit taken time, compares the day’s count discreetly with a user-stated usual count, retains the full expandable history, counts remaining stock, signals reorder time and preserves halted histories when dosage changes. It does not prevent or prescribe what the user records.
-
-The current development APK is published as a GitHub pre-release:
-
-- [Download `nota-bene-dev.apk` (Alpha 26)](https://github.com/AndyJMyers/Nota-Bene/releases/download/v0.9.0-alpha26/nota-bene-dev.apk)
-- SHA-256: `08DB2A601BC31BD1E0FA31D17887F83A7B36C04187CDFE72E31FDD7EB9C51FA6`
-
-Near-term work is practical rather than expansive: test receipt extraction, notification privacy, reminder timing and complete erasure on real devices; verify exports in common spreadsheet applications; and complete release-candidate publication details. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
+Near-term work is practical rather than expansive: test image extraction, data migration, complete erasure and exports on real devices; then recapture the store material around the configurable interface. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
 
 ## Testing
 
-Nota Bene has a focused regression suite rather than a large testing framework: **25 fast JVM tests** protect MEDS rules, receipt parsing, reminder decisions and XLSX integrity; **10 opt-in Android tests** protect Room persistence/migration, reminder settings, rotation-safe drafts, complete erasure and essential live interface paths. Ordinary APK assembly does not run or package either suite.
+Nota Bene has a focused regression suite rather than a large testing framework. It is being updated alongside the new collection model; ordinary APK assembly does not run or package either suite.
 
 Run the practical local gate with:
 
@@ -151,17 +132,7 @@ The project targets Android 16 (API 36) and supports Android 8+ (API 26).
 
 ## Google Play preparation
 
-First-draft publication documents are kept in [`docs/google-play`](docs/google-play):
-
-- [store listing copy and asset brief](docs/google-play/STORE_LISTING.md);
-- [privacy policy](docs/google-play/PRIVACY_POLICY.md);
-- [Data Safety answers](docs/google-play/DATA_SAFETY_DRAFT.md);
-- [Health Apps declaration](docs/google-play/HEALTH_DECLARATION_DRAFT.md); and
-- [submission checklist](docs/google-play/SUBMISSION_CHECKLIST.md).
-
-The current data flows, UK GDPR position, reminder limitations and medical-purpose boundary are recorded in the [compliance position](docs/google-play/COMPLIANCE_POSITION.md).
-
-The current engineering/publication state is recorded in the [Alpha 36 Google Play readiness pass](docs/google-play/ALPHA36_READINESS.md). The public [Privacy Policy](https://andyjmyers.github.io/Nota-Bene/privacy/) is hosted as a static GitHub Pages document.
+Publication material will be recreated from the final generic-collections build. The product boundary and local-first data position are in the [generic collections note](docs/google-play/GENERIC_COLLECTIONS_POSITION.md). The public [Privacy Policy](https://andyjmyers.github.io/Nota-Bene/privacy/) is hosted as a static GitHub Pages document.
 
 These remain working drafts until the release candidate and final Play Console review are complete.
 
