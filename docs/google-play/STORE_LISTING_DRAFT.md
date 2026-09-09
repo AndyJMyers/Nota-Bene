@@ -12,7 +12,7 @@ Use this only after the final generic-collections build and final screenshots ar
 
 ## Short description
 
-`A private, offline-first organiser for your own notes, records and repeatable tasks.`
+`Private, offline-first organiser for notes, records and repeatable tasks.`
 
 ## Full description
 
