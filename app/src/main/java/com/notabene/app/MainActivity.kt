@@ -30,6 +30,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -152,7 +153,6 @@ private enum class Effect(val label: String) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        MedicineReminderScheduler.prepare(applicationContext)
         setContent { NotaBeneApp() }
     }
 }
@@ -166,7 +166,9 @@ private fun NotaBeneApp() {
     val scope = rememberCoroutineScope()
     val database = remember { NotaBeneDatabase.get(context) }
     val uiPreferences = remember { context.getSharedPreferences("nota-bene-ui", Activity.MODE_PRIVATE) }
-    var selected by rememberSaveable { mutableStateOf(Tab.PAYMENTS) }
+    val collectionDao = remember { database.collectionDao() }
+    val collections by collectionDao.observeCollections().collectAsState(initial = emptyList())
+    var selectedCollectionId by rememberSaveable { mutableStateOf<Long?>(null) }
     var mood by rememberSaveable { mutableFloatStateOf(.42f) }
     var effect by rememberSaveable { mutableStateOf(Effect.STARS) }
     var appStyle by rememberSaveable {
@@ -175,15 +177,7 @@ private fun NotaBeneApp() {
     var styleChangeCount by rememberSaveable { mutableStateOf(0) }
     var showStyleName by remember { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
-    var remindersEnabled by remember {
-        mutableStateOf(MedicineReminderScheduler.remindersEnabled(context))
-    }
-    var remindersGranted by remember {
-        mutableStateOf(
-            Build.VERSION.SDK_INT < 33 ||
-                context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        )
-    }
+    var showNewCollection by rememberSaveable { mutableStateOf(false) }
     val styleSpec = appStyle.spec
     val accent = lerp(styleSpec.glow, moodColour(mood), .58f)
     LaunchedEffect(styleChangeCount) {
@@ -193,13 +187,15 @@ private fun NotaBeneApp() {
             showStyleName = false
         }
     }
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        remindersGranted = granted
-        if (granted) {
-            MedicineReminderScheduler.setRemindersEnabled(context, true)
-            remindersEnabled = true
+    LaunchedEffect(collections) {
+        if (collections.isEmpty()) {
+            withContext(Dispatchers.IO) {
+                if (collectionDao.count() == 0) {
+                    collectionDao.insertCollection(Collection(title = "TODO", kind = CollectionKind.TODO.name))
+                }
+            }
+        } else if (selectedCollectionId !in collections.map { it.id }) {
+            selectedCollectionId = collections.first().id
         }
     }
     var pendingImport by remember { mutableStateOf<WorkbookSnapshot?>(null) }
@@ -365,27 +361,26 @@ private fun NotaBeneApp() {
                         uiPreferences.edit().putString("style", nextStyle.name).apply()
                         styleChangeCount += 1
                     },
-                    onSettings = {
-                        remindersEnabled = MedicineReminderScheduler.remindersEnabled(context)
-                        remindersGranted = MedicineReminderScheduler.notificationsEnabled(context)
-                        showSettings = true
-                    }
+                    onSettings = { showSettings = true }
                 )
-                InstrumentTabs(selected, accent, appStyle) { selected = it }
+                InstrumentCollections(
+                    collections = collections,
+                    selectedId = selectedCollectionId,
+                    accent = accent,
+                    appStyle = appStyle,
+                    onSelect = { selectedCollectionId = it },
+                    onAdd = { showNewCollection = true }
+                )
+                val selectedCollection = collections.firstOrNull { it.id == selectedCollectionId }
                 AnimatedContent(
-                    targetState = selected,
+                    targetState = selectedCollection?.title ?: "NOTA BENE",
                     transitionSpec = { fadeIn(tween(450)) togetherWith fadeOut(tween(1100)) },
                     label = "tab title"
-                ) { tab ->
-                    Text(tab.title.uppercase(), color = accent, fontSize = 23.sp, fontWeight = FontWeight.Light, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
+                ) { title ->
+                    Text(title.uppercase(), color = accent, fontSize = 23.sp, fontWeight = FontWeight.Light, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
                 }
-                when (selected) {
-                    Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
-                    Tab.MEDICINE -> MedicationPanel(accent, Modifier.weight(1f))
-                    Tab.HEALTH -> BodyPanel(accent, Modifier.weight(1f))
-                    Tab.TASKS -> TaskPanel(accent, Modifier.weight(1f))
-                    Tab.RESEARCH -> AskPanel(accent, Modifier.weight(1f))
-                    else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
+                if (selectedCollection != null) {
+                    CollectionPanel(selectedCollection, accent, Modifier.weight(1f))
                 }
             }
             if (importBusy) {
@@ -424,17 +419,7 @@ private fun NotaBeneApp() {
             if (showSettings) {
                 SettingsDialog(
                     accent = accent,
-                    remindersEnabled = remindersEnabled,
-                    remindersGranted = remindersGranted,
                     onDismiss = { showSettings = false },
-                    onRemindersChanged = { enabled ->
-                        if (enabled && !remindersGranted && Build.VERSION.SDK_INT >= 33) {
-                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        } else {
-                            MedicineReminderScheduler.setRemindersEnabled(context, enabled)
-                            remindersEnabled = enabled
-                        }
-                    },
                     onExport = {
                         showSettings = false
                         exportLauncher.launch("nota-bene-${LocalDate.now()}.xlsx")
@@ -446,9 +431,23 @@ private fun NotaBeneApp() {
                     onErase = {
                         scope.launch {
                             withContext(Dispatchers.IO) { database.clearAllTables() }
-                            MedicineReminderScheduler.eraseReminderData(context)
                             Toast.makeText(context, "All Nota Bene records erased", Toast.LENGTH_LONG).show()
                             showSettings = false
+                        }
+                    }
+                )
+            }
+            if (showNewCollection) {
+                NewCollectionDialog(
+                    accent = accent,
+                    onDismiss = { showNewCollection = false },
+                    onCreate = { title, kind ->
+                        scope.launch {
+                            val id = withContext(Dispatchers.IO) {
+                                collectionDao.insertCollection(Collection(title = title, kind = kind.name))
+                            }
+                            selectedCollectionId = id
+                            showNewCollection = false
                         }
                     }
                 )
@@ -586,10 +585,7 @@ private fun HeaderButton(
 @Composable
 private fun SettingsDialog(
     accent: Color,
-    remindersEnabled: Boolean,
-    remindersGranted: Boolean,
     onDismiss: () -> Unit,
-    onRemindersChanged: (Boolean) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onErase: () -> Unit
@@ -615,33 +611,6 @@ private fun SettingsDialog(
                 Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("MEDS REMINDERS", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                Text(
-                    "Nota Bene checks local schedules after a dose is due and again in the early evening if it is still unrecorded. Android may delay or suppress notifications because of battery, permission or device settings. Reminders are a helpful aid, not a substitute for paying attention to your prescription or medical advice.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            if (remindersEnabled) "APP REMINDERS ON" else "APP REMINDERS OFF",
-                            color = if (remindersEnabled) accent else Color(0xFFC7BDC7),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            if (remindersGranted) "Android notifications permitted" else "Android notification permission is off",
-                            color = Color(0xFFA79DA8),
-                            fontSize = 10.sp
-                        )
-                    }
-                    Switch(
-                        checked = remindersEnabled,
-                        onCheckedChange = onRemindersChanged,
-                        modifier = Modifier.semantics { contentDescription = "MEDS reminder toggle" }
-                    )
-                }
-                HorizontalDivider(color = Color(0xFF4B424D))
                 Text("DATA", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
                     Text("EXPORT XLSX")
@@ -650,7 +619,7 @@ private fun SettingsDialog(
                     Text("IMPORT XLSX")
                 }
                 if (confirmErase) {
-                    Text("Erase every SPEND, MEDS, SOMA, TASK and ASK record on this device? Exported copies are not affected.", color = Color(0xFFE2B5C2), fontSize = 12.sp)
+                    Text("Erase every collection and record on this device? Exported copies are not affected.", color = Color(0xFFE2B5C2), fontSize = 12.sp)
                     Button(
                         onClick = onErase,
                         colors = ButtonDefaults.buttonColors(containerColor = Crimson),
@@ -665,7 +634,7 @@ private fun SettingsDialog(
                 HorizontalDivider(color = Color(0xFF4B424D))
                 Text("PRIVACY & SAFETY", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 Text(
-                    "YOUR RECORDS\nSPEND, MEDS, SOMA, TASK and ASK records stay in Nota Bene's local database. There is no Nota Bene account or server, and the developer cannot see them. Android cloud backup and device-transfer backup are disabled.",
+                    "YOUR RECORDS\nCollections and records stay in Nota Bene's local database. There is no Nota Bene account or server, and the developer cannot see them. Android cloud backup and device-transfer backup are disabled.",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
@@ -675,25 +644,14 @@ private fun SettingsDialog(
                     fontSize = 12.sp
                 )
                 Text(
-                    "RECEIPTS & SPEECH\nReceipt images and recognised text are processed on-device and the image is not retained. Google's bundled ML Kit may send limited app, device, performance and installation diagnostics—not the receipt image or recognised text. Speech is handled by the recognition service installed on your phone; its provider may process audio under its own policy. Nota Bene keeps only text you accept.",
+                    "SPEECH\nSpeech is handled by the recognition service installed on your phone; its provider may process audio under its own policy. Nota Bene keeps only text you accept.",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
                 Text(
-                    "REMINDERS & LOCK SCREEN\nMedicine checks run locally. Notification details are marked private; a generic message is shown until the phone is unlocked, subject to your Android lock-screen settings. Use a device screen lock.",
+                    "DELETION\nErase all local data removes every collection and record in Nota Bene. Previously exported copies must be deleted where you saved them.",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
-                )
-                Text(
-                    "DELETION\nErase all local data removes every record and reminder-state marker in Nota Bene. Previously exported copies must be deleted where you saved them.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Text(
-                    "MEDICAL LIMITS\nNota Bene is a personal recording and organisation tool, not a medical device. The MEDS colour compares your recorded count only with the usual count you entered; it is not a safe-consumption threshold. Nota Bene does not diagnose, treat, cure or prevent any medical condition and does not give dose advice. Do not use it as your only essential reminder. Seek professional advice for medical questions and use emergency services when necessary.",
-                    color = Color(0xFFE0D5DF),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     "PUBLISHER\nDeveloped and published by Andy J Myers. Privacy and support: andyjmyers@gmail.com",
@@ -710,26 +668,102 @@ private fun SettingsDialog(
 }
 
 @Composable
-private fun InstrumentTabs(selected: Tab, accent: Color, appStyle: NotaStyle, onSelect: (Tab) -> Unit) {
+private fun InstrumentCollections(
+    collections: List<Collection>,
+    selectedId: Long?,
+    accent: Color,
+    appStyle: NotaStyle,
+    onSelect: (Long) -> Unit,
+    onAdd: () -> Unit
+) {
     val styleSpec = appStyle.spec
     val shape = RoundedCornerShape(styleSpec.corner.dp)
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Tab.entries.forEach { tab ->
-            val active = tab == selected
+    Row(
+        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        collections.forEach { collection ->
+            val active = collection.id == selectedId
             val glow by animateFloatAsState(if (active) 1f else .14f, tween(420), label = "filament glow")
             Box(
-                Modifier.weight(1f).height(50.dp)
+                Modifier.width(92.dp).height(50.dp)
                     .background(Brush.verticalGradient(listOf(lerp(styleSpec.ink, accent, glow * .55f), styleSpec.surface, styleSpec.ink)), shape)
                     .border(styleSpec.border.dp, lerp(styleSpec.frame, accent, glow), shape)
-                    .clickable { onSelect(tab) },
+                    .clickable { onSelect(collection.id) },
                 contentAlignment = Alignment.Center
             ) {
                 TabArtwork(appStyle, accent, active)
-                Text(tab.shortLabel, color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow), fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.sp)
+                Text(
+                    collection.title.uppercase(),
+                    color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = styleSpec.titleFamily,
+                    letterSpacing = 1.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
             }
         }
+        Box(
+            Modifier.width(50.dp).height(50.dp)
+                .background(styleSpec.surface, shape)
+                .border(styleSpec.border.dp, styleSpec.frame, shape)
+                .clickable(onClick = onAdd),
+            contentAlignment = Alignment.Center
+        ) { Text("+", color = accent, fontSize = 24.sp, fontWeight = FontWeight.Light) }
     }
 }
+
+@Composable
+private fun NewCollectionDialog(
+    accent: Color,
+    onDismiss: () -> Unit,
+    onCreate: (String, CollectionKind) -> Unit
+) {
+    var title by remember { mutableStateOf("") }
+    var kind by remember { mutableStateOf(CollectionKind.LOG) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        title = { Text("NEW COLLECTION", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PaymentField("Name", title, { title = it }, Modifier.fillMaxWidth(), accent)
+                Text("TYPE", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                CollectionKind.entries.forEach { option ->
+                    Row(Modifier.fillMaxWidth().clickable { kind = option }, verticalAlignment = Alignment.CenterVertically) {
+                        RadioButton(selected = kind == option, onClick = { kind = option })
+                        Column {
+                            Text(option.label, fontWeight = FontWeight.Bold)
+                            Text(option.description, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onCreate(title.trim(), kind) }, enabled = title.isNotBlank()) {
+                Text("CREATE", color = accent)
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL") } }
+    )
+}
+
+private val CollectionKind.label: String
+    get() = when (this) {
+        CollectionKind.TODO -> "TODO"
+        CollectionKind.LOG -> "LOG"
+        CollectionKind.REPEAT -> "REPEAT"
+    }
+
+private val CollectionKind.description: String
+    get() = when (this) {
+        CollectionKind.TODO -> "A checklist with optional follow-on detail."
+        CollectionKind.LOG -> "A dated stream of notes and observations."
+        CollectionKind.REPEAT -> "Items you complete again, with optional stock counts."
+    }
 
 @Composable
 private fun TabArtwork(style: NotaStyle, accent: Color, active: Boolean) {
@@ -840,6 +874,132 @@ private fun NotaCard(
 private fun panelAccent(accent: Color): Color = when (LocalNotaStyle.current) {
     NotaStyle.STEAMPUNK, NotaStyle.ECCLESIASTIC, NotaStyle.ORBITAL_DECO, NotaStyle.ART_NOUVEAU, NotaStyle.WILLIAM_MORRIS -> MaterialTheme.colorScheme.secondary
     else -> accent
+}
+
+@Composable
+private fun CollectionPanel(collection: Collection, accent: Color, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
+    val entries by dao.observeEntries(collection.id).collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+    val kind = remember(collection.kind) { runCatching { CollectionKind.valueOf(collection.kind) }.getOrDefault(CollectionKind.LOG) }
+    var text by rememberSaveable(collection.id) { mutableStateOf("") }
+    var detail by rememberSaveable(collection.id) { mutableStateOf("") }
+    var interval by rememberSaveable(collection.id) { mutableStateOf("") }
+    var quantity by rememberSaveable(collection.id) { mutableStateOf("") }
+    var restockAt by rememberSaveable(collection.id) { mutableStateOf("") }
+    var hideCompleted by rememberSaveable(collection.id) { mutableStateOf(false) }
+    val shown = if (hideCompleted) entries.filterNot { it.done } else entries
+
+    Column(
+        modifier.verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        NotaCard(Modifier.fillMaxWidth()) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("NEW ${kind.label} ITEM", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                PaymentField("What do you want to keep?", text, { text = it }, Modifier.fillMaxWidth(), accent, minLines = if (kind == CollectionKind.LOG) 2 else 1)
+                PaymentField(
+                    when (kind) {
+                        CollectionKind.TODO -> "Follow-on detail (optional)"
+                        CollectionKind.LOG -> "Detail (optional)"
+                        CollectionKind.REPEAT -> "Detail (optional)"
+                    },
+                    detail,
+                    { detail = it },
+                    Modifier.fillMaxWidth(),
+                    accent
+                )
+                if (kind == CollectionKind.REPEAT) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PaymentField("Repeat every days", interval, { interval = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
+                        PaymentField("On hand", quantity, { quantity = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
+                    }
+                    PaymentField("Restock at (optional)", restockAt, { restockAt = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
+                }
+                Button(
+                    enabled = text.isNotBlank(),
+                    onClick = {
+                        scope.launch {
+                            dao.insertEntry(
+                                CollectionEntry(
+                                    collectionId = collection.id,
+                                    text = text.trim(),
+                                    detail = detail.trim(),
+                                    intervalDays = interval.toIntOrNull() ?: 0,
+                                    quantity = quantity.toIntOrNull(),
+                                    restockAt = restockAt.toIntOrNull()
+                                )
+                            )
+                            text = ""; detail = ""; interval = ""; quantity = ""; restockAt = ""
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("KEEP ITEM", fontWeight = FontWeight.Black) }
+            }
+        }
+        if (kind != CollectionKind.LOG) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text("${shown.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+                TextButton(onClick = { hideCompleted = !hideCompleted }) { Text(if (hideCompleted) "SHOW DONE" else "HIDE DONE", color = accent, fontSize = 10.sp) }
+            }
+        }
+        if (shown.isEmpty()) {
+            Text("No ${kind.label.lowercase()} items to show", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .55f), modifier = Modifier.padding(12.dp))
+        }
+        shown.forEach { entry ->
+            CollectionEntryRow(entry, kind, accent,
+                onDone = { done -> scope.launch { dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null) } },
+                onQuantity = { value -> scope.launch { dao.setQuantity(entry.id, value) } },
+                onDelete = { scope.launch { dao.deleteEntry(entry.id) } }
+            )
+        }
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun CollectionEntryRow(
+    entry: CollectionEntry,
+    kind: CollectionKind,
+    accent: Color,
+    onDone: (Boolean) -> Unit,
+    onQuantity: (Int?) -> Unit,
+    onDelete: () -> Unit
+) {
+    var showHistory by remember { mutableStateOf(false) }
+    NotaCard(Modifier.fillMaxWidth(), compact = true) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+            if (kind != CollectionKind.LOG) {
+                Checkbox(checked = entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.width(6.dp))
+            }
+            Column(Modifier.weight(1f).clickable { showHistory = !showHistory }) {
+                Text(entry.text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, textDecoration = if (entry.done) TextDecoration.LineThrough else null)
+                if (entry.detail.isNotBlank()) Text(entry.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                if (kind == CollectionKind.REPEAT) {
+                    val next = entry.lastCompletedAt?.let { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it + entry.intervalDays.coerceAtLeast(1) * 86_400_000L)) }
+                    Text(
+                        buildString {
+                            entry.quantity?.let { append("On hand: $it") }
+                            entry.restockAt?.let { append(if (isNotEmpty()) " · " else ""); append("restock at $it") }
+                            next?.let { append(if (isNotEmpty()) " · " else ""); append("next $it") }
+                        }.ifBlank { "Completed when you choose" },
+                        color = if (entry.quantity != null && entry.restockAt != null && entry.quantity <= entry.restockAt) Crimson else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp
+                    )
+                }
+                if (showHistory) Text("Created ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.createdAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                if (kind == CollectionKind.REPEAT && entry.quantity != null) {
+                    TextButton(onClick = { onQuantity((entry.quantity - 1).coerceAtLeast(0)) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("−", color = accent, fontSize = 18.sp) }
+                }
+                TextButton(onClick = onDelete, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("×", color = Crimson, fontSize = 18.sp) }
+            }
+        }
+    }
 }
 
 @Composable

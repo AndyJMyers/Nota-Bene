@@ -20,17 +20,22 @@ internal data class WorkbookSnapshot(
 )
 
 suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
-    writeWorkbook(
-        WorkbookSnapshot(
-            payments = database.paymentDao().observeAll().first(),
-            asks = database.askDao().observeAll().first(),
-            tasks = database.taskDao().observeAll().first(),
-            body = database.bodyDao().observeAll().first(),
-            medicines = database.medicationDao().observeMedications().first(),
-            doses = database.medicationDao().observeDoseLogs().first()
-        ),
-        output
-    )
+    val dao = database.collectionDao()
+    val collections = dao.observeCollections().first()
+    val sheets = collections.map { collection ->
+        val entries = dao.observeEntries(collection.id).first()
+        ExportSheet(
+            safeSheetName(collection.title),
+            listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at")) +
+                entries.map {
+                    listOf(
+                        exportDate(it.createdAt), it.text, it.detail, collection.kind, yesNo(it.done),
+                        it.lastCompletedAt?.let(::exportDate).orEmpty(), it.intervalDays, it.quantity ?: "", it.restockAt ?: ""
+                    )
+                }
+        )
+    }.ifEmpty { listOf(ExportSheet("TODO", listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at")))) }
+    writeSheets(sheets, output)
 }
 
 internal fun writeWorkbook(snapshot: WorkbookSnapshot, output: OutputStream) {
@@ -60,6 +65,10 @@ internal fun writeWorkbook(snapshot: WorkbookSnapshot, output: OutputStream) {
         )
     )
 
+    writeSheets(sheets, output)
+}
+
+private fun writeSheets(sheets: List<ExportSheet>, output: OutputStream) {
     ZipOutputStream(output.buffered()).use { zip ->
         zip.xml("[Content_Types].xml", contentTypes(sheets.size))
         zip.xml("_rels/.rels", rootRelationships)
@@ -71,6 +80,12 @@ internal fun writeWorkbook(snapshot: WorkbookSnapshot, output: OutputStream) {
         }
     }
 }
+
+private fun safeSheetName(title: String): String = title
+    .replace(Regex("[\\\\/:*?\\[\\]]"), " ")
+    .trim()
+    .ifBlank { "COLLECTION" }
+    .take(31)
 
 private val exportDateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 

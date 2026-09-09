@@ -29,43 +29,15 @@ Nota Bene is being built first and foremost as a personal utility: fast to use, 
 
 ## Current scope
 
-| Instrument | Purpose |
+Nota Bene is a small local-first organiser made of user-named collections. It opens with one **TODO** collection; the `+` control adds as many others as are useful.
+
+| Collection type | Purpose |
 | :--- | :--- |
-| **SPEND** | Card payments by receipt, manual entry or voice |
-| **MEDS** | Medicines, daily doses, stock counts and reorder warnings |
-| **SOMA** | Symptoms, blood pressure and other health observations |
-| **TASK** | Lightweight to-dos and simple dependencies |
-| **ASK** | Research questions and completion tracking |
+| **TODO** | A lightweight checklist with completion state and optional follow-on detail |
+| **LOG** | A dated stream of notes, observations and other things worth retaining |
+| **REPEAT** | An item to complete again, with an optional repeat interval, quantity and restock point |
 
-### SPEND
-
-Quickly record card payments using whichever method is easiest at the time:
-
-- photograph a receipt and capture the useful information;
-- enter the details manually;
-- use system speech recognition.
-
-Captured payment data is stored locally. Receipt photographs are an input mechanism rather than a permanent image archive.
-
-### MEDS
-
-Record medicines and other user-defined consumables with enough information to make everyday management easier. Each entry has a first reminder time, a user-stated usual daily count, remaining-dose count and reorder threshold. Every actual dose can be recorded—even after another has already been logged that day—and halted entries retain their histories when a dosage changes.
-
-A discreet `today/usual` indicator moves from white to green, amber and red as the recorded count passes the user’s own usual count. It is a factual personal reference, not a clinical limit or dose recommendation.
-
-The app shows due, overdue and reorder states and provides local Android notifications after a dose becomes overdue, with a further early-evening reminder if it remains unrecorded. Reminder checks survive app closure and phone restart, but Android may delay or suppress notifications: they are a helpful aid, not a guaranteed or sole medicine reminder.
-
-### SOMA
-
-Record simple health-related observations such as symptoms, blood-pressure measurements and similar information. How this develops will be determined by actual use rather than by attempting to design every possible feature in advance.
-
-### TASK
-
-A lightweight place for things that need doing, including simple dependencies where one action is waiting on another. This is intentionally not intended to become a project-management system.
-
-### ASK
-
-A place to record questions that need further investigation. Items can be entered by typing or speech, marked complete and hidden from the active list. Follow-on notes and deletion are not yet implemented.
+The application does not assign a category or meaning to what a person writes. A collection might be household jobs, books, work expenses, research, supplies or anything else the owner finds useful. The contents remain local and private.
 
 ## Data
 
@@ -73,9 +45,9 @@ Anything deliberately entered or accepted by the user is treated as the recorded
 
 Primary data is stored locally in a Room database and survives application closure and phone restart. The expected data volume is small.
 
-The `*` settings control contains the export action. It opens Android's standard save picker and creates a dated XLSX workbook with five worksheets: **SPEND**, **MEDS**, **SOMA**, **TASK** and **ASK**. Completed, hidden and halted records are included, together with medicine dose history.
+The `*` settings control contains the export action. It opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included.
 
-> Personal and medical records stay on-device and Android backup is disabled. They leave only when the user explicitly exports an XLSX workbook. Bundled receipt OCR may send Google limited technical diagnostics, never the receipt image, recognised text or Nota Bene database.
+> Personal records stay on-device and Android backup is disabled. They leave only when the user explicitly exports an XLSX workbook.
 
 ## Design
 

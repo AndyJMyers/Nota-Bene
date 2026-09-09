@@ -122,6 +122,65 @@ data class DoseLog(
     val takenAt: Long = System.currentTimeMillis()
 )
 
+/**
+ * The current Nota Bene model is intentionally neutral.  A collection is a user-named
+ * place for ordinary records; the app does not assign a life, financial, or health meaning
+ * to either a collection or its contents.
+ */
+enum class CollectionKind { TODO, LOG, REPEAT }
+
+@Entity(tableName = "collections")
+data class Collection(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val title: String,
+    val kind: String,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(tableName = "collection_entries", indices = [Index(value = ["collectionId", "createdAt"])])
+data class CollectionEntry(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val collectionId: Long,
+    val text: String,
+    val detail: String = "",
+    val intervalDays: Int = 0,
+    val quantity: Int? = null,
+    val restockAt: Int? = null,
+    val done: Boolean = false,
+    val lastCompletedAt: Long? = null,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Dao
+interface CollectionDao {
+    @Query("SELECT * FROM collections ORDER BY createdAt ASC")
+    fun observeCollections(): Flow<List<Collection>>
+
+    @Query("SELECT COUNT(*) FROM collections")
+    suspend fun count(): Int
+
+    @Insert
+    suspend fun insertCollection(collection: Collection): Long
+
+    @Query("DELETE FROM collections WHERE id = :id")
+    suspend fun deleteCollection(id: Long)
+
+    @Query("SELECT * FROM collection_entries WHERE collectionId = :collectionId ORDER BY done ASC, createdAt DESC")
+    fun observeEntries(collectionId: Long): Flow<List<CollectionEntry>>
+
+    @Insert
+    suspend fun insertEntry(entry: CollectionEntry)
+
+    @Query("UPDATE collection_entries SET done = :done, lastCompletedAt = :completedAt WHERE id = :id")
+    suspend fun setDone(id: Long, done: Boolean, completedAt: Long?)
+
+    @Query("UPDATE collection_entries SET quantity = :quantity WHERE id = :id")
+    suspend fun setQuantity(id: Long, quantity: Int?)
+
+    @Query("DELETE FROM collection_entries WHERE id = :id")
+    suspend fun deleteEntry(id: Long)
+}
+
 @Dao
 interface MedicationDao {
     @Query("SELECT * FROM medications ORDER BY active DESC, createdAt DESC")
@@ -143,13 +202,14 @@ interface MedicationDao {
     suspend fun setStartingDoses(id: Long, startingDoses: Int)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class], version = 6, exportSchema = false)
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class], version = 7, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
     abstract fun taskDao(): TaskDao
     abstract fun bodyDao(): BodyDao
     abstract fun medicationDao(): MedicationDao
+    abstract fun collectionDao(): CollectionDao
 
     companion object {
         @Volatile private var instance: NotaBeneDatabase? = null
@@ -159,7 +219,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -203,6 +263,18 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE `medications` ADD COLUMN `dailyTarget` INTEGER NOT NULL DEFAULT 1")
                 db.execSQL("DROP INDEX IF EXISTS `index_dose_logs_medicationId_doseDate`")
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_dose_logs_medicationId_doseDate` ON `dose_logs` (`medicationId`, `doseDate`)")
+            }
+        }
+
+        internal val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `collections` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `kind` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)"
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `collection_entries` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `collectionId` INTEGER NOT NULL, `text` TEXT NOT NULL, `detail` TEXT NOT NULL, `intervalDays` INTEGER NOT NULL, `quantity` INTEGER, `restockAt` INTEGER, `done` INTEGER NOT NULL, `lastCompletedAt` INTEGER, `createdAt` INTEGER NOT NULL)"
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS `index_collection_entries_collectionId_createdAt` ON `collection_entries` (`collectionId`, `createdAt`)")
             }
         }
     }
