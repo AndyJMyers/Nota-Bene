@@ -1209,8 +1209,15 @@ private fun CollectionEntryRow(
     val events by dao.observeRepeatEvents(entry.id).collectAsState(initial = emptyList())
     NotaCard(Modifier.fillMaxWidth(), compact = true) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-            if (kind == CollectionKind.TODO || kind == CollectionKind.REPEAT) {
-                Checkbox(checked = if (kind == CollectionKind.REPEAT) false else entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
+            if (kind == CollectionKind.TODO) {
+                Checkbox(checked = entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
+                Spacer(Modifier.width(6.dp))
+            } else if (kind == CollectionKind.REPEAT) {
+                Button(
+                    onClick = { onDone(true) },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 2.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink)
+                ) { Text("LOG", fontSize = 10.sp, fontWeight = FontWeight.Black) }
                 Spacer(Modifier.width(6.dp))
             }
             Column(
