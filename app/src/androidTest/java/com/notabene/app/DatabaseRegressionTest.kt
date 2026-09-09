@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -95,5 +96,14 @@ class DatabaseRegressionTest {
         MedicineReminderScheduler.eraseReminderData(context)
 
         assertTrue(preferences.all.isEmpty())
+    }
+
+    @Test
+    fun reminderTogglePersistsBothStates() {
+        MedicineReminderScheduler.setRemindersEnabled(context, false)
+        assertFalse(MedicineReminderScheduler.remindersEnabled(context))
+
+        MedicineReminderScheduler.setRemindersEnabled(context, true)
+        assertTrue(MedicineReminderScheduler.remindersEnabled(context))
     }
 }

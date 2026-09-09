@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,20 +7,38 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val releaseSigningPropertiesFile = rootProject.file("release-signing.properties")
+val releaseSigningProperties = Properties().apply {
+    if (releaseSigningPropertiesFile.isFile) {
+        releaseSigningPropertiesFile.inputStream().use(::load)
+    }
+}
+
+val requiresReleaseSigning = gradle.startParameter.taskNames.any {
+    it.contains("release", ignoreCase = true)
+}
+
+if (requiresReleaseSigning && !releaseSigningPropertiesFile.isFile) {
+    error("Release signing is required. Create the ignored release-signing.properties file from the secure release-key instructions.")
+}
+
 android {
     namespace = "com.notabene.app"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.notabene.app"
+        applicationId = "com.andyjmyers.notabene"
         minSdk = 26
         targetSdk = 36
-        versionCode = 26
-        versionName = "0.9.0-alpha26"
+        versionCode = 39
+        versionName = "0.9.0-alpha39"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -26,6 +46,26 @@ android {
     }
 
     kotlinOptions { jvmTarget = "17" }
+
+    signingConfigs {
+        create("release") {
+            if (releaseSigningPropertiesFile.isFile) {
+                storeFile = rootProject.file(releaseSigningProperties.getProperty("storeFile"))
+                storePassword = releaseSigningProperties.getProperty("storePassword")
+                keyAlias = releaseSigningProperties.getProperty("keyAlias")
+                keyPassword = releaseSigningProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".dev"
+        }
+        release {
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
 }
 
 dependencies {

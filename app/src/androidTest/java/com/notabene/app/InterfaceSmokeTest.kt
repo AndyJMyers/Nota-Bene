@@ -51,7 +51,9 @@ class InterfaceSmokeTest {
     fun settingsKeepsAdministrativeControlsOneLevelDown() {
         compose.onNodeWithContentDescription("Settings").performClick()
         compose.onNodeWithText("SETTINGS").assertIsDisplayed()
-        compose.onNodeWithText("EXPORT XLSX").assertIsDisplayed()
+        compose.onNodeWithText("${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE} · Development").assertIsDisplayed()
+        compose.onNodeWithText("EXPORT XLSX").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("IMPORT XLSX").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("PRIVACY & SAFETY").performScrollTo().assertIsDisplayed()
     }
 
@@ -68,6 +70,16 @@ class InterfaceSmokeTest {
         waitForText("1/1")
         compose.onNodeWithText("LOG TAKEN").performScrollTo().performClick()
         waitForText("2/1")
+    }
+
+    @Test
+    fun unfinishedTaskSurvivesActivityRecreation() {
+        compose.onNodeWithText("TASK").performClick()
+        compose.onNode(hasText("What needs doing?") and hasSetTextAction()).performTextInput("Survive rotation")
+
+        compose.activityRule.scenario.recreate()
+
+        compose.onNode(hasText("Survive rotation") and hasSetTextAction()).assertIsDisplayed()
     }
 
     private fun waitForText(text: String) {

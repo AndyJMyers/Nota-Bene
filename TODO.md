@@ -1,12 +1,12 @@
 # Nota Bene TODO
 
-Updated for **Alpha 26**.
+Updated for **Alpha 36**.
 
 ## Current UI baseline — do not drift
 
 - The top-level instruments are, in this order: **SPEND · MEDS · SOMA · TASK · ASK**.
 - The five large industrial radio controls remain on one line and use the same interface language throughout.
-- The header contains the Nota Bene identity, the unlabeled mood slider, the background selector and one small `*` settings control in the same vertical band.
+- The header contains the Nota Bene identity and unlabeled colour slider, with adjacent, visibly framed `MOOD >`, animation and `*` settings buttons on the right.
 - Mood and background animation remain atmospheric but clearly visible; the current backgrounds are sky, snow, oil and waves.
 - Every instrument panel scrolls vertically and remains usable after phone rotation.
 - Tapping outside an input dismisses the keyboard.
@@ -16,7 +16,7 @@ Updated for **Alpha 26**.
 
 - [ ] Test all five instruments repeatedly on the intended phone in portrait and landscape, including small-screen scrolling and keyboard dismissal.
 - [ ] Test SPEND speech capture and receipt selection with varied real receipts; confirm every proposed field remains editable before saving.
-- [ ] Test MEDS reminders across app closure, phone restart, battery-saving modes and notification permission changes.
+- [ ] Test the MEDS reminder on/off switch across app closure, phone restart, battery-saving modes and Android notification permission changes.
 - [ ] Confirm the locked-screen MEDS notification is generic and medicine details appear only after the phone is unlocked, subject to Android settings.
 - [ ] Test repeated same-day logging, the white/green/amber/red `today/usual` indicator, stock correction, reorder state, halted entries and expandable history with realistic fictitious records.
 - [ ] Verify **Erase all local data** removes SPEND, MEDS, SOMA, TASK and ASK records plus MEDS reminder state and visible notifications.
@@ -47,3 +47,17 @@ The detailed publication checklist remains in [`docs/google-play/SUBMISSION_CHEC
 - Reminders are helpful aids, never guaranteed delivery or a substitute for attention, prescriptions or professional advice.
 - Nota Bene does not diagnose, interpret measurements clinically, calculate doses or recommend treatment.
 - Any account, cloud sync, analytics, remote processing, clinician sharing or clinical inference requires a fresh privacy and regulatory review before implementation.
+# Visual styles
+
+- [x] Add a persistent `MOOD >` next-style control with a generous touch target.
+- [x] Add distinct palettes, type character, tab artwork, panel frames and backdrop ornament for Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris.
+- [x] Glow the selected style name into view and fade it away without interrupting the current task.
+- [ ] Refine each treatment on a physical phone after side-by-side use.
+- [x] Complete the first production artwork pass for Art Nouveau, including the transparent ginkgo frame and light enamel work surfaces.
+- [x] Complete the full-blooded William Morris treatment with saturated textile field, illustrated border and light book-paper work surfaces.
+- [x] Complete the Cosmic Funk treatment with lacquer black, chrome, coloured orbital ribbons and a restrained starfield.
+- [x] Complete the Ecclesiastic treatment with midnight-blue Gothic architecture, gold tracery, jewel glass and warm ivory work surfaces.
+- [x] Complete the Orbital Deco treatment with black enamel, champagne-gold geometry, crimson signal jewels and celestial navigation detail.
+- [x] Complete the Steampunk treatment with oil-black iron, aged brass, copper joints, gauge work and filament lamps.
+- [x] Complete the Retro Futurist treatment with smoked instrument glass, gunmetal, stained colour and filament light.
+- [ ] Refine all seven treatments side-by-side on a physical phone, keeping their operational layout and control language consistent.

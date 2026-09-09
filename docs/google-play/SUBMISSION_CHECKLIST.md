@@ -2,8 +2,8 @@
 
 ## Blocking product and policy work
 
-- [ ] Add the public privacy contact email to `PRIVACY_POLICY.md` (developer name and publication date are present).
-- [ ] Publish the privacy policy as a stable public HTML page (not a PDF, not geofenced, no login required).
+- [x] Add the public privacy contact email to `PRIVACY_POLICY.md`: andyjmyers@gmail.com.
+- [x] Publish the privacy policy as a stable public HTML page: https://andyjmyers.github.io/Nota-Bene/privacy/
 - [x] Add clear privacy and safety disclosure text inside Nota Bene under `*` settings.
 - [x] Add an in-app medical disclaimer stating that Nota Bene is not a medical device, does not diagnose or recommend treatment, and is not for emergencies.
 - [x] Disable Android cloud backup and device-transfer backup, with explicit exclusion rules for all app-data domains.
@@ -12,14 +12,18 @@
 
 ## Play Console declarations
 
-- [ ] App access: no login or restricted area.
-- [ ] Ads: no ads.
-- [ ] Data Safety: complete using `DATA_SAFETY_DRAFT.md`, after inspecting the final bundle and SDK disclosures.
-- [ ] Health Apps: declare Medication and Treatment Management; assess Healthcare Services and Management using the live form wording.
-- [ ] Content rating questionnaire: complete accurately; the app contains no developer-supplied sexual, violent, gambling or drug-use content.
-- [ ] Target audience: adults; do not include child age groups.
+Saved/actioned in Console as at 5 September 2026; not yet sent for review or approved. No App content declarations need attention.
+
+- [x] App access: no login or restricted area.
+- [x] Ads: no ads.
+- [x] Advertising ID: no; current release merged manifest has no AD_ID permission.
+- [x] Data Safety: limited ML Kit diagnostics, app interactions and installation identifiers; exact saved answers in `DATA_SAFETY_DRAFT.md`.
+- [x] Health Apps: Medication and Treatment Management; no medical-device intention.
+- [x] Content rating questionnaire completed and actioned.
+- [x] Financial features and government-app declarations actioned.
+- [x] Target audience: adults; no child age groups.
 - [ ] Category and tags: start with Lifestyle while completing the Health Apps declaration accurately; reassess after testing.
-- [ ] Provide a support email and, if available, a support website.
+- [x] Support email: andyjmyers@gmail.com, saved and published.
 
 ## Store listing
 
@@ -34,11 +38,11 @@
 
 ## Release engineering
 
-- [ ] Build and upload a signed Android App Bundle (`.aab`), not the development APK.
-- [ ] Enrol in or configure Play App Signing.
+- [x] Build and inspect a signed Android App Bundle (`.aab`), not the development APK. Alpha 36's signed bundle is at `app/build/outputs/bundle/release/app-release.aab`; its SHA-256 is `0ED5052D540255359F414602ED4EF7C10C6990C340B28B1933E7408E9A4836CE`.
+- [ ] Enrol in Play App Signing and upload a current signed `.aab` to the selected testing track.
 - [ ] Ensure the application ID and signing key are final before production.
 - [ ] Run lint, unit/instrumentation tests and a clean-install/upgrade test on supported Android versions.
-- [ ] Verify the release targets the API level required on the intended submission date.
+- [x] Alpha 36 targets Android 16 / API 36, meeting the current new-app Play requirement as at 4 September 2026. Reconfirm against Play Console on upload.
 - [ ] Test receipt selection, speech recognition, local persistence, dose logging and export on the Play-delivered build.
 - [ ] Test locked-screen MEDS notification redaction, delayed/suppressed reminder behaviour and complete local erasure on representative devices.
 - [ ] Remove or clearly identify development-only behaviour.
@@ -46,3 +50,5 @@
 ## Personal developer account consideration
 
 If the Google Play developer account is a personal account created after 13 November 2023, check the current closed-testing requirements before applying for production access.
+
+Nota Bene's dashboard currently requires 12 opted-in closed testers for 14 continuous days. See `CLOSED_TESTING_PLAN.md` for the verified 32 Visualisations temporary zero-price sale approach. Do not permanently convert Nota Bene to Free.

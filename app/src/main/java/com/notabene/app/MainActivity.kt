@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -23,6 +24,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,10 +34,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -59,10 +64,12 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -76,20 +83,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -114,6 +125,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private val Ink = Color(0xFF090812)
+private const val PrivacyPolicyUrl = "https://andyjmyers.github.io/Nota-Bene/privacy/"
 private val Glass = Color(0xFF28212B)
 private val Purple = Color(0xFF321052)
 private val Blue = Color(0xFF164B89)
@@ -153,20 +165,59 @@ private fun NotaBeneApp() {
     val backgroundInteraction = remember { MutableInteractionSource() }
     val scope = rememberCoroutineScope()
     val database = remember { NotaBeneDatabase.get(context) }
+    val uiPreferences = remember { context.getSharedPreferences("nota-bene-ui", Activity.MODE_PRIVATE) }
     var selected by rememberSaveable { mutableStateOf(Tab.PAYMENTS) }
     var mood by rememberSaveable { mutableFloatStateOf(.42f) }
     var effect by rememberSaveable { mutableStateOf(Effect.STARS) }
+    var appStyle by rememberSaveable {
+        mutableStateOf(NotaStyle.fromStored(uiPreferences.getString("style", null)))
+    }
+    var styleChangeCount by rememberSaveable { mutableStateOf(0) }
+    var showStyleName by remember { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
+    var remindersEnabled by remember {
+        mutableStateOf(MedicineReminderScheduler.remindersEnabled(context))
+    }
     var remindersGranted by remember {
         mutableStateOf(
             Build.VERSION.SDK_INT < 33 ||
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
         )
     }
-    val accent = moodColour(mood)
+    val styleSpec = appStyle.spec
+    val accent = lerp(styleSpec.glow, moodColour(mood), .58f)
+    LaunchedEffect(styleChangeCount) {
+        if (styleChangeCount > 0) {
+            showStyleName = true
+            delay(1600)
+            showStyleName = false
+        }
+    }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> remindersGranted = granted }
+    ) { granted ->
+        remindersGranted = granted
+        if (granted) {
+            MedicineReminderScheduler.setRemindersEnabled(context, true)
+            remindersEnabled = true
+        }
+    }
+    var pendingImport by remember { mutableStateOf<WorkbookSnapshot?>(null) }
+    var importBusy by remember { mutableStateOf(false) }
+    var importMessage by remember { mutableStateOf<String?>(null) }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null && !importBusy) scope.launch {
+            importBusy = true
+            try {
+                pendingImport = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)?.use { readWorkbook(it) }
+                        ?: error("Could not open the selected file")
+                }
+            } catch (e: Exception) {
+                importMessage = "Unable to read this export. ${e.message.orEmpty()}\nNo records were imported."
+            } finally { importBusy = false }
+        }
+    }
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
     ) { uri ->
@@ -183,11 +234,25 @@ private fun NotaBeneApp() {
         }
     }
 
-    MaterialTheme(colorScheme = darkColorScheme(primary = accent, surface = Glass, background = Ink)) {
+    CompositionLocalProvider(LocalNotaStyle provides appStyle) {
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = accent,
+            secondary = styleSpec.secondary,
+            background = styleSpec.ink,
+            surface = styleSpec.panel,
+            surfaceVariant = styleSpec.surface,
+            onBackground = styleSpec.text,
+            onSurface = styleSpec.panelText,
+            onSurfaceVariant = styleSpec.panelMuted,
+            outline = styleSpec.frame,
+            outlineVariant = styleSpec.frame.copy(alpha = .62f)
+        )
+    ) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Ink)
+                .background(styleSpec.ink)
                 .clickable(
                     interactionSource = backgroundInteraction,
                     indication = null
@@ -197,6 +262,88 @@ private fun NotaBeneApp() {
                 }
         ) {
             CalmBackground(effect, accent, mood)
+            if (appStyle == NotaStyle.RETRO_FUTURIST) {
+                Image(
+                    painter = painterResource(R.drawable.retro_futurist_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .4f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (appStyle == NotaStyle.STEAMPUNK) {
+                Image(
+                    painter = painterResource(R.drawable.steampunk_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .4f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (appStyle == NotaStyle.ORBITAL_DECO) {
+                Image(
+                    painter = painterResource(R.drawable.orbital_deco_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .42f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (appStyle == NotaStyle.ECCLESIASTIC) {
+                Image(
+                    painter = painterResource(R.drawable.ecclesiastic_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .4f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (appStyle == NotaStyle.COSMIC_FUNK) {
+                Image(
+                    painter = painterResource(R.drawable.cosmic_funk_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .42f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            if (appStyle == NotaStyle.WILLIAM_MORRIS) {
+                Image(
+                    painter = painterResource(R.drawable.william_morris_field),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alpha = .26f,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+            StyleBackdrop(appStyle, accent)
+            if (appStyle == NotaStyle.RETRO_FUTURIST || appStyle == NotaStyle.STEAMPUNK || appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ORBITAL_DECO || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) {
+                Image(
+                    painter = painterResource(
+                        when (appStyle) {
+                            NotaStyle.RETRO_FUTURIST -> R.drawable.retro_futurist_frame
+                            NotaStyle.STEAMPUNK -> R.drawable.steampunk_frame
+                            NotaStyle.ECCLESIASTIC -> R.drawable.ecclesiastic_frame
+                            NotaStyle.COSMIC_FUNK -> R.drawable.cosmic_funk_frame
+                            NotaStyle.ORBITAL_DECO -> R.drawable.orbital_deco_frame
+                            NotaStyle.ART_NOUVEAU -> R.drawable.art_nouveau_frame
+                            else -> R.drawable.william_morris_frame
+                        }
+                    ),
+                    contentDescription = null,
+                    contentScale = ContentScale.FillBounds,
+                    alpha = when (appStyle) {
+                        NotaStyle.RETRO_FUTURIST -> .82f
+                        NotaStyle.STEAMPUNK -> .84f
+                        NotaStyle.ECCLESIASTIC -> .84f
+                        NotaStyle.COSMIC_FUNK -> .9f
+                        NotaStyle.ORBITAL_DECO -> .86f
+                        NotaStyle.ART_NOUVEAU -> .72f
+                        else -> .82f
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
             Column(
                 Modifier
                     .fillMaxSize()
@@ -209,20 +356,28 @@ private fun NotaBeneApp() {
                     mood = mood,
                     accent = accent,
                     effect = effect,
+                    appStyle = appStyle,
                     onMoodChange = { mood = it },
                     onCycleEffect = { effect = effect.next() },
+                    onCycleStyle = {
+                        val nextStyle = appStyle.next()
+                        appStyle = nextStyle
+                        uiPreferences.edit().putString("style", nextStyle.name).apply()
+                        styleChangeCount += 1
+                    },
                     onSettings = {
+                        remindersEnabled = MedicineReminderScheduler.remindersEnabled(context)
                         remindersGranted = MedicineReminderScheduler.notificationsEnabled(context)
                         showSettings = true
                     }
                 )
-                InstrumentTabs(selected, accent) { selected = it }
+                InstrumentTabs(selected, accent, appStyle) { selected = it }
                 AnimatedContent(
                     targetState = selected,
                     transitionSpec = { fadeIn(tween(450)) togetherWith fadeOut(tween(1100)) },
                     label = "tab title"
                 ) { tab ->
-                    Text(tab.title.uppercase(), color = accent, fontSize = 23.sp, fontWeight = FontWeight.Light, letterSpacing = 3.sp)
+                    Text(tab.title.uppercase(), color = accent, fontSize = 23.sp, fontWeight = FontWeight.Light, fontFamily = styleSpec.titleFamily, letterSpacing = 3.sp)
                 }
                 when (selected) {
                     Tab.PAYMENTS -> PaymentPanel(accent, Modifier.weight(1f))
@@ -233,21 +388,60 @@ private fun NotaBeneApp() {
                     else -> PlaceholderPanel(selected, accent, Modifier.weight(1f))
                 }
             }
+            if (importBusy) {
+                AlertDialog(onDismissRequest = {}, title = { Text("IMPORTING") },
+                    text = { Text("Please wait…") }, confirmButton = {})
+            } else if (pendingImport != null) {
+                val snapshot = pendingImport!!
+                AlertDialog(
+                    onDismissRequest = { pendingImport = null },
+                    title = { Text("IMPORT XLSX") },
+                    text = { Column(Modifier.verticalScroll(rememberScrollState())) {
+                        Text(snapshot.importSummary())
+                        Text("\nThese records will be added to this app. Existing records stay as they are. Importing the same file twice creates duplicates.\n\nOlder exports contain dates to the minute in the exporting phone's time zone, and do not include medicine creation dates or interface settings. Check medicine schedules and stock after importing.")
+                    } },
+                    confirmButton = { TextButton(onClick = {
+                        pendingImport = null
+                        importBusy = true
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { importWorkbook(database, snapshot) }
+                                importMessage = "Records imported.\n${snapshot.importSummary()}"
+                            } catch (_: Exception) {
+                                importMessage = "Import failed. No records were added."
+                            } finally { importBusy = false }
+                        }
+                    }) { Text("IMPORT RECORDS") } },
+                    dismissButton = { TextButton(onClick = { pendingImport = null }) { Text("CANCEL") } }
+                )
+            }
+            importMessage?.let { message ->
+                AlertDialog(onDismissRequest = { importMessage = null }, title = { Text("IMPORT") },
+                    text = { Text(message) }, confirmButton = {
+                        TextButton(onClick = { importMessage = null }) { Text("OK") }
+                    })
+            }
             if (showSettings) {
                 SettingsDialog(
                     accent = accent,
+                    remindersEnabled = remindersEnabled,
                     remindersGranted = remindersGranted,
                     onDismiss = { showSettings = false },
-                    onRequestReminders = {
-                        if (Build.VERSION.SDK_INT >= 33) {
+                    onRemindersChanged = { enabled ->
+                        if (enabled && !remindersGranted && Build.VERSION.SDK_INT >= 33) {
                             notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         } else {
-                            remindersGranted = true
+                            MedicineReminderScheduler.setRemindersEnabled(context, enabled)
+                            remindersEnabled = enabled
                         }
                     },
                     onExport = {
                         showSettings = false
                         exportLauncher.launch("nota-bene-${LocalDate.now()}.xlsx")
+                    },
+                    onImport = {
+                        showSettings = false
+                        importLauncher.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                     },
                     onErase = {
                         scope.launch {
@@ -259,7 +453,28 @@ private fun NotaBeneApp() {
                     }
                 )
             }
+            AnimatedVisibility(
+                visible = showStyleName,
+                enter = fadeIn(tween(500)),
+                exit = fadeOut(tween(1900)),
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                Text(
+                    appStyle.displayName,
+                    color = styleSpec.text,
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Light,
+                    fontFamily = styleSpec.titleFamily,
+                    letterSpacing = 4.sp,
+                    style = TextStyle(shadow = Shadow(accent, Offset.Zero, 22f)),
+                    modifier = Modifier
+                        .background(styleSpec.ink.copy(alpha = .78f), RoundedCornerShape(10.dp))
+                        .border(1.dp, accent.copy(alpha = .7f), RoundedCornerShape(10.dp))
+                        .padding(horizontal = 24.dp, vertical = 15.dp)
+                )
+            }
         }
+    }
     }
 }
 
@@ -268,57 +483,132 @@ private fun Header(
     mood: Float,
     accent: Color,
     effect: Effect,
+    appStyle: NotaStyle,
     onMoodChange: (Float) -> Unit,
     onCycleEffect: () -> Unit,
+    onCycleStyle: () -> Unit,
     onSettings: () -> Unit
 ) {
-    Row(Modifier.fillMaxWidth().height(52.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Image(
-            painter = painterResource(id = R.drawable.nb_fountain_icon),
-            contentDescription = "Nota Bene",
-            contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .width(46.dp)
-                .height(46.dp)
-                .clip(RoundedCornerShape(11.dp))
-                .border(1.dp, Color(0x99F2C94C), RoundedCornerShape(11.dp))
-        )
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-            Text("NOTA BENE", color = Color(0xFFE9E0D2), fontSize = 26.sp, fontWeight = FontWeight.Black, letterSpacing = 3.sp)
-            Text("PERSONAL OPERATIONS LOG", color = Color(0xFF8F8790), fontSize = 9.sp, letterSpacing = 2.sp)
-        }
-        Row(Modifier.weight(1f).height(52.dp), verticalAlignment = Alignment.CenterVertically) {
-            Slider(
-                value = mood,
-                onValueChange = onMoodChange,
-                modifier = Modifier.weight(1f).height(48.dp),
-                colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
-            )
-            TextButton(onClick = onCycleEffect, contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                Text(effect.label, color = Color(0xFFC8BDC8), fontSize = 9.sp)
+    val styleSpec = appStyle.spec
+    BoxWithConstraints(Modifier.fillMaxWidth().height(68.dp)) {
+        val compact = maxWidth < 500.dp
+        val gap = if (compact) 6.dp else 12.dp
+        Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
+            if (appStyle != NotaStyle.RETRO_FUTURIST && appStyle != NotaStyle.STEAMPUNK && appStyle != NotaStyle.ECCLESIASTIC && appStyle != NotaStyle.COSMIC_FUNK && appStyle != NotaStyle.ORBITAL_DECO && appStyle != NotaStyle.ART_NOUVEAU && appStyle != NotaStyle.WILLIAM_MORRIS) {
+                val markSize = if (compact) 40.dp else 46.dp
+                Image(
+                    painter = painterResource(id = R.drawable.nb_fountain_icon),
+                    contentDescription = "Nota Bene",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(markSize)
+                        .clip(RoundedCornerShape(11.dp))
+                        .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
+                )
             }
-            TextButton(onClick = onSettings, modifier = Modifier.width(30.dp).semantics { contentDescription = "Settings" }, contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                Text("*", color = Color(0xFFE9E0D2), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            val titleModifier = if (compact) {
+                Modifier.width(if (appStyle == NotaStyle.RETRO_FUTURIST || appStyle == NotaStyle.STEAMPUNK || appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ORBITAL_DECO || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 108.dp else 92.dp)
+            } else {
+                Modifier.weight(1f)
+            }
+            Column(titleModifier, verticalArrangement = Arrangement.Center) {
+                Text(
+                    "NOTA BENE",
+                    color = styleSpec.text,
+                    fontSize = if (compact) 18.sp else 26.sp,
+                    fontWeight = FontWeight.Black,
+                    fontFamily = styleSpec.titleFamily,
+                    letterSpacing = if (compact) 1.5.sp else 3.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip
+                )
+                Text("PERSONAL LOG", color = styleSpec.muted, fontSize = 8.sp, fontFamily = styleSpec.titleFamily, letterSpacing = 1.2.sp, maxLines = 1)
+            }
+            Column(Modifier.weight(1f).height(66.dp), verticalArrangement = Arrangement.Center) {
+                Slider(
+                    value = mood,
+                    onValueChange = onMoodChange,
+                    modifier = Modifier.fillMaxWidth().height(31.dp),
+                    colors = SliderDefaults.colors(thumbColor = accent, activeTrackColor = accent)
+                )
+                Row(Modifier.fillMaxWidth().height(31.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    HeaderButton(
+                        label = "MOOD >",
+                        contentDescription = "Next mood style, currently ${appStyle.displayName}",
+                        accent = accent,
+                        modifier = Modifier.width(if (compact) 60.dp else 74.dp),
+                        onClick = onCycleStyle
+                    )
+                    HeaderButton(
+                        label = effect.label.substringAfter(' ') + " >",
+                        contentDescription = "Next animation, currently ${effect.label}",
+                        accent = styleSpec.frame,
+                        modifier = Modifier.weight(1f),
+                        onClick = onCycleEffect
+                    )
+                    HeaderButton(
+                        label = "*",
+                        contentDescription = "Settings",
+                        accent = styleSpec.frame,
+                        modifier = Modifier.width(30.dp),
+                        onClick = onSettings
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
+private fun HeaderButton(
+    label: String,
+    contentDescription: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val style = LocalNotaStyle.current
+    val spec = style.spec
+    val shape = RoundedCornerShape((spec.corner.coerceAtLeast(5) * .72f).dp)
+    Box(
+        modifier
+            .fillMaxHeight()
+            .background(Brush.verticalGradient(listOf(spec.surface, spec.ink)), shape)
+            .border(1.dp, accent.copy(alpha = .88f), shape)
+            .semantics { this.contentDescription = contentDescription }
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(label, color = spec.text, fontSize = 9.sp, fontWeight = FontWeight.Bold, fontFamily = spec.titleFamily, letterSpacing = .6.sp, maxLines = 1)
+    }
+}
+
+@Composable
 private fun SettingsDialog(
     accent: Color,
+    remindersEnabled: Boolean,
     remindersGranted: Boolean,
     onDismiss: () -> Unit,
-    onRequestReminders: () -> Unit,
+    onRemindersChanged: (Boolean) -> Unit,
     onExport: () -> Unit,
+    onImport: () -> Unit,
     onErase: () -> Unit
 ) {
+    val uriHandler = LocalUriHandler.current
     var confirmErase by remember { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF17131B),
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
         title = {
-            Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text(
+                    "${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE} · " +
+                        if (BuildConfig.DEBUG) "Development" else "Release",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+            }
         },
         text = {
             Column(
@@ -331,18 +621,33 @@ private fun SettingsDialog(
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
-                Button(
-                    onClick = onRequestReminders,
-                    enabled = !remindersGranted,
-                    colors = ButtonDefaults.buttonColors(containerColor = accent),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (remindersGranted) "REMINDERS ON" else "ENABLE REMINDERS", color = Ink, fontWeight = FontWeight.Black)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            if (remindersEnabled) "APP REMINDERS ON" else "APP REMINDERS OFF",
+                            color = if (remindersEnabled) accent else Color(0xFFC7BDC7),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            if (remindersGranted) "Android notifications permitted" else "Android notification permission is off",
+                            color = Color(0xFFA79DA8),
+                            fontSize = 10.sp
+                        )
+                    }
+                    Switch(
+                        checked = remindersEnabled,
+                        onCheckedChange = onRemindersChanged,
+                        modifier = Modifier.semantics { contentDescription = "MEDS reminder toggle" }
+                    )
                 }
                 HorizontalDivider(color = Color(0xFF4B424D))
                 Text("DATA", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
                     Text("EXPORT XLSX")
+                }
+                OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
+                    Text("IMPORT XLSX")
                 }
                 if (confirmErase) {
                     Text("Erase every SPEND, MEDS, SOMA, TASK and ASK record on this device? Exported copies are not affected.", color = Color(0xFFE2B5C2), fontSize = 12.sp)
@@ -391,10 +696,13 @@ private fun SettingsDialog(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    "PUBLISHER\nDeveloped and published by Andy J Myers. Project and support: github.com/AndyJMyers/Nota-Bene",
+                    "PUBLISHER\nDeveloped and published by Andy J Myers. Privacy and support: andyjmyers@gmail.com",
                     color = Color(0xFFC7BDC7),
                     fontSize = 12.sp
                 )
+                TextButton(onClick = { uriHandler.openUri(PrivacyPolicyUrl) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("OPEN PRIVACY POLICY", color = accent)
+                }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("DONE", color = accent) } }
@@ -402,22 +710,136 @@ private fun SettingsDialog(
 }
 
 @Composable
-private fun InstrumentTabs(selected: Tab, accent: Color, onSelect: (Tab) -> Unit) {
+private fun InstrumentTabs(selected: Tab, accent: Color, appStyle: NotaStyle, onSelect: (Tab) -> Unit) {
+    val styleSpec = appStyle.spec
+    val shape = RoundedCornerShape(styleSpec.corner.dp)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Tab.entries.forEach { tab ->
             val active = tab == selected
             val glow by animateFloatAsState(if (active) 1f else .14f, tween(420), label = "filament glow")
             Box(
                 Modifier.weight(1f).height(50.dp)
-                    .background(Brush.verticalGradient(listOf(lerp(Ink, accent, glow * .55f), Glass, Ink)), RoundedCornerShape(7.dp))
-                    .border(2.dp, lerp(Color(0xFF39313B), accent, glow), RoundedCornerShape(7.dp))
+                    .background(Brush.verticalGradient(listOf(lerp(styleSpec.ink, accent, glow * .55f), styleSpec.surface, styleSpec.ink)), shape)
+                    .border(styleSpec.border.dp, lerp(styleSpec.frame, accent, glow), shape)
                     .clickable { onSelect(tab) },
                 contentAlignment = Alignment.Center
             ) {
-                Text(tab.shortLabel, color = lerp(Color(0xFF6A626C), Color(0xFFFFE8A8), glow), fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+                TabArtwork(appStyle, accent, active)
+                Text(tab.shortLabel, color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow), fontWeight = FontWeight.Bold, fontFamily = styleSpec.titleFamily, letterSpacing = 1.sp)
             }
         }
     }
+}
+
+@Composable
+private fun TabArtwork(style: NotaStyle, accent: Color, active: Boolean) {
+    val spec = style.spec
+    Canvas(Modifier.fillMaxSize().alpha(if (active) .58f else .24f)) {
+        val edge = if (active) accent else spec.frame
+        when (style) {
+            NotaStyle.RETRO_FUTURIST -> {
+                drawLine(edge, Offset(8f, size.height - 6f), Offset(size.width - 8f, size.height - 6f), 2f)
+            }
+            NotaStyle.STEAMPUNK -> {
+                listOf(Offset(7f, 7f), Offset(size.width - 7f, 7f), Offset(7f, size.height - 7f), Offset(size.width - 7f, size.height - 7f)).forEach {
+                    drawCircle(edge, 3.5f, it)
+                    drawCircle(spec.ink, 1.2f, it)
+                }
+            }
+            NotaStyle.ECCLESIASTIC -> {
+                drawArc(edge, 180f, 180f, false, Offset(size.width * .2f, 5f), androidx.compose.ui.geometry.Size(size.width * .6f, size.height * 1.05f), style = Stroke(2f))
+                drawLine(edge, Offset(size.width / 2f, 6f), Offset(size.width / 2f, 15f), 2f)
+            }
+            NotaStyle.COSMIC_FUNK -> {
+                drawLine(Color(0xFFE51B48), Offset(6f, size.height - 5f), Offset(size.width * .36f, size.height - 5f), 4f)
+                drawLine(Color(0xFFFFB000), Offset(size.width * .36f, size.height - 5f), Offset(size.width * .68f, size.height - 5f), 4f)
+                drawLine(Color(0xFF145CFF), Offset(size.width * .68f, size.height - 5f), Offset(size.width - 6f, size.height - 5f), 4f)
+            }
+            NotaStyle.ORBITAL_DECO -> {
+                drawLine(edge, Offset(6f, 12f), Offset(18f, 4f), 2f)
+                drawLine(edge, Offset(size.width - 6f, 12f), Offset(size.width - 18f, 4f), 2f)
+                drawCircle(edge, 2.5f, Offset(size.width / 2f, size.height - 6f))
+            }
+            NotaStyle.ART_NOUVEAU -> {
+                val flourish = Path().apply {
+                    moveTo(4f, size.height - 5f)
+                    cubicTo(size.width * .18f, size.height * .55f, size.width * .3f, size.height, size.width * .43f, size.height - 5f)
+                }
+                drawPath(flourish, edge, style = Stroke(2f))
+            }
+            NotaStyle.WILLIAM_MORRIS -> {
+                drawOval(edge, Offset(6f, 6f), androidx.compose.ui.geometry.Size(12f, 7f))
+                drawOval(edge, Offset(size.width - 18f, size.height - 13f), androidx.compose.ui.geometry.Size(12f, 7f))
+                drawLine(edge, Offset(8f, size.height - 6f), Offset(size.width - 8f, 6f), 1.2f)
+            }
+        }
+    }
+}
+
+@Composable
+private fun NotaCard(
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val style = LocalNotaStyle.current
+    val spec = style.spec
+    val accent = MaterialTheme.colorScheme.primary
+    val shape = RoundedCornerShape(if (compact) (spec.corner * .72f).dp else spec.corner.dp)
+    Card(
+        modifier = modifier.drawWithContent {
+            drawContent()
+            val inset = if (compact) 5f else 8f
+            when (style) {
+                NotaStyle.RETRO_FUTURIST -> drawLine(accent.copy(alpha = .22f), Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset), 2f)
+                NotaStyle.STEAMPUNK -> listOf(
+                    Offset(inset, inset), Offset(size.width - inset, inset),
+                    Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset)
+                ).forEach { drawCircle(spec.glow.copy(alpha = .72f), if (compact) 2.5f else 4f, it) }
+                NotaStyle.ECCLESIASTIC -> {
+                    drawArc(spec.glow.copy(alpha = .42f), 180f, 180f, false, Offset(size.width * .34f, 4f), androidx.compose.ui.geometry.Size(size.width * .32f, size.height * .46f), style = Stroke(2f))
+                    drawCircle(spec.secondary.copy(alpha = .5f), 3f, Offset(size.width / 2f, 7f))
+                }
+                NotaStyle.COSMIC_FUNK -> {
+                    drawLine(Color(0xFFE51B48).copy(alpha = .62f), Offset(inset, size.height - 5f), Offset(size.width * .34f, size.height - 5f), 5f)
+                    drawLine(Color(0xFFFFB000).copy(alpha = .62f), Offset(size.width * .34f, size.height - 5f), Offset(size.width * .67f, size.height - 5f), 5f)
+                    drawLine(Color(0xFF145CFF).copy(alpha = .62f), Offset(size.width * .67f, size.height - 5f), Offset(size.width - inset, size.height - 5f), 5f)
+                }
+                NotaStyle.ORBITAL_DECO -> {
+                    val line = spec.glow.copy(alpha = .44f)
+                    drawLine(line, Offset(inset, 18f), Offset(25f, inset), 2f)
+                    drawLine(line, Offset(size.width - inset, 18f), Offset(size.width - 25f, inset), 2f)
+                    drawLine(line, Offset(inset, size.height - 18f), Offset(25f, size.height - inset), 2f)
+                    drawLine(line, Offset(size.width - inset, size.height - 18f), Offset(size.width - 25f, size.height - inset), 2f)
+                }
+                NotaStyle.ART_NOUVEAU -> {
+                    val vine = Path().apply {
+                        moveTo(inset, size.height - inset)
+                        cubicTo(size.width * .18f, size.height * .64f, size.width * .1f, size.height * .3f, size.width * .29f, inset)
+                    }
+                    drawPath(vine, spec.glow.copy(alpha = .34f), style = Stroke(2.5f))
+                }
+                NotaStyle.WILLIAM_MORRIS -> {
+                    val colour = spec.glow.copy(alpha = .32f)
+                    repeat(4) { index ->
+                        val x = inset + index * 15f
+                        drawOval(colour, Offset(x, 5f + (index % 2) * 5f), androidx.compose.ui.geometry.Size(10f, 6f))
+                        drawOval(colour, Offset(size.width - x - 10f, size.height - 11f - (index % 2) * 5f), androidx.compose.ui.geometry.Size(10f, 6f))
+                    }
+                }
+            }
+        },
+        colors = CardDefaults.cardColors(containerColor = spec.panel.copy(alpha = .94f)),
+        shape = shape,
+        border = BorderStroke(spec.border.dp, spec.frame.copy(alpha = .78f)),
+        content = content
+    )
+}
+
+@Composable
+private fun panelAccent(accent: Color): Color = when (LocalNotaStyle.current) {
+    NotaStyle.STEAMPUNK, NotaStyle.ECCLESIASTIC, NotaStyle.ORBITAL_DECO, NotaStyle.ART_NOUVEAU, NotaStyle.WILLIAM_MORRIS -> MaterialTheme.colorScheme.secondary
+    else -> accent
 }
 
 @Composable
@@ -426,11 +848,11 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).paymentDao() }
     val payments by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var merchant by remember { mutableStateOf("") }
-    var amount by remember { mutableStateOf("") }
-    var note by remember { mutableStateOf("") }
-    var source by remember { mutableStateOf("manual") }
-    var status by remember { mutableStateOf("Ready for manual, voice or receipt capture") }
+    var merchant by rememberSaveable { mutableStateOf("") }
+    var amount by rememberSaveable { mutableStateOf("") }
+    var note by rememberSaveable { mutableStateOf("") }
+    var source by rememberSaveable { mutableStateOf("manual") }
+    var status by rememberSaveable { mutableStateOf("Ready for manual, voice or receipt capture") }
     var busy by remember { mutableStateOf(false) }
 
     fun absorb(text: String, captureSource: String) {
@@ -472,9 +894,9 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("CAPTURE / REVIEW", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("CAPTURE / REVIEW", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PaymentField("Merchant", merchant, { merchant = it }, Modifier.weight(1.35f), accent)
                     PaymentField("Amount", amount, { amount = it }, Modifier.weight(.8f), accent)
@@ -502,13 +924,13 @@ private fun PaymentPanel(accent: Color, modifier: Modifier = Modifier) {
                     }) { Text("LISTEN") }
                     OutlinedButton(onClick = { imageLauncher.launch("image/*") }, enabled = !busy) { Text(if (busy) "READING" else "RECEIPT") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
-        Text("KEPT PAYMENTS  ${payments.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+        Text("KEPT PAYMENTS  ${payments.size}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp)
         if (payments.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text("Nothing kept yet", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text("Nothing kept yet", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -525,21 +947,27 @@ private fun PaymentField(label: String, value: String, onChange: (String) -> Uni
     OutlinedTextField(
         value = value, onValueChange = onChange, modifier = modifier, minLines = minLines,
         label = { Text(label) },
-        colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = accent, cursorColor = accent, focusedTextColor = Color.White, unfocusedTextColor = Color.White)
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = accent,
+            unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+            cursorColor = accent,
+            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+        )
     )
 }
 
 @Composable
 private fun PaymentRow(payment: PaymentRecord, accent: Color, onDelete: () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+    NotaCard(compact = true) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(payment.merchant.ifBlank { "Unlabelled payment" }, color = Color(0xFFE6DEE6), fontWeight = FontWeight.SemiBold)
-                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(payment.createdAt)) + "  ·  " + payment.capturedFrom.uppercase(), color = Color(0xFF847C86), fontSize = 10.sp)
-                if (payment.note.isNotBlank()) Text(payment.note.replace('\n', ' '), color = Color(0xFFAFA5AF), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(payment.merchant.ifBlank { "Unlabelled payment" }, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
+                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(payment.createdAt)) + "  ·  " + payment.capturedFrom.uppercase(), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                if (payment.note.isNotBlank()) Text(payment.note.replace('\n', ' '), color = MaterialTheme.colorScheme.onSurface.copy(alpha = .72f), fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            if (payment.amount.isNotBlank()) Text(payment.amount, color = accent, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            TextButton(onClick = onDelete) { Text("×", color = Color(0xFF817781), fontSize = 20.sp) }
+            if (payment.amount.isNotBlank()) Text(payment.amount, color = panelAccent(accent), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            TextButton(onClick = onDelete) { Text("×", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f), fontSize = 20.sp) }
         }
     }
 }
@@ -550,9 +978,9 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).askDao() }
     val items by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var draft by remember { mutableStateOf("") }
-    var hideCompleted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Type or speak something to investigate") }
+    var draft by rememberSaveable { mutableStateOf("") }
+    var hideCompleted by rememberSaveable { mutableStateOf(false) }
+    var status by rememberSaveable { mutableStateOf("Type or speak something to investigate") }
     val visibleItems = remember(items, hideCompleted) { if (hideCompleted) items.filterNot { it.done } else items }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -566,9 +994,9 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW QUESTION / TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW QUESTION / TASK", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("What needs looking into?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
@@ -591,23 +1019,23 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
                         runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
                     }) { Text("LISTEN") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("ASK ITEMS  ${items.count { !it.done }} OPEN", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text("ASK ITEMS  ${items.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
             TextButton(onClick = { hideCompleted = !hideCompleted }) {
                 Text(if (hideCompleted) "SHOW COMPLETED" else "HIDE COMPLETED", color = accent, fontSize = 10.sp)
             }
         }
         if (visibleItems.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text(if (items.isEmpty()) "Nothing waiting to be investigated" else "All completed items are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text(if (items.isEmpty()) "Nothing waiting to be investigated" else "All completed items are hidden", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 visibleItems.forEach { item ->
-                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
                         Row(
                             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -615,7 +1043,7 @@ private fun AskPanel(accent: Color, modifier: Modifier = Modifier) {
                             Checkbox(checked = item.done, onCheckedChange = { done -> scope.launch { dao.setDone(item.id, done) } })
                             Text(
                                 item.text,
-                                color = if (item.done) Color(0xFF777078) else Color(0xFFE6DEE6),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (item.done) .45f else 1f),
                                 fontSize = 14.sp,
                                 textDecoration = if (item.done) TextDecoration.LineThrough else TextDecoration.None,
                                 modifier = Modifier.weight(1f)
@@ -634,10 +1062,10 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).taskDao() }
     val tasks by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var draft by remember { mutableStateOf("") }
-    var waitingOn by remember { mutableStateOf("") }
-    var hideCompleted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Type or speak a task") }
+    var draft by rememberSaveable { mutableStateOf("") }
+    var waitingOn by rememberSaveable { mutableStateOf("") }
+    var hideCompleted by rememberSaveable { mutableStateOf(false) }
+    var status by rememberSaveable { mutableStateOf("Type or speak a task") }
     val visibleTasks = remember(tasks, hideCompleted) { if (hideCompleted) tasks.filterNot { it.done } else tasks }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -651,9 +1079,9 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW TASK", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW TASK", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("What needs doing?", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 PaymentField("Waiting on… (optional)", waitingOn, { waitingOn = it }, Modifier.fillMaxWidth(), accent)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -677,34 +1105,34 @@ private fun TaskPanel(accent: Color, modifier: Modifier = Modifier) {
                         runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
                     }) { Text("LISTEN") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("TASKS  ${tasks.count { !it.done }} OPEN", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text("TASKS  ${tasks.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
             TextButton(onClick = { hideCompleted = !hideCompleted }) {
                 Text(if (hideCompleted) "SHOW COMPLETED" else "HIDE COMPLETED", color = accent, fontSize = 10.sp)
             }
         }
         if (visibleTasks.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text(if (tasks.isEmpty()) "Nothing waiting to be done" else "All completed tasks are hidden", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text(if (tasks.isEmpty()) "Nothing waiting to be done" else "All completed tasks are hidden", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 visibleTasks.forEach { task ->
-                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = task.done, onCheckedChange = { done -> scope.launch { dao.setDone(task.id, done) } })
                             Column(Modifier.weight(1f)) {
                                 Text(
                                     task.text,
-                                    color = if (task.done) Color(0xFF777078) else Color(0xFFE6DEE6),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (task.done) .45f else 1f),
                                     fontSize = 14.sp,
                                     textDecoration = if (task.done) TextDecoration.LineThrough else TextDecoration.None
                                 )
                                 if (task.waitingOn.isNotBlank()) {
-                                    Text("WAITING ON  ${task.waitingOn}", color = if (task.done) Color(0xFF655F66) else accent, fontSize = 10.sp, letterSpacing = 1.sp)
+                                    Text("WAITING ON  ${task.waitingOn}", color = if (task.done) MaterialTheme.colorScheme.onSurface.copy(alpha = .38f) else accent, fontSize = 10.sp, letterSpacing = 1.sp)
                                 }
                             }
                         }
@@ -721,9 +1149,9 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
     val dao = remember { NotaBeneDatabase.get(context).bodyDao() }
     val observations by dao.observeAll().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var draft by remember { mutableStateOf("") }
-    var measurement by remember { mutableStateOf("") }
-    var status by remember { mutableStateOf("Type or speak an observation") }
+    var draft by rememberSaveable { mutableStateOf("") }
+    var measurement by rememberSaveable { mutableStateOf("") }
+    var status by rememberSaveable { mutableStateOf("Type or speak an observation") }
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
@@ -736,9 +1164,9 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
     }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                Text("NEW SOMA RECORD", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW SOMA RECORD", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 PaymentField("Symptom or observation", draft, { draft = it }, Modifier.fillMaxWidth(), accent, minLines = 2)
                 PaymentField("Measurement (optional)", measurement, { measurement = it }, Modifier.fillMaxWidth(), accent)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -762,25 +1190,25 @@ private fun BodyPanel(accent: Color, modifier: Modifier = Modifier) {
                         runCatching { speechLauncher.launch(intent) }.onFailure { status = "No speech recognition service is available" }
                     }) { Text("LISTEN") }
                 }
-                Text(status, color = Color(0xFFA79DA8), fontSize = 11.sp)
+                Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
-        Text("SOMA HISTORY  ${observations.size}", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp)
+        Text("SOMA HISTORY  ${observations.size}", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp)
         if (observations.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text("No observations recorded", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text("No observations recorded", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                 observations.forEach { item ->
-                    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+                    NotaCard(compact = true) {
                         Row(Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                if (item.observation.isNotBlank()) Text(item.observation, color = Color(0xFFE6DEE6), fontSize = 14.sp)
-                                if (item.measurement.isNotBlank()) Text(item.measurement, color = accent, fontSize = 16.sp, fontWeight = FontWeight.Bold)
-                                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt)), color = Color(0xFF847C86), fontSize = 10.sp)
+                                if (item.observation.isNotBlank()) Text(item.observation, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+                                if (item.measurement.isNotBlank()) Text(item.measurement, color = panelAccent(accent), fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                                Text(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(item.createdAt)), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                             }
-                            TextButton(onClick = { scope.launch { dao.delete(item.id) } }) { Text("×", color = Color(0xFF817781), fontSize = 20.sp) }
+                            TextButton(onClick = { scope.launch { dao.delete(item.id) } }) { Text("×", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .55f), fontSize = 20.sp) }
                         }
                     }
                 }
@@ -796,14 +1224,14 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     val medications by dao.observeMedications().collectAsState(initial = emptyList())
     val logs by dao.observeDoseLogs().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
-    var name by remember { mutableStateOf("") }
-    var dosage by remember { mutableStateOf("") }
-    var doseTime by remember { mutableStateOf("08:00") }
-    var dailyTarget by remember { mutableStateOf("1") }
-    var startingDoses by remember { mutableStateOf("") }
-    var reorderAt by remember { mutableStateOf("7") }
-    var showHalted by remember { mutableStateOf(false) }
-    var status by remember { mutableStateOf("Set your usual daily count; every entry can still be logged") }
+    var name by rememberSaveable { mutableStateOf("") }
+    var dosage by rememberSaveable { mutableStateOf("") }
+    var doseTime by rememberSaveable { mutableStateOf("08:00") }
+    var dailyTarget by rememberSaveable { mutableStateOf("1") }
+    var startingDoses by rememberSaveable { mutableStateOf("") }
+    var reorderAt by rememberSaveable { mutableStateOf("7") }
+    var showHalted by rememberSaveable { mutableStateOf(false) }
+    var status by rememberSaveable { mutableStateOf("Set your usual daily count; every entry can still be logged") }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -822,9 +1250,9 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
     val validReorder = reorderAt.toIntOrNull()?.takeIf { it >= 0 }
 
     Column(modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Card(colors = CardDefaults.cardColors(containerColor = Color(0xE61B1820)), shape = RoundedCornerShape(12.dp)) {
+        NotaCard {
             Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text("NEW MEDICATION SCHEDULE", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("NEW MEDICATION SCHEDULE", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     PaymentField("Medication", name, { name = it }, Modifier.weight(1.25f), accent)
                     PaymentField("Dosage", dosage, { dosage = it }, Modifier.weight(.9f), accent)
@@ -855,22 +1283,22 @@ private fun MedicationPanel(accent: Color, modifier: Modifier = Modifier) {
                         enabled = name.isNotBlank() && dosage.isNotBlank() && validTime != null && validTarget != null && validStock != null && validReorder != null,
                         colors = ButtonDefaults.buttonColors(containerColor = accent)
                     ) { Text("ADD", color = Ink, fontWeight = FontWeight.Black) }
-                    Text(status, color = Color(0xFFA79DA8), fontSize = 10.sp, modifier = Modifier.weight(1f))
+                    Text(status, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp, modifier = Modifier.weight(1f))
                 }
             }
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("MEDICINES", color = Color(0xFF8F8790), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
+            Text("MEDICINES", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RadioButton(selected = !showHalted, onClick = { showHalted = false })
-                Text("ACTIVE", color = if (!showHalted) accent else Color(0xFF777078), fontSize = 9.sp)
+                Text("ACTIVE", color = if (!showHalted) accent else MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 9.sp)
                 RadioButton(selected = showHalted, onClick = { showHalted = true })
-                Text("WITH HALTED", color = if (showHalted) accent else Color(0xFF777078), fontSize = 9.sp)
+                Text("WITH HALTED", color = if (showHalted) accent else MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 9.sp)
             }
         }
         if (visibleMedications.isEmpty()) {
             Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                Text("No medication schedules to show", color = Color(0xFF6F6771), fontSize = 13.sp)
+                Text("No medication schedules to show", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .45f), fontSize = 13.sp)
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -940,7 +1368,7 @@ private fun MedicationRow(
         else -> "DUE ${medication.doseTime}"
     }
     val stateColor = when {
-        !medication.active -> Color(0xFF777078)
+        !medication.active -> MaterialTheme.colorScheme.onSurface.copy(alpha = .45f)
         latestTodayLog != null -> Color(0xFFC7BDC7)
         now > scheduled -> Crimson
         else -> accent
@@ -953,15 +1381,15 @@ private fun MedicationRow(
     }
     val reorder = remaining <= medication.reorderAt
 
-    Card(colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(9.dp)) {
+    NotaCard(compact = true) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(
                 Modifier.fillMaxWidth().clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(medication.name, color = if (medication.active) Color(0xFFE6DEE6) else Color(0xFF777078), fontWeight = FontWeight.SemiBold)
-                    Text("${medication.dosage}  ·  USUAL ${medication.dailyTarget}/DAY  ·  FIRST ${medication.doseTime}", color = Color(0xFF9A919B), fontSize = 10.sp)
+                    Text(medication.name, color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (medication.active) 1f else .45f), fontWeight = FontWeight.SemiBold)
+                    Text("${medication.dosage}  ·  USUAL ${medication.dailyTarget}/DAY  ·  FIRST ${medication.doseTime}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                 }
                 Box(
                     Modifier
@@ -972,10 +1400,10 @@ private fun MedicationRow(
                 )
                 Text(" ${todayLogs.size}/${medication.dailyTarget} ", color = consumptionColor, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 Text(stateText, color = stateColor, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                Text(if (expanded) "  ▲" else "  ▼", color = accent, fontSize = 9.sp)
+                Text(if (expanded) "  ▲" else "  ▼", color = panelAccent(accent), fontSize = 9.sp)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("$remaining DOSES LEFT", color = if (reorder) Crimson else Color(0xFFC5BBC5), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                Text("$remaining DOSES LEFT", color = if (reorder) Crimson else MaterialTheme.colorScheme.onSurface.copy(alpha = .76f), fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                 if (reorder && medication.active) Text("APPLY FOR MORE", color = Crimson, fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -995,7 +1423,7 @@ private fun MedicationRow(
                 }
                 if (expanded) {
                     HorizontalDivider(color = Color(0xFF4B424D))
-                    Text("STOCK", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Text("STOCK", color = panelAccent(accent), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         PaymentField(
                             "Amount on hand",
@@ -1011,16 +1439,16 @@ private fun MedicationRow(
                         ) { Text("SET STOCK", color = Ink, fontWeight = FontWeight.Black) }
                     }
                     HorizontalDivider(color = Color(0xFF4B424D))
-                    Text("DOSE HISTORY", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Text("DOSE HISTORY", color = panelAccent(accent), fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     if (logs.isEmpty()) {
-                        Text("No doses recorded", color = Color(0xFF817881), fontSize = 11.sp)
+                        Text("No doses recorded", color = MaterialTheme.colorScheme.onSurface.copy(alpha = .5f), fontSize = 11.sp)
                     } else {
                         logs.sortedByDescending { it.takenAt }.forEach { log ->
                             val taken = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(log.takenAt))
                             val planned = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(log.scheduledFor))
                             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text(taken, color = Color(0xFFD4CCD4), fontSize = 11.sp)
-                                Text("due $planned", color = Color(0xFF8F8790), fontSize = 10.sp)
+                                Text(taken, color = MaterialTheme.colorScheme.onSurface.copy(alpha = .82f), fontSize = 11.sp)
+                                Text("due $planned", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                             }
                         }
                     }
@@ -1037,13 +1465,82 @@ private fun MedicationRow(
 
 @Composable
 private fun PlaceholderPanel(tab: Tab, accent: Color, modifier: Modifier = Modifier) {
-    Card(modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xD91B1820)), shape = RoundedCornerShape(12.dp)) {
+    NotaCard(modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxSize().padding(18.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(tab.prompt, color = Color(0xFFCFC5CE), fontSize = 15.sp)
+            Text(tab.prompt, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
             Spacer(Modifier.height(9.dp))
-            HorizontalDivider(Modifier.width(44.dp), color = accent)
+            HorizontalDivider(Modifier.width(44.dp), color = panelAccent(accent))
             Spacer(Modifier.height(9.dp))
-            Text("Scheduled for a later working circuit", color = Color(0xFF756D77), fontSize = 11.sp)
+            Text("Scheduled for a later working circuit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+private fun StyleBackdrop(style: NotaStyle, accent: Color) {
+    val spec = style.spec
+    Canvas(Modifier.fillMaxSize().alpha(.24f)) {
+        when (style) {
+            NotaStyle.RETRO_FUTURIST -> {
+                drawLine(spec.frame, Offset(0f, size.height * .18f), Offset(size.width, size.height * .18f), 2f)
+                drawCircle(accent, size.minDimension * .18f, Offset(size.width * .88f, size.height * .84f), style = Stroke(2f))
+            }
+            NotaStyle.STEAMPUNK -> {
+                listOf(.12f, .88f).forEach { x ->
+                    drawLine(spec.frame, Offset(size.width * x, 0f), Offset(size.width * x, size.height), 7f)
+                    for (y in 0..8) drawCircle(spec.glow, 7f, Offset(size.width * x, size.height * y / 8f))
+                }
+                drawCircle(spec.frame, size.minDimension * .19f, Offset(size.width * .84f, size.height * .78f), style = Stroke(8f))
+                drawCircle(spec.glow, size.minDimension * .13f, Offset(size.width * .84f, size.height * .78f), style = Stroke(3f))
+            }
+            NotaStyle.ECCLESIASTIC -> {
+                val archWidth = size.width / 5f
+                repeat(5) { index ->
+                    val left = archWidth * index
+                    drawArc(spec.glow, 180f, 180f, false, Offset(left, size.height * .06f), androidx.compose.ui.geometry.Size(archWidth, archWidth * 1.5f), style = Stroke(4f))
+                    drawLine(spec.frame, Offset(left, size.height * .06f + archWidth * .75f), Offset(left, size.height), 2f)
+                }
+            }
+            NotaStyle.COSMIC_FUNK -> {
+                val colours = listOf(Color(0xFFE51B48), Color(0xFFFFB000), Color(0xFF145CFF))
+                colours.forEachIndexed { index, colour ->
+                    drawArc(colour, 198f, 116f, false, Offset(-size.width * .5f + index * 18f, size.height * .58f + index * 22f), androidx.compose.ui.geometry.Size(size.width * 1.25f, size.width * 1.25f), style = Stroke(13f))
+                }
+            }
+            NotaStyle.ORBITAL_DECO -> {
+                val centre = Offset(size.width / 2f, size.height * .82f)
+                repeat(13) { ray ->
+                    val angle = PI.toFloat() * (1.08f + ray / 15f)
+                    drawLine(spec.glow, centre, centre + Offset(cos(angle) * size.width, sin(angle) * size.width), 2f)
+                }
+                repeat(3) { ring -> drawCircle(spec.frame, size.width * (.22f + ring * .18f), centre, style = Stroke(2f)) }
+            }
+            NotaStyle.ART_NOUVEAU -> {
+                val leftVine = Path().apply {
+                    moveTo(0f, size.height)
+                    cubicTo(size.width * .25f, size.height * .72f, -size.width * .08f, size.height * .42f, size.width * .18f, 0f)
+                }
+                val rightVine = Path().apply {
+                    moveTo(size.width, size.height)
+                    cubicTo(size.width * .75f, size.height * .72f, size.width * 1.08f, size.height * .42f, size.width * .82f, 0f)
+                }
+                drawPath(leftVine, spec.glow, style = Stroke(7f))
+                drawPath(rightVine, spec.glow, style = Stroke(7f))
+                repeat(7) { index ->
+                    val y = size.height * (.12f + index * .12f)
+                    drawOval(spec.frame, Offset(size.width * .03f, y), androidx.compose.ui.geometry.Size(34f, 16f))
+                    drawOval(spec.frame, Offset(size.width * .93f, y), androidx.compose.ui.geometry.Size(34f, 16f))
+                }
+            }
+            NotaStyle.WILLIAM_MORRIS -> {
+                repeat(12) { index ->
+                    val y = size.height * index / 11f
+                    drawCircle(if (index % 3 == 0) spec.secondary else spec.frame, 13f, Offset(18f, y))
+                    drawCircle(if (index % 3 == 1) spec.secondary else spec.frame, 13f, Offset(size.width - 18f, y))
+                    drawLine(spec.frame, Offset(18f, y), Offset(40f, y + 22f), 3f)
+                    drawLine(spec.frame, Offset(size.width - 18f, y), Offset(size.width - 40f, y + 22f), 3f)
+                }
+            }
         }
     }
 }

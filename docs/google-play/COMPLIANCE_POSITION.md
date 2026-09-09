@@ -1,6 +1,6 @@
 # Nota Bene compliance position
 
-Status: engineering and publication record for Alpha 26; review again before Google Play submission and whenever the app’s purpose or data flows change. This is a practical compliance position, not legal advice.
+Status: engineering and publication record for Alpha 36, reviewed 4 September 2026; review again before Google Play submission and whenever the app’s purpose or data flows change. This is a practical compliance position, not legal advice.
 
 ## Intended purpose
 

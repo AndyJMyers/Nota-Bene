@@ -22,6 +22,8 @@ import java.time.LocalTime
 private const val ReminderChannel = "meds_reminders"
 private const val ReminderRequest = 7401
 private const val ReminderInterval = 15 * 60 * 1000L
+private const val ReminderSettings = "nota_bene_settings"
+private const val RemindersEnabled = "meds_reminders_enabled"
 
 object MedicineReminderScheduler {
     fun prepare(context: Context) {
@@ -36,10 +38,11 @@ object MedicineReminderScheduler {
                 lockscreenVisibility = Notification.VISIBILITY_PRIVATE
             }
         )
-        schedule(context)
+        if (remindersEnabled(context)) schedule(context) else cancelSchedule(context)
     }
 
     fun schedule(context: Context) {
+        if (!remindersEnabled(context)) return
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val intent = Intent(context, MedicineReminderReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(
@@ -54,6 +57,34 @@ object MedicineReminderScheduler {
             ReminderInterval,
             pendingIntent
         )
+    }
+
+    fun remindersEnabled(context: Context): Boolean =
+        context.getSharedPreferences(ReminderSettings, Context.MODE_PRIVATE)
+            .getBoolean(RemindersEnabled, true)
+
+    fun setRemindersEnabled(context: Context, enabled: Boolean) {
+        context.getSharedPreferences(ReminderSettings, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(RemindersEnabled, enabled)
+            .apply()
+        if (enabled) {
+            schedule(context)
+        } else {
+            cancelSchedule(context)
+            context.getSystemService(NotificationManager::class.java).cancelAll()
+        }
+    }
+
+    private fun cancelSchedule(context: Context) {
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            ReminderRequest,
+            Intent(context, MedicineReminderReceiver::class.java),
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        ) ?: return
+        context.getSystemService(AlarmManager::class.java).cancel(pendingIntent)
+        pendingIntent.cancel()
     }
 
     fun cancelNotification(context: Context, medicationId: Long) {
@@ -91,6 +122,7 @@ class MedicineReminderReceiver : BroadcastReceiver() {
     }
 
     private suspend fun checkSchedules(context: Context) {
+        if (!MedicineReminderScheduler.remindersEnabled(context)) return
         if (Build.VERSION.SDK_INT >= 33 &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) return
