@@ -25,10 +25,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -371,7 +373,7 @@ private fun NotaBeneApp() {
                     appStyle = appStyle,
                     onSelect = { selectedCollectionId = it },
                     onAdd = { showNewCollection = true },
-                    onManage = { collectionToManage = collections.firstOrNull { it.id == selectedCollectionId } }
+                    onManage = { id -> collectionToManage = collections.firstOrNull { it.id == id } }
                 )
                 val selectedCollection = collections.firstOrNull { it.id == selectedCollectionId }
                 AnimatedContent(
@@ -690,6 +692,7 @@ private fun SettingsDialog(
 }
 
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 private fun InstrumentCollections(
     collections: List<Collection>,
     selectedId: Long?,
@@ -697,7 +700,7 @@ private fun InstrumentCollections(
     appStyle: NotaStyle,
     onSelect: (Long) -> Unit,
     onAdd: () -> Unit,
-    onManage: () -> Unit
+    onManage: (Long) -> Unit
 ) {
     val styleSpec = appStyle.spec
     val shape = RoundedCornerShape(styleSpec.corner.dp)
@@ -712,7 +715,10 @@ private fun InstrumentCollections(
                 Modifier.width(92.dp).height(50.dp)
                     .background(Brush.verticalGradient(listOf(lerp(styleSpec.ink, accent, glow * .55f), styleSpec.surface, styleSpec.ink)), shape)
                     .border(styleSpec.border.dp, lerp(styleSpec.frame, accent, glow), shape)
-                    .clickable { onSelect(collection.id) },
+                    .combinedClickable(
+                        onClick = { onSelect(collection.id) },
+                        onLongClick = { onManage(collection.id) }
+                    ),
                 contentAlignment = Alignment.Center
             ) {
                 TabArtwork(appStyle, accent, active)
@@ -735,13 +741,6 @@ private fun InstrumentCollections(
                 .clickable(onClick = onAdd),
             contentAlignment = Alignment.Center
         ) { Text("+", color = accent, fontSize = 24.sp, fontWeight = FontWeight.Light) }
-        Box(
-            Modifier.width(50.dp).height(50.dp)
-                .background(styleSpec.surface, shape)
-                .border(styleSpec.border.dp, styleSpec.frame, shape)
-                .clickable(onClick = onManage),
-            contentAlignment = Alignment.Center
-        ) { Text("⋯", color = accent, fontSize = 25.sp, fontWeight = FontWeight.Bold) }
     }
 }
 
