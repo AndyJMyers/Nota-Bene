@@ -21,10 +21,10 @@
             </intent-filter>
         </activity>
         <receiver
-            android:name=".MedicineReminderReceiver"
+            android:name=".RepeatReminderReceiver"
             android:exported="false" />
         <receiver
-            android:name=".MedicineReminderBootReceiver"
+            android:name=".RepeatReminderBootReceiver"
             android:enabled="true"
             android:exported="false">
             <intent-filter>

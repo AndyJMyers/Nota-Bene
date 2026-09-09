@@ -147,6 +147,8 @@ data class CollectionEntry(
     val intervalDays: Int = 0,
     val quantity: Int? = null,
     val restockAt: Int? = null,
+    val notifyWhenDue: Boolean = false,
+    val notifyAt: String = "09:00",
     val done: Boolean = false,
     val lastCompletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
@@ -215,7 +217,7 @@ interface MedicationDao {
     suspend fun setStartingDoses(id: Long, startingDoses: Int)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class], version = 7, exportSchema = false)
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class], version = 8, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
@@ -232,7 +234,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -288,6 +290,13 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                     "CREATE TABLE IF NOT EXISTS `collection_entries` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `collectionId` INTEGER NOT NULL, `text` TEXT NOT NULL, `detail` TEXT NOT NULL, `intervalDays` INTEGER NOT NULL, `quantity` INTEGER, `restockAt` INTEGER, `done` INTEGER NOT NULL, `lastCompletedAt` INTEGER, `createdAt` INTEGER NOT NULL)"
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_collection_entries_collectionId_createdAt` ON `collection_entries` (`collectionId`, `createdAt`)")
+            }
+        }
+
+        internal val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `collection_entries` ADD COLUMN `notifyWhenDue` INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE `collection_entries` ADD COLUMN `notifyAt` TEXT NOT NULL DEFAULT '09:00'")
             }
         }
     }

@@ -26,15 +26,16 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
         val entries = dao.observeEntries(collection.id).first()
         ExportSheet(
             safeSheetName(collection.title),
-            listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at")) +
+            listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at")) +
                 entries.map {
                     listOf(
                         exportDate(it.createdAt), it.text, it.detail, collection.kind, yesNo(it.done),
-                        it.lastCompletedAt?.let(::exportDate).orEmpty(), it.intervalDays, it.quantity ?: "", it.restockAt ?: ""
+                        it.lastCompletedAt?.let(::exportDate).orEmpty(), it.intervalDays, it.quantity ?: "", it.restockAt ?: "",
+                        yesNo(it.notifyWhenDue), it.notifyAt
                     )
                 }
         )
-    }.ifEmpty { listOf(ExportSheet("TODO", listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at")))) }
+    }.ifEmpty { listOf(ExportSheet("TODO", listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at")))) }
     writeSheets(sheets, output)
 }
 

@@ -183,6 +183,7 @@ private fun NotaBeneApp() {
     var collectionToManage by remember { mutableStateOf<Collection?>(null) }
     val styleSpec = appStyle.spec
     val accent = lerp(styleSpec.glow, moodColour(mood), .58f)
+    LaunchedEffect(Unit) { RepeatReminderScheduler.prepare(context) }
     LaunchedEffect(styleChangeCount) {
         if (styleChangeCount > 0) {
             showStyleName = true
@@ -984,6 +985,8 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     var repeatDays by rememberSaveable(collection.id) { mutableStateOf(7) }
     var quantity by rememberSaveable(collection.id) { mutableStateOf("") }
     var restockAt by rememberSaveable(collection.id) { mutableStateOf("") }
+    var notifyWhenDue by rememberSaveable(collection.id) { mutableStateOf(false) }
+    var notifyAt by rememberSaveable(collection.id) { mutableStateOf("09:00") }
     var hideCompleted by rememberSaveable(collection.id) { mutableStateOf(false) }
     var captureStatus by rememberSaveable(collection.id) { mutableStateOf("") }
     var readingImage by remember { mutableStateOf(false) }
@@ -1021,6 +1024,10 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         if (bitmap != null) readImage(InputImage.fromBitmap(bitmap, 0), "Photo text")
         else captureStatus = "Photo cancelled"
+    }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        notifyWhenDue = granted
+        if (!granted) captureStatus = "Notifications were not allowed"
     }
 
     Column(
@@ -1087,9 +1094,34 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                     }
                     PaymentField("On hand (optional)", quantity, { quantity = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
                     PaymentField("Restock at (optional)", restockAt, { restockAt = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
+                    Row(Modifier.fillMaxWidth().clickable {
+                        if (Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            notifyWhenDue = !notifyWhenDue
+                        }
+                    }, verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = notifyWhenDue,
+                            onCheckedChange = { enabled ->
+                                if (enabled && Build.VERSION.SDK_INT >= 33 && context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    notifyWhenDue = enabled
+                                }
+                            }
+                        )
+                        Text("NOTIFY WHEN DUE", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                    if (notifyWhenDue) {
+                        PaymentField("Notify at (24-hour HH:MM)", notifyAt, { notifyAt = it.take(5) }, Modifier.fillMaxWidth(), accent)
+                        if (runCatching { LocalTime.parse(notifyAt) }.isFailure) {
+                            Text("Use a time such as 09:00 or 17:30", color = Crimson, fontSize = 11.sp)
+                        }
+                    }
                 }
                 Button(
-                    enabled = text.isNotBlank(),
+                    enabled = text.isNotBlank() && (!notifyWhenDue || runCatching { LocalTime.parse(notifyAt) }.isSuccess),
                     onClick = {
                         scope.launch {
                             dao.insertEntry(
@@ -1099,10 +1131,13 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                                     detail = detail.trim(),
                                     intervalDays = if (kind == CollectionKind.REPEAT) repeatDays else 0,
                                     quantity = quantity.toIntOrNull(),
-                                    restockAt = restockAt.toIntOrNull()
+                                    restockAt = restockAt.toIntOrNull(),
+                                    notifyWhenDue = kind == CollectionKind.REPEAT && notifyWhenDue,
+                                    notifyAt = notifyAt.ifBlank { "09:00" }
                                 )
                             )
-                            text = ""; detail = ""; quantity = ""; restockAt = ""
+                            if (kind == CollectionKind.REPEAT && notifyWhenDue) RepeatReminderScheduler.prepare(context)
+                            text = ""; detail = ""; quantity = ""; restockAt = ""; notifyWhenDue = false; notifyAt = "09:00"
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink),
@@ -1121,9 +1156,15 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
         }
         shown.forEach { entry ->
             CollectionEntryRow(entry, kind, accent,
-                onDone = { done -> scope.launch { dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null) } },
+                onDone = { done -> scope.launch {
+                    dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null)
+                    if (done && kind == CollectionKind.REPEAT) RepeatReminderScheduler.cancelNotification(context, entry.id)
+                } },
                 onQuantity = { value -> scope.launch { dao.setQuantity(entry.id, value) } },
-                onDelete = { scope.launch { dao.deleteEntry(entry.id) } }
+                onDelete = { scope.launch {
+                    dao.deleteEntry(entry.id)
+                    if (kind == CollectionKind.REPEAT) RepeatReminderScheduler.cancelNotification(context, entry.id)
+                } }
             )
         }
         Spacer(Modifier.height(20.dp))
@@ -1152,11 +1193,13 @@ private fun CollectionEntryRow(
                 if (kind == CollectionKind.REPEAT) {
                     val next = entry.lastCompletedAt?.let { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it + entry.intervalDays.coerceAtLeast(1) * 86_400_000L)) }
                     Text(
-                        buildString {
-                            entry.quantity?.let { append("On hand: $it") }
-                            entry.restockAt?.let { append(if (isNotEmpty()) " · " else ""); append("restock at $it") }
-                            next?.let { append(if (isNotEmpty()) " · " else ""); append("next $it") }
-                        }.ifBlank { "Completed when you choose" },
+                        listOfNotNull(
+                            "Every ${repeatIntervalLabel(entry.intervalDays)}",
+                            entry.quantity?.let { "On hand: $it" },
+                            entry.restockAt?.let { "restock at $it" },
+                            if (entry.notifyWhenDue) "notify ${entry.notifyAt}" else null,
+                            next?.let { "next $it" }
+                        ).joinToString(" · "),
                         color = if (entry.quantity != null && entry.restockAt != null && entry.quantity <= entry.restockAt) Crimson else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 11.sp
                     )
@@ -1171,6 +1214,14 @@ private fun CollectionEntryRow(
             }
         }
     }
+}
+
+private fun repeatIntervalLabel(days: Int): String = when (days) {
+    1 -> "day"
+    7 -> "week"
+    30 -> "month"
+    365 -> "year"
+    else -> "$days days"
 }
 
 @Composable
