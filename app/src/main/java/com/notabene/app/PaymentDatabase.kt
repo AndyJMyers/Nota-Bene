@@ -10,6 +10,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
@@ -162,8 +163,20 @@ interface CollectionDao {
     @Insert
     suspend fun insertCollection(collection: Collection): Long
 
+    @Query("UPDATE collections SET title = :title WHERE id = :id")
+    suspend fun renameCollection(id: Long, title: String)
+
     @Query("DELETE FROM collections WHERE id = :id")
     suspend fun deleteCollection(id: Long)
+
+    @Query("DELETE FROM collection_entries WHERE collectionId = :collectionId")
+    suspend fun deleteEntriesForCollection(collectionId: Long)
+
+    @Transaction
+    suspend fun deleteCollectionAndEntries(id: Long) {
+        deleteEntriesForCollection(id)
+        deleteCollection(id)
+    }
 
     @Query("SELECT * FROM collection_entries WHERE collectionId = :collectionId ORDER BY done ASC, createdAt DESC")
     fun observeEntries(collectionId: Long): Flow<List<CollectionEntry>>

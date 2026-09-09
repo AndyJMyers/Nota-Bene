@@ -178,6 +178,7 @@ private fun NotaBeneApp() {
     var showStyleName by remember { mutableStateOf(false) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
     var showNewCollection by rememberSaveable { mutableStateOf(false) }
+    var collectionToManage by remember { mutableStateOf<Collection?>(null) }
     val styleSpec = appStyle.spec
     val accent = lerp(styleSpec.glow, moodColour(mood), .58f)
     LaunchedEffect(styleChangeCount) {
@@ -369,7 +370,8 @@ private fun NotaBeneApp() {
                     accent = accent,
                     appStyle = appStyle,
                     onSelect = { selectedCollectionId = it },
-                    onAdd = { showNewCollection = true }
+                    onAdd = { showNewCollection = true },
+                    onManage = { collectionToManage = collections.firstOrNull { it.id == selectedCollectionId } }
                 )
                 val selectedCollection = collections.firstOrNull { it.id == selectedCollectionId }
                 AnimatedContent(
@@ -448,6 +450,26 @@ private fun NotaBeneApp() {
                             }
                             selectedCollectionId = id
                             showNewCollection = false
+                        }
+                    }
+                )
+            }
+            collectionToManage?.let { collection ->
+                EditCollectionDialog(
+                    collection = collection,
+                    canDelete = collections.size > 1,
+                    accent = accent,
+                    onDismiss = { collectionToManage = null },
+                    onRename = { title ->
+                        scope.launch {
+                            withContext(Dispatchers.IO) { collectionDao.renameCollection(collection.id, title) }
+                            collectionToManage = null
+                        }
+                    },
+                    onDelete = {
+                        scope.launch {
+                            withContext(Dispatchers.IO) { collectionDao.deleteCollectionAndEntries(collection.id) }
+                            collectionToManage = null
                         }
                     }
                 )
@@ -674,7 +696,8 @@ private fun InstrumentCollections(
     accent: Color,
     appStyle: NotaStyle,
     onSelect: (Long) -> Unit,
-    onAdd: () -> Unit
+    onAdd: () -> Unit,
+    onManage: () -> Unit
 ) {
     val styleSpec = appStyle.spec
     val shape = RoundedCornerShape(styleSpec.corner.dp)
@@ -712,6 +735,13 @@ private fun InstrumentCollections(
                 .clickable(onClick = onAdd),
             contentAlignment = Alignment.Center
         ) { Text("+", color = accent, fontSize = 24.sp, fontWeight = FontWeight.Light) }
+        Box(
+            Modifier.width(50.dp).height(50.dp)
+                .background(styleSpec.surface, shape)
+                .border(styleSpec.border.dp, styleSpec.frame, shape)
+                .clickable(onClick = onManage),
+            contentAlignment = Alignment.Center
+        ) { Text("⋯", color = accent, fontSize = 25.sp, fontWeight = FontWeight.Bold) }
     }
 }
 
@@ -748,6 +778,71 @@ private fun NewCollectionDialog(
             }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL") } }
+    )
+}
+
+@Composable
+private fun EditCollectionDialog(
+    collection: Collection,
+    canDelete: Boolean,
+    accent: Color,
+    onDismiss: () -> Unit,
+    onRename: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    var title by remember(collection.id) { mutableStateOf(collection.title) }
+    var confirmingDelete by remember(collection.id) { mutableStateOf(false) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        title = {
+            Text(
+                if (confirmingDelete) "DELETE COLLECTION?" else "EDIT COLLECTION",
+                color = if (confirmingDelete) Color(0xFFE2B5C2) else accent,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.5.sp
+            )
+        },
+        text = {
+            if (confirmingDelete) {
+                Text(
+                    "Delete ${collection.title.uppercase()} and every record in it? This cannot be undone here. Export first if you want a copy.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    PaymentField("Name", title, { title = it }, Modifier.fillMaxWidth(), accent)
+                    Text(
+                        "Type: ${runCatching { CollectionKind.valueOf(collection.kind) }.getOrDefault(CollectionKind.LOG).label}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        if (canDelete) "Delete removes this collection and all of its records."
+                        else "Keep at least one collection. Create another before deleting this one.",
+                        color = if (canDelete) Color(0xFFE2B5C2) else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            if (confirmingDelete) {
+                TextButton(onClick = onDelete) { Text("DELETE", color = Color(0xFFE2B5C2)) }
+            } else {
+                TextButton(onClick = { onRename(title.trim()) }, enabled = title.isNotBlank()) { Text("SAVE", color = accent) }
+            }
+        },
+        dismissButton = {
+            Row {
+                if (!confirmingDelete && canDelete) {
+                    TextButton(onClick = { confirmingDelete = true }) { Text("DELETE…", color = Color(0xFFE2B5C2)) }
+                }
+                TextButton(onClick = { if (confirmingDelete) confirmingDelete = false else onDismiss() }) {
+                    Text(if (confirmingDelete) "BACK" else "CANCEL")
+                }
+            }
+        }
     )
 }
 
