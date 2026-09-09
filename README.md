@@ -35,6 +35,7 @@ Nota Bene is a small local-first organiser made of user-named collections. It op
 | :--- | :--- |
 | **TODO** | A lightweight checklist with completion state and optional follow-on detail |
 | **LOG** | A dated stream of notes, observations and other things worth retaining |
+| **RECORD** | A dated item with an optional value or reference |
 | **REPEAT** | An item to complete again, with an optional repeat interval, quantity and restock point |
 
 The application does not assign a category or meaning to what a person writes. A collection might be household jobs, books, work expenses, research, supplies or anything else the owner finds useful. The contents remain local and private.

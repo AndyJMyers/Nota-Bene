@@ -127,7 +127,7 @@ data class DoseLog(
  * place for ordinary records; the app does not assign a life, financial, or health meaning
  * to either a collection or its contents.
  */
-enum class CollectionKind { TODO, LOG, REPEAT }
+enum class CollectionKind { TODO, LOG, RECORD, REPEAT }
 
 @Entity(tableName = "collections")
 data class Collection(

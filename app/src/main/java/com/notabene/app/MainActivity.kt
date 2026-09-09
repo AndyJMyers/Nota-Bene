@@ -755,6 +755,7 @@ private val CollectionKind.label: String
     get() = when (this) {
         CollectionKind.TODO -> "TODO"
         CollectionKind.LOG -> "LOG"
+        CollectionKind.RECORD -> "RECORD"
         CollectionKind.REPEAT -> "REPEAT"
     }
 
@@ -762,6 +763,7 @@ private val CollectionKind.description: String
     get() = when (this) {
         CollectionKind.TODO -> "A checklist with optional follow-on detail."
         CollectionKind.LOG -> "A dated stream of notes and observations."
+        CollectionKind.RECORD -> "A dated item with an optional value or reference."
         CollectionKind.REPEAT -> "Items you complete again, with optional stock counts."
     }
 
@@ -885,11 +887,47 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     val kind = remember(collection.kind) { runCatching { CollectionKind.valueOf(collection.kind) }.getOrDefault(CollectionKind.LOG) }
     var text by rememberSaveable(collection.id) { mutableStateOf("") }
     var detail by rememberSaveable(collection.id) { mutableStateOf("") }
-    var interval by rememberSaveable(collection.id) { mutableStateOf("") }
+    var repeatDays by rememberSaveable(collection.id) { mutableStateOf(7) }
     var quantity by rememberSaveable(collection.id) { mutableStateOf("") }
     var restockAt by rememberSaveable(collection.id) { mutableStateOf("") }
     var hideCompleted by rememberSaveable(collection.id) { mutableStateOf(false) }
+    var captureStatus by rememberSaveable(collection.id) { mutableStateOf("") }
+    var readingImage by remember { mutableStateOf(false) }
     val shown = if (hideCompleted) entries.filterNot { it.done } else entries
+
+    fun absorbCapture(captured: String, source: String) {
+        val clean = captured.trim()
+        if (clean.isBlank()) {
+            captureStatus = "No text was captured"
+            return
+        }
+        if (text.isBlank()) text = clean.lineSequence().first().take(120)
+        detail = listOf(detail, clean).filter { it.isNotBlank() }.joinToString("\n")
+        captureStatus = "$source captured — check it before keeping"
+    }
+    val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            absorbCapture(result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull().orEmpty(), "Speech")
+        } else captureStatus = "Listening cancelled"
+    }
+    fun readImage(image: InputImage, source: String) {
+        readingImage = true
+        captureStatus = "Reading image text on this device…"
+        TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS).process(image)
+            .addOnSuccessListener { absorbCapture(it.text, source) }
+            .addOnFailureListener { captureStatus = "Could not read that image" }
+            .addOnCompleteListener { readingImage = false }
+    }
+    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching { InputImage.fromFilePath(context, uri) }
+            .onSuccess { image -> readImage(image, "Image text") }
+            .onFailure { readingImage = false; captureStatus = "Could not open that image" }
+    }
+    val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
+        if (bitmap != null) readImage(InputImage.fromBitmap(bitmap, 0), "Photo text")
+        else captureStatus = "Photo cancelled"
+    }
 
     Column(
         modifier.verticalScroll(rememberScrollState()),
@@ -898,11 +936,24 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
         NotaCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("NEW ${kind.label} ITEM", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
-                PaymentField("What do you want to keep?", text, { text = it }, Modifier.fillMaxWidth(), accent, minLines = if (kind == CollectionKind.LOG) 2 else 1)
+                PaymentField(
+                    when (kind) {
+                        CollectionKind.TODO -> "What do you want to do?"
+                        CollectionKind.LOG -> "What do you want to log?"
+                        CollectionKind.RECORD -> "What do you want to record?"
+                        CollectionKind.REPEAT -> "What do you want to do?"
+                    },
+                    text,
+                    { text = it },
+                    Modifier.fillMaxWidth(),
+                    accent,
+                    minLines = if (kind == CollectionKind.LOG) 2 else 1
+                )
                 PaymentField(
                     when (kind) {
                         CollectionKind.TODO -> "Follow-on detail (optional)"
                         CollectionKind.LOG -> "Detail (optional)"
+                        CollectionKind.RECORD -> "Value or reference (optional)"
                         CollectionKind.REPEAT -> "Detail (optional)"
                     },
                     detail,
@@ -910,11 +961,37 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                     Modifier.fillMaxWidth(),
                     accent
                 )
-                if (kind == CollectionKind.REPEAT) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PaymentField("Repeat every days", interval, { interval = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
-                        PaymentField("On hand", quantity, { quantity = it.filter(Char::isDigit) }, Modifier.weight(1f), accent)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = {
+                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+                            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
+                            putExtra(RecognizerIntent.EXTRA_PROMPT, "What would you like to record?")
+                        }
+                        runCatching { speechLauncher.launch(intent) }.onFailure { captureStatus = "No speech recognition service is available" }
+                    }) { Text("LISTEN") }
+                    OutlinedButton(onClick = { photoLauncher.launch(null) }, enabled = !readingImage) {
+                        Text(if (readingImage) "READING" else "PHOTO")
                     }
+                    OutlinedButton(onClick = { galleryLauncher.launch("image/*") }, enabled = !readingImage) {
+                        Text("GALLERY")
+                    }
+                }
+                if (captureStatus.isNotBlank()) Text(captureStatus, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                if (kind == CollectionKind.REPEAT) {
+                    Text("REPEAT", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                        listOf(1 to "DAY", 7 to "WEEK", 30 to "MONTH", 365 to "YEAR").forEach { (days, label) ->
+                            Row(
+                                Modifier.weight(1f).clickable { repeatDays = days },
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(selected = repeatDays == days, onClick = { repeatDays = days }, modifier = Modifier.size(24.dp))
+                                Text(label, color = accent, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                    PaymentField("On hand (optional)", quantity, { quantity = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
                     PaymentField("Restock at (optional)", restockAt, { restockAt = it.filter(Char::isDigit) }, Modifier.fillMaxWidth(), accent)
                 }
                 Button(
@@ -926,12 +1003,12 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                                     collectionId = collection.id,
                                     text = text.trim(),
                                     detail = detail.trim(),
-                                    intervalDays = interval.toIntOrNull() ?: 0,
+                                    intervalDays = if (kind == CollectionKind.REPEAT) repeatDays else 0,
                                     quantity = quantity.toIntOrNull(),
                                     restockAt = restockAt.toIntOrNull()
                                 )
                             )
-                            text = ""; detail = ""; interval = ""; quantity = ""; restockAt = ""
+                            text = ""; detail = ""; quantity = ""; restockAt = ""
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink),
@@ -939,7 +1016,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                 ) { Text("KEEP ITEM", fontWeight = FontWeight.Black) }
             }
         }
-        if (kind != CollectionKind.LOG) {
+        if (kind == CollectionKind.TODO || kind == CollectionKind.REPEAT) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("${shown.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { hideCompleted = !hideCompleted }) { Text(if (hideCompleted) "SHOW DONE" else "HIDE DONE", color = accent, fontSize = 10.sp) }
@@ -971,7 +1048,7 @@ private fun CollectionEntryRow(
     var showHistory by remember { mutableStateOf(false) }
     NotaCard(Modifier.fillMaxWidth(), compact = true) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-            if (kind != CollectionKind.LOG) {
+            if (kind == CollectionKind.TODO || kind == CollectionKind.REPEAT) {
                 Checkbox(checked = entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(6.dp))
             }
