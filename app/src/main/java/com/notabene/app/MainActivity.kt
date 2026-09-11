@@ -4,6 +4,9 @@ import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognizerIntent
@@ -92,6 +95,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
@@ -117,6 +121,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -134,6 +140,36 @@ private val Purple = Color(0xFF321052)
 private val Blue = Color(0xFF164B89)
 private val Fusion = Color(0xFFF2C94C)
 private val Crimson = Color(0xFF9D174D)
+
+/**
+ * Copies an accepted photo into the app's private storage.  Gallery grants can be temporary,
+ * so retaining the original URI would not be a dependable attachment.
+ */
+private fun saveAttachment(context: android.content.Context, bitmap: Bitmap): String? = runCatching {
+    val folder = File(context.filesDir, "attachments").apply { mkdirs() }
+    val file = File(folder, "record-${System.currentTimeMillis()}.jpg")
+    FileOutputStream(file).use { output ->
+        check(bitmap.compress(Bitmap.CompressFormat.JPEG, 92, output))
+    }
+    file.absolutePath
+}.getOrNull()
+
+private fun saveAttachment(context: android.content.Context, source: Uri): String? = runCatching {
+    val folder = File(context.filesDir, "attachments").apply { mkdirs() }
+    val file = File(folder, "record-${System.currentTimeMillis()}.jpg")
+    context.contentResolver.openInputStream(source)?.use { input ->
+        file.outputStream().use { output -> input.copyTo(output) }
+    } ?: error("Unable to open image")
+    file.absolutePath
+}.getOrNull()
+
+private fun loadAttachmentForDisplay(path: String): Bitmap? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(path, bounds)
+    var sample = 1
+    while (bounds.outWidth / sample > 1600 || bounds.outHeight / sample > 1600) sample *= 2
+    BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
+}.getOrNull()
 
 private enum class Tab(val shortLabel: String, val title: String, val prompt: String) {
     PAYMENTS("SPEND", "Spending", "Capture, check, then keep"),
@@ -531,7 +567,8 @@ private fun Header(
                 )
             }
             val titleModifier = if (compact) {
-                Modifier.width(if (appStyle == NotaStyle.RETRO_FUTURIST || appStyle == NotaStyle.STEAMPUNK || appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ORBITAL_DECO || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 108.dp else 92.dp)
+                // Keep the full masthead legible on a narrow portrait phone.
+                Modifier.width(if (appStyle == NotaStyle.RETRO_FUTURIST || appStyle == NotaStyle.STEAMPUNK || appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ORBITAL_DECO || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 122.dp else 106.dp)
             } else {
                 Modifier.weight(1f)
             }
@@ -539,10 +576,10 @@ private fun Header(
                 Text(
                     "NOTA BENE",
                     color = styleSpec.text,
-                    fontSize = if (compact) 18.sp else 26.sp,
+                    fontSize = if (compact) 16.sp else 26.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = styleSpec.titleFamily,
-                    letterSpacing = if (compact) 1.5.sp else 3.sp,
+                    letterSpacing = if (compact) 1.sp else 3.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Clip
                 )
@@ -989,6 +1026,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     var notifyAt by rememberSaveable(collection.id) { mutableStateOf("09:00") }
     var hideCompleted by rememberSaveable(collection.id) { mutableStateOf(false) }
     var captureStatus by rememberSaveable(collection.id) { mutableStateOf("") }
+    var pendingAttachmentPath by rememberSaveable(collection.id) { mutableStateOf("") }
     var readingImage by remember { mutableStateOf(false) }
     var entryToEdit by remember { mutableStateOf<CollectionEntry?>(null) }
     val shown = if (hideCompleted && kind != CollectionKind.REPEAT) entries.filterNot { it.done } else entries
@@ -1018,13 +1056,28 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     }
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        runCatching { InputImage.fromFilePath(context, uri) }
+        val attachmentPath = saveAttachment(context, uri)
+        if (attachmentPath == null) {
+            captureStatus = "Could not retain that image"
+            return@rememberLauncherForActivityResult
+        }
+        pendingAttachmentPath = attachmentPath
+        runCatching { InputImage.fromFilePath(context, Uri.fromFile(File(attachmentPath))) }
             .onSuccess { image -> readImage(image, "Image text") }
-            .onFailure { readingImage = false; captureStatus = "Could not open that image" }
+            .onFailure { readingImage = false; captureStatus = "Photo retained, but its text could not be read" }
     }
     val photoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        if (bitmap != null) readImage(InputImage.fromBitmap(bitmap, 0), "Photo text")
-        else captureStatus = "Photo cancelled"
+        if (bitmap == null) {
+            captureStatus = "Photo cancelled"
+        } else {
+            val attachmentPath = saveAttachment(context, bitmap)
+            if (attachmentPath == null) {
+                captureStatus = "Could not retain that photo"
+            } else {
+                pendingAttachmentPath = attachmentPath
+                readImage(InputImage.fromBitmap(bitmap, 0), "Photo text")
+            }
+        }
     }
     val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         notifyWhenDue = granted
@@ -1080,6 +1133,16 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                     }
                 }
                 if (captureStatus.isNotBlank()) Text(captureStatus, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                if (pendingAttachmentPath.isNotBlank()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("PHOTO ATTACHED · retained locally with this item", color = panelAccent(accent), fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                        TextButton(onClick = {
+                            File(pendingAttachmentPath).delete()
+                            pendingAttachmentPath = ""
+                            captureStatus = "Photo removed"
+                        }) { Text("REMOVE", color = Crimson, fontSize = 10.sp) }
+                    }
+                }
                 if (kind == CollectionKind.REPEAT) {
                     Text("REPEAT", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -1134,11 +1197,12 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                                     quantity = quantity.toIntOrNull(),
                                     restockAt = restockAt.toIntOrNull(),
                                     notifyWhenDue = kind == CollectionKind.REPEAT && notifyWhenDue,
-                                    notifyAt = notifyAt.ifBlank { "09:00" }
+                                    notifyAt = notifyAt.ifBlank { "09:00" },
+                                    attachmentPath = pendingAttachmentPath
                                 )
                             )
                             if (kind == CollectionKind.REPEAT && notifyWhenDue) RepeatReminderScheduler.prepare(context)
-                            text = ""; detail = ""; quantity = ""; restockAt = ""; notifyWhenDue = false; notifyAt = "09:00"
+                            text = ""; detail = ""; quantity = ""; restockAt = ""; notifyWhenDue = false; notifyAt = "09:00"; pendingAttachmentPath = ""
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink),
@@ -1168,6 +1232,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                 onQuantity = { value -> scope.launch { dao.setQuantity(entry.id, value) } },
                 onDelete = { scope.launch {
                     dao.deleteEntryAndEvents(entry.id)
+                    entry.attachmentPath.takeIf { it.isNotBlank() }?.let { File(it).delete() }
                     if (kind == CollectionKind.REPEAT) RepeatReminderScheduler.cancelNotification(context, entry.id)
                 } },
                 onEdit = { entryToEdit = entry }
@@ -1204,6 +1269,7 @@ private fun CollectionEntryRow(
     onEdit: () -> Unit
 ) {
     var showHistory by remember { mutableStateOf(false) }
+    var showAttachment by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
     val events by dao.observeRepeatEvents(entry.id).collectAsState(initial = emptyList())
@@ -1228,6 +1294,12 @@ private fun CollectionEntryRow(
             ) {
                 Text(entry.text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, textDecoration = if (kind != CollectionKind.REPEAT && entry.done) TextDecoration.LineThrough else null)
                 if (entry.detail.isNotBlank()) Text(entry.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                if (entry.attachmentPath.isNotBlank()) {
+                    TextButton(
+                        onClick = { showAttachment = true },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+                    ) { Text("PHOTO ATTACHED", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
+                }
                 if (kind == CollectionKind.REPEAT) {
                     val next = entry.lastCompletedAt?.let { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it + entry.intervalDays.coerceAtLeast(1) * 86_400_000L)) }
                     Text(
@@ -1263,6 +1335,34 @@ private fun CollectionEntryRow(
             }
         }
     }
+    if (showAttachment) {
+        AttachmentDialog(
+            path = entry.attachmentPath,
+            onDismiss = { showAttachment = false }
+        )
+    }
+}
+
+@Composable
+private fun AttachmentDialog(path: String, onDismiss: () -> Unit) {
+    val bitmap = remember(path) { loadAttachmentForDisplay(path) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("RETAINED PHOTO") },
+        text = {
+            if (bitmap == null) {
+                Text("This photo is no longer available on this device.")
+            } else {
+                Image(
+                    bitmap = bitmap.asImageBitmap(),
+                    contentDescription = "Photo attached to this record",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp)
+                )
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("CLOSE") } }
+    )
 }
 
 @Composable

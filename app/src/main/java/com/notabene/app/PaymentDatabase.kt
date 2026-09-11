@@ -150,6 +150,8 @@ data class CollectionEntry(
     val restockAt: Int? = null,
     val notifyWhenDue: Boolean = false,
     val notifyAt: String = "09:00",
+    /** App-private copy of an optional photo attached to this record. */
+    val attachmentPath: String = "",
     val done: Boolean = false,
     val lastCompletedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis()
@@ -253,7 +255,7 @@ interface MedicationDao {
     suspend fun setStartingDoses(id: Long, startingDoses: Int)
 }
 
-@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class, RepeatEvent::class], version = 9, exportSchema = false)
+@Database(entities = [PaymentRecord::class, AskItem::class, TaskItem::class, BodyItem::class, Medication::class, DoseLog::class, Collection::class, CollectionEntry::class, RepeatEvent::class], version = 10, exportSchema = false)
 abstract class NotaBeneDatabase : RoomDatabase() {
     abstract fun paymentDao(): PaymentDao
     abstract fun askDao(): AskDao
@@ -270,7 +272,7 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                 context.applicationContext,
                 NotaBeneDatabase::class.java,
                 "nota-bene.db"
-            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10).build().also { instance = it }
         }
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -342,6 +344,12 @@ abstract class NotaBeneDatabase : RoomDatabase() {
                     "CREATE TABLE IF NOT EXISTS `repeat_events` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `entryId` INTEGER NOT NULL, `occurredAt` INTEGER NOT NULL)"
                 )
                 db.execSQL("CREATE INDEX IF NOT EXISTS `index_repeat_events_entryId_occurredAt` ON `repeat_events` (`entryId`, `occurredAt`)")
+            }
+        }
+
+        internal val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `collection_entries` ADD COLUMN `attachmentPath` TEXT NOT NULL DEFAULT ''")
             }
         }
     }
