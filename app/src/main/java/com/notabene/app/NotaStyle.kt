@@ -11,7 +11,11 @@ internal enum class NotaStyle(val displayName: String) {
     COSMIC_FUNK("COSMIC FUNK"),
     ORBITAL_DECO("ORBITAL DECO"),
     ART_NOUVEAU("ART NOUVEAU"),
-    WILLIAM_MORRIS("WILLIAM MORRIS");
+    WILLIAM_MORRIS("WILLIAM MORRIS"),
+    SLATE("SLATE"),
+    BLEEDING_WATERCOLOURS("BLEEDING WATERCOLOURS"),
+    ISOLATION("ISOLATION"),
+    MARTIAL_SPIRIT("MARTIAL SPIRIT");
 
     fun next(): NotaStyle = entries[(ordinal + 1) % entries.size]
 
@@ -72,6 +76,26 @@ internal val NotaStyle.spec: NotaStyleSpec
             ink = Color(0xFF071315), surface = Color(0xFF142622), panel = Color(0xFFEDE0BC),
             text = Color(0xFFF3E7C8), muted = Color(0xFFB9B397), panelText = Color(0xFF122522), panelMuted = Color(0xFF5B6657), frame = Color(0xFF9A7735),
             glow = Color(0xFFD0A646), secondary = Color(0xFF8C342B), titleFamily = FontFamily.Serif, corner = 4, border = 2
+        )
+        NotaStyle.SLATE -> NotaStyleSpec(
+            ink = Color(0xFF0C1115), surface = Color(0xFF172027), panel = Color(0xFF202B32),
+            text = Color(0xFFEAF0F2), muted = Color(0xFFADBCC4), panelText = Color(0xFFEAF0F2), panelMuted = Color(0xFFADBCC4), frame = Color(0xFF748B98),
+            glow = Color(0xFFD3E3E8), secondary = Color(0xFFC19A59), titleFamily = FontFamily.SansSerif, corner = 3, border = 2
+        )
+        NotaStyle.BLEEDING_WATERCOLOURS -> NotaStyleSpec(
+            ink = Color(0xFF10142B), surface = Color(0xFF1B2343), panel = Color(0xFF272748),
+            text = Color(0xFFF7EAF3), muted = Color(0xFFC9BBD6), panelText = Color(0xFFF7EAF3), panelMuted = Color(0xFFC9BBD6), frame = Color(0xFFA787B4),
+            glow = Color(0xFFFFC46F), secondary = Color(0xFFC7446A), titleFamily = FontFamily.Serif, corner = 22, border = 2
+        )
+        NotaStyle.ISOLATION -> NotaStyleSpec(
+            ink = Color(0xFF080D15), surface = Color(0xFF141D28), panel = Color(0xFF18232E),
+            text = Color(0xFFE8F0F5), muted = Color(0xFFA8BBC7), panelText = Color(0xFFE8F0F5), panelMuted = Color(0xFFA8BBC7), frame = Color(0xFF607889),
+            glow = Color(0xFFDDEBF2), secondary = Color(0xFF849DB0), titleFamily = FontFamily.SansSerif, corner = 10, border = 1
+        )
+        NotaStyle.MARTIAL_SPIRIT -> NotaStyleSpec(
+            ink = Color(0xFF130E0E), surface = Color(0xFF23191A), panel = Color(0xFF2A2020),
+            text = Color(0xFFF2E5D2), muted = Color(0xFFC8AD9D), panelText = Color(0xFFF2E5D2), panelMuted = Color(0xFFC8AD9D), frame = Color(0xFFAA835C),
+            glow = Color(0xFFE4BB75), secondary = Color(0xFFAF3540), titleFamily = FontFamily.Serif, corner = 2, border = 2
         )
     }
 

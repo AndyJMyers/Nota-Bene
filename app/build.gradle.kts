@@ -30,8 +30,8 @@ android {
         applicationId = "com.andyjmyers.notabene"
         minSdk = 26
         targetSdk = 36
-        versionCode = 41
-        versionName = "0.9.0-alpha41"
+        versionCode = 43
+        versionName = "0.9.0-alpha43"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

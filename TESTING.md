@@ -1,6 +1,6 @@
 # Nota Bene testing
 
-The suite is intentionally small and risk-led. It protects data, repeated MEDS logging, reminder decisions, export integrity and the few UI paths that have previously proved easy to regress. It is not intended to turn a quick personal-app build into an enterprise ceremony.
+The suite is intentionally small and risk-led. It protects stored data, reminder decisions, import/export integrity, style cycling and the UI paths that have previously proved easy to regress. Some tests still exercise the older five-tab data format because existing exports and database migrations remain relevant.
 
 ## Fast suite — run routinely
 
@@ -8,17 +8,18 @@ The suite is intentionally small and risk-led. It protects data, repeated MEDS l
 .\gradlew.bat testDebugUnitTest
 ```
 
-The 25 local JVM tests cover:
+The local JVM tests cover:
 
-- MEDS white/green/amber/red count boundaries;
+- older dose-count colour boundaries;
 - stock arithmetic, including exhaustion without negative display;
 - receipt merchant/amount extraction;
 - strict dose-time parsing;
 - due, evening, duplicate and recorded-dose reminder decisions;
-- the five gospel XLSX worksheets;
+- compatibility with older five-sheet XLSX workbooks;
 - repeated same-day dose export;
 - retention of all record types and completion states; and
-- spreadsheet XML escaping and illegal-character removal.
+- spreadsheet XML escaping and illegal-character removal; and
+- cycling every visual style and handling a corrupt saved style.
 
 These tests need no phone or emulator and add nothing to the installed APK. Gradle skips them during an ordinary `assembleDebug`; run them deliberately during development or with the combined release gate below.
 
@@ -36,7 +37,7 @@ Run it on a connected phone or emulator:
 .\gradlew.bat connectedDebugAndroidTest
 ```
 
-The 10 Android tests cover:
+The Android tests cover:
 
 - two same-day dose rows in a real Room database;
 - persistent stock correction and halted state;
@@ -44,10 +45,10 @@ The 10 Android tests cover:
 - erasure of reminder-state preferences;
 - persistence of both MEDS reminder-toggle states;
 - migration from database version 5 to 6, including preserved history and removal of the one-dose-per-day constraint;
-- navigation to all five working instrument panels;
-- the `*` Settings boundary, generated version/build/edition label, and scrollable export/import/privacy controls;
-- two consecutive presses of the live MEDS **LOG TAKEN** control; and
-- preservation of unfinished TASK text through Android activity recreation (the mechanism used during rotation).
+- first-use guidance in the generic TODO collection;
+- the `*` settings cabinet, visible export/import controls, field guide and support actions;
+- creating a user-named LOG collection; and
+- preservation of unfinished TODO text through Android activity recreation (the mechanism used during rotation).
 
 This layer is opt-in because installing and driving an Android test APK is inherently slower than the JVM suite. Merely compiling it catches dependency and source drift without requiring a device.
 
@@ -71,6 +72,8 @@ The suite does not pretend to replace judgement on a real phone. These remain ma
 - lock-screen presentation under the user’s notification settings;
 - keyboard behaviour, rotation and small-screen feel;
 - save-picker destinations; and
+- the settings cabinet on narrow phones and across all visual styles;
+- the Android email/share chooser and Play-page link; and
 - opening the exported workbook in Excel, Google Sheets and LibreOffice.
 
 When a real defect recurs or proves subtle, add the smallest regression test that reproduces it. Test behaviour and data promises, not implementation trivia.

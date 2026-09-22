@@ -2,6 +2,7 @@ package com.notabene.app
 
 import android.Manifest
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -135,11 +136,40 @@ import kotlin.math.sin
 
 private val Ink = Color(0xFF090812)
 private const val PrivacyPolicyUrl = "https://andyjmyers.github.io/Nota-Bene/privacy/"
+private const val PlayStoreUrl = "https://play.google.com/store/apps/details?id=com.andyjmyers.notabene"
+private const val ClosedTestUrl = "https://play.google.com/apps/testing/com.andyjmyers.notabene"
+private const val SupportEmail = "andyjmyers@gmail.com"
 private val Glass = Color(0xFF28212B)
 private val Purple = Color(0xFF321052)
 private val Blue = Color(0xFF164B89)
 private val Fusion = Color(0xFFF2C94C)
 private val Crimson = Color(0xFF9D174D)
+
+private fun openPlayPage(context: Context) {
+    val playIntent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.andyjmyers.notabene"))
+        .setPackage("com.android.vending")
+    if (runCatching { context.startActivity(playIntent) }.isFailure) {
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(PlayStoreUrl))) }
+            .onFailure { Toast.makeText(context, "Unable to open the Play page", Toast.LENGTH_SHORT).show() }
+    }
+}
+
+private fun openFeedbackEmail(context: Context) {
+    val address = Uri.parse("mailto:$SupportEmail?subject=Nota%20Bene%20feedback%20build%20${BuildConfig.VERSION_CODE}")
+    runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO, address)) }
+        .onFailure { Toast.makeText(context, "No email app is available", Toast.LENGTH_SHORT).show() }
+}
+
+private fun shareRecommendation(context: Context) {
+    val message = "I thought you might like Nota Bene, a personal log for the things worth remembering. " +
+        "It is in closed testing, so ask Andy for tester access before installing: $ClosedTestUrl"
+    val share = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, message)
+    }
+    runCatching { context.startActivity(Intent.createChooser(share, "Recommend Nota Bene")) }
+        .onFailure { Toast.makeText(context, "No sharing app is available", Toast.LENGTH_SHORT).show() }
+}
 
 /**
  * Copies an accepted photo into the app's private storage.  Gallery grants can be temporary,
@@ -298,74 +328,49 @@ private fun NotaBeneApp() {
                 }
         ) {
             CalmBackground(effect, accent, mood)
-            if (appStyle == NotaStyle.RETRO_FUTURIST) {
-                Image(
-                    painter = painterResource(R.drawable.retro_futurist_field),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = .4f,
-                    modifier = Modifier.fillMaxSize()
-                )
+            val fieldArt = when (appStyle) {
+                NotaStyle.RETRO_FUTURIST -> R.drawable.retro_futurist_field
+                NotaStyle.STEAMPUNK -> R.drawable.steampunk_field
+                NotaStyle.ECCLESIASTIC -> R.drawable.ecclesiastic_field
+                NotaStyle.COSMIC_FUNK -> R.drawable.cosmic_funk_field
+                NotaStyle.ORBITAL_DECO -> R.drawable.orbital_deco_field
+                NotaStyle.ART_NOUVEAU -> null
+                NotaStyle.WILLIAM_MORRIS -> R.drawable.william_morris_field
+                NotaStyle.SLATE -> R.drawable.slate_field
+                NotaStyle.BLEEDING_WATERCOLOURS -> R.drawable.bleeding_watercolours_field
+                NotaStyle.ISOLATION -> R.drawable.isolation_field
+                NotaStyle.MARTIAL_SPIRIT -> R.drawable.martial_spirit_field
             }
-            if (appStyle == NotaStyle.STEAMPUNK) {
+            if (fieldArt != null) {
                 Image(
-                    painter = painterResource(R.drawable.steampunk_field),
+                    painter = painterResource(fieldArt),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    alpha = .4f,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            if (appStyle == NotaStyle.ORBITAL_DECO) {
-                Image(
-                    painter = painterResource(R.drawable.orbital_deco_field),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = .42f,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            if (appStyle == NotaStyle.ECCLESIASTIC) {
-                Image(
-                    painter = painterResource(R.drawable.ecclesiastic_field),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = .4f,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            if (appStyle == NotaStyle.COSMIC_FUNK) {
-                Image(
-                    painter = painterResource(R.drawable.cosmic_funk_field),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = .42f,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-            if (appStyle == NotaStyle.WILLIAM_MORRIS) {
-                Image(
-                    painter = painterResource(R.drawable.william_morris_field),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    alpha = .26f,
+                    alpha = when (appStyle) {
+                        NotaStyle.WILLIAM_MORRIS -> .26f
+                        NotaStyle.SLATE -> .68f
+                        NotaStyle.BLEEDING_WATERCOLOURS -> .56f
+                        NotaStyle.ISOLATION -> .72f
+                        NotaStyle.MARTIAL_SPIRIT -> .68f
+                        else -> .4f
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
             }
             StyleBackdrop(appStyle, accent)
-            if (appStyle == NotaStyle.RETRO_FUTURIST || appStyle == NotaStyle.STEAMPUNK || appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ORBITAL_DECO || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) {
+            val frameArt = when (appStyle) {
+                NotaStyle.RETRO_FUTURIST -> R.drawable.retro_futurist_frame
+                NotaStyle.STEAMPUNK -> R.drawable.steampunk_frame
+                NotaStyle.ECCLESIASTIC -> R.drawable.ecclesiastic_frame
+                NotaStyle.COSMIC_FUNK -> R.drawable.cosmic_funk_frame
+                NotaStyle.ORBITAL_DECO -> R.drawable.orbital_deco_frame
+                NotaStyle.ART_NOUVEAU -> R.drawable.art_nouveau_frame
+                NotaStyle.WILLIAM_MORRIS -> R.drawable.william_morris_frame
+                else -> null
+            }
+            if (frameArt != null) {
                 Image(
-                    painter = painterResource(
-                        when (appStyle) {
-                            NotaStyle.RETRO_FUTURIST -> R.drawable.retro_futurist_frame
-                            NotaStyle.STEAMPUNK -> R.drawable.steampunk_frame
-                            NotaStyle.ECCLESIASTIC -> R.drawable.ecclesiastic_frame
-                            NotaStyle.COSMIC_FUNK -> R.drawable.cosmic_funk_frame
-                            NotaStyle.ORBITAL_DECO -> R.drawable.orbital_deco_frame
-                            NotaStyle.ART_NOUVEAU -> R.drawable.art_nouveau_frame
-                            else -> R.drawable.william_morris_frame
-                        }
-                    ),
+                    painter = painterResource(frameArt),
                     contentDescription = null,
                     contentScale = ContentScale.FillBounds,
                     alpha = when (appStyle) {
@@ -475,7 +480,10 @@ private fun NotaBeneApp() {
                             Toast.makeText(context, "All Nota Bene records erased", Toast.LENGTH_LONG).show()
                             showSettings = false
                         }
-                    }
+                    },
+                    onOpenPlay = { openPlayPage(context) },
+                    onFeedback = { openFeedbackEmail(context) },
+                    onRecommend = { shareRecommendation(context) }
                 )
             }
             if (showNewCollection) {
@@ -522,10 +530,11 @@ private fun NotaBeneApp() {
                 Text(
                     appStyle.displayName,
                     color = styleSpec.text,
-                    fontSize = 25.sp,
+                    fontSize = if (appStyle == NotaStyle.BLEEDING_WATERCOLOURS) 17.sp else 25.sp,
                     fontWeight = FontWeight.Light,
                     fontFamily = styleSpec.titleFamily,
-                    letterSpacing = 4.sp,
+                    letterSpacing = if (appStyle == NotaStyle.BLEEDING_WATERCOLOURS) 2.sp else 4.sp,
+                    maxLines = 1,
                     style = TextStyle(shadow = Shadow(accent, Offset.Zero, 22f)),
                     modifier = Modifier
                         .background(styleSpec.ink.copy(alpha = .78f), RoundedCornerShape(10.dp))
@@ -554,21 +563,9 @@ private fun Header(
         val compact = maxWidth < 500.dp
         val gap = if (compact) 6.dp else 12.dp
         Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(gap)) {
-            if (appStyle != NotaStyle.RETRO_FUTURIST && appStyle != NotaStyle.STEAMPUNK && appStyle != NotaStyle.ECCLESIASTIC && appStyle != NotaStyle.COSMIC_FUNK && appStyle != NotaStyle.ORBITAL_DECO && appStyle != NotaStyle.ART_NOUVEAU && appStyle != NotaStyle.WILLIAM_MORRIS) {
-                val markSize = if (compact) 40.dp else 46.dp
-                Image(
-                    painter = painterResource(id = R.drawable.nb_fountain_icon),
-                    contentDescription = "Nota Bene",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(markSize)
-                        .clip(RoundedCornerShape(11.dp))
-                        .border(1.dp, styleSpec.frame, RoundedCornerShape(11.dp))
-                )
-            }
             val titleModifier = if (compact) {
                 // Keep the full masthead legible on a narrow portrait phone.
-                Modifier.width(if (appStyle == NotaStyle.RETRO_FUTURIST || appStyle == NotaStyle.STEAMPUNK || appStyle == NotaStyle.ECCLESIASTIC || appStyle == NotaStyle.COSMIC_FUNK || appStyle == NotaStyle.ORBITAL_DECO || appStyle == NotaStyle.ART_NOUVEAU || appStyle == NotaStyle.WILLIAM_MORRIS) 122.dp else 106.dp)
+                Modifier.width(122.dp)
             } else {
                 Modifier.weight(1f)
             }
@@ -650,83 +647,118 @@ private fun SettingsDialog(
     onDismiss: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
-    onErase: () -> Unit
+    onErase: () -> Unit,
+    onOpenPlay: () -> Unit,
+    onFeedback: () -> Unit,
+    onRecommend: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
-    var confirmErase by remember { mutableStateOf(false) }
+    val spec = LocalNotaStyle.current.spec
+    var confirmErase by rememberSaveable { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
         title = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("SETTINGS", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 2.sp)
+                Text("THE CABINET", color = panelAccent(accent), fontFamily = spec.titleFamily, fontWeight = FontWeight.Bold, fontSize = 21.sp, letterSpacing = 2.sp)
                 Text(
-                    "${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE} · " +
+                    "NOTA BENE  ·  Build ${BuildConfig.VERSION_CODE}  ·  " +
                         if (BuildConfig.DEBUG) "Development" else "Release",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
+                    color = spec.panelMuted,
+                    fontSize = 11.sp
                 )
             }
         },
         text = {
             Column(
                 Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
-                Text("DATA", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) {
-                    Text("EXPORT XLSX")
-                }
-                OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) {
-                    Text("IMPORT XLSX")
-                }
-                if (confirmErase) {
-                    Text("Erase every collection and record on this device? Exported copies are not affected.", color = Color(0xFFE2B5C2), fontSize = 12.sp)
-                    Button(
-                        onClick = onErase,
-                        colors = ButtonDefaults.buttonColors(containerColor = Crimson),
-                        modifier = Modifier.fillMaxWidth()
-                    ) { Text("CONFIRM ERASE ALL", fontWeight = FontWeight.Black) }
-                    TextButton(onClick = { confirmErase = false }, modifier = Modifier.fillMaxWidth()) { Text("CANCEL") }
-                } else {
-                    TextButton(onClick = { confirmErase = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("ERASE ALL LOCAL DATA", color = Color(0xFFC98A9D))
+                CabinetDrawer("01", "DATA", "Take your records with you", accent, initiallyOpen = true) {
+                    OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) { Text("EXPORT XLSX", color = spec.panelText) }
+                    OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) { Text("IMPORT XLSX", color = spec.panelText) }
+                    HorizontalDivider(color = spec.frame.copy(alpha = .55f))
+                    if (confirmErase) {
+                        Text("Erase every collection and record on this device? Exported copies are not affected.", color = spec.panelText, fontSize = 12.sp)
+                        Button(
+                            onClick = onErase,
+                            colors = ButtonDefaults.buttonColors(containerColor = Crimson),
+                            modifier = Modifier.fillMaxWidth()
+                        ) { Text("CONFIRM ERASE ALL", fontWeight = FontWeight.Black) }
+                        TextButton(onClick = { confirmErase = false }, modifier = Modifier.fillMaxWidth()) { Text("CANCEL", color = spec.panelText) }
+                    } else {
+                        TextButton(onClick = { confirmErase = true }, modifier = Modifier.fillMaxWidth()) {
+                            Text("ERASE ALL LOCAL DATA", color = spec.secondary)
+                        }
                     }
                 }
-                HorizontalDivider(color = Color(0xFF4B424D))
-                Text("PRIVACY & SAFETY", color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
-                Text(
-                    "YOUR RECORDS\nCollections and records stay in Nota Bene's local database. There is no Nota Bene account or server, and the developer cannot see them. Android cloud backup and device-transfer backup are disabled.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Text(
-                    "EXPORT\nRecords leave Nota Bene only when you deliberately export an XLSX workbook and choose where to save it. A cloud destination then applies its own privacy terms. Protect exports as sensitive data and delete them separately.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Text(
-                    "SPEECH\nSpeech is handled by the recognition service installed on your phone; its provider may process audio under its own policy. Nota Bene keeps only text you accept.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Text(
-                    "DELETION\nErase all local data removes every collection and record in Nota Bene. Previously exported copies must be deleted where you saved them.",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                Text(
-                    "PUBLISHER\nDeveloped and published by Andy J Myers. Privacy and support: andyjmyers@gmail.com",
-                    color = Color(0xFFC7BDC7),
-                    fontSize = 12.sp
-                )
-                TextButton(onClick = { uriHandler.openUri(PrivacyPolicyUrl) }, modifier = Modifier.fillMaxWidth()) {
-                    Text("OPEN PRIVACY POLICY", color = accent)
+                CabinetDrawer("02", "HOW IT WORKS", "A short field guide", accent) {
+                    CabinetNote("ENTER", "Write above and tap KEEP ITEM. Your entries stay on this phone.", spec.panelText, spec.panelMuted)
+                    CabinetNote("OR CAPTURE", "LISTEN, PHOTO and GALLERY can fill text for you. Check it before keeping.", spec.panelText, spec.panelMuted)
+                    CabinetNote("MAKE IT YOURS", "Tap + beside the tabs to add a collection. Hold a tab to rename or delete it.", spec.panelText, spec.panelMuted)
+                    CabinetNote("REPEAT", "Choose an interval, then tap LOG each time it happens. Notifications are optional.", spec.panelText, spec.panelMuted)
+                }
+                CabinetDrawer("03", "PRIVACY", "Plain words, no small print", accent) {
+                    CabinetNote("YOUR RECORDS", "Collections and records stay in Nota Bene's local database. There is no Nota Bene account or server, and the developer cannot see them. Android cloud backup and device-transfer backup are disabled.", spec.panelText, spec.panelMuted)
+                    CabinetNote("EXPORT", "Records leave Nota Bene only when you deliberately export an XLSX workbook and choose where to save it. A cloud destination then applies its own privacy terms. Protect exports as sensitive data and delete them separately.", spec.panelText, spec.panelMuted)
+                    CabinetNote("SPEECH", "Speech is handled by the recognition service installed on your phone; its provider may process audio under its own policy. Nota Bene keeps only text you accept.", spec.panelText, spec.panelMuted)
+                    CabinetNote("DELETION", "Erase all local data removes every collection and record in Nota Bene. Previously exported copies must be deleted where you saved them.", spec.panelText, spec.panelMuted)
+                    TextButton(onClick = { uriHandler.openUri(PrivacyPolicyUrl) }, modifier = Modifier.fillMaxWidth()) {
+                        Text("OPEN PRIVACY POLICY", color = panelAccent(accent))
+                    }
+                }
+                CabinetDrawer("04", "ABOUT & SUPPORT", "A word back is always welcome", accent) {
+                    CabinetNote("PUBLISHER", "Developed and published by Andy J Myers. Privacy and support: $SupportEmail", spec.panelText, spec.panelMuted)
+                    CabinetNote("VERSION", "${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE}", spec.panelText, spec.panelMuted)
+                    OutlinedButton(onClick = onFeedback, modifier = Modifier.fillMaxWidth()) { Text("SEND FEEDBACK", color = spec.panelText) }
+                    OutlinedButton(onClick = onOpenPlay, modifier = Modifier.fillMaxWidth()) { Text("RATE / REVIEW ON PLAY", color = spec.panelText) }
+                    Text("During closed testing, Play feedback is private. Public ratings become available after launch.", color = spec.panelMuted, fontSize = 11.sp)
+                    OutlinedButton(onClick = onRecommend, modifier = Modifier.fillMaxWidth()) { Text("RECOMMEND NOTA BENE", color = spec.panelText) }
+                    Text("The shared test link currently needs tester access.", color = spec.panelMuted, fontSize = 11.sp)
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("DONE", color = accent) } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text("DONE", color = panelAccent(accent)) } }
     )
+}
+
+@Composable
+private fun CabinetDrawer(
+    number: String,
+    title: String,
+    subtitle: String,
+    accent: Color,
+    initiallyOpen: Boolean = false,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val spec = LocalNotaStyle.current.spec
+    var expanded by rememberSaveable { mutableStateOf(initiallyOpen) }
+    val shape = RoundedCornerShape(spec.corner.dp)
+    Column(Modifier.fillMaxWidth().border(1.dp, spec.frame.copy(alpha = .8f), shape).clip(shape)) {
+        Row(
+            Modifier.fillMaxWidth().background(spec.surface).clickable { expanded = !expanded }.padding(horizontal = 12.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(number, color = accent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Column(Modifier.weight(1f)) {
+                Text(title, color = spec.text, fontFamily = spec.titleFamily, fontWeight = FontWeight.Bold, fontSize = 13.sp, letterSpacing = 1.sp)
+                Text(subtitle, color = spec.muted, fontSize = 10.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text(if (expanded) "−" else "+", color = accent, fontSize = 20.sp)
+        }
+        if (expanded) {
+            Column(Modifier.fillMaxWidth().background(spec.panel).padding(12.dp), verticalArrangement = Arrangement.spacedBy(9.dp), content = content)
+        }
+    }
+}
+
+@Composable
+private fun CabinetNote(title: String, body: String, text: Color, muted: Color) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(title, color = muted, fontWeight = FontWeight.Bold, fontSize = 10.sp, letterSpacing = 1.sp)
+        Text(body, color = text, fontSize = 12.sp)
+    }
 }
 
 @Composable
@@ -742,41 +774,49 @@ private fun InstrumentCollections(
 ) {
     val styleSpec = appStyle.spec
     val shape = RoundedCornerShape(styleSpec.corner.dp)
+    val tabScroll = rememberScrollState()
+    LaunchedEffect(selectedId, collections.size) {
+        if (collections.lastOrNull()?.id == selectedId) tabScroll.animateScrollTo(tabScroll.maxValue)
+    }
     Row(
-        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        collections.forEach { collection ->
-            val active = collection.id == selectedId
-            val glow by animateFloatAsState(if (active) 1f else .14f, tween(420), label = "filament glow")
-            Box(
-                Modifier.width(92.dp).height(50.dp)
-                    .background(Brush.verticalGradient(listOf(lerp(styleSpec.ink, accent, glow * .55f), styleSpec.surface, styleSpec.ink)), shape)
-                    .border(styleSpec.border.dp, lerp(styleSpec.frame, accent, glow), shape)
-                    .combinedClickable(
-                        onClick = { onSelect(collection.id) },
-                        onLongClick = { onManage(collection.id) }
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                TabArtwork(appStyle, accent, active)
-                Text(
-                    collection.title.uppercase(),
-                    color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = styleSpec.titleFamily,
-                    letterSpacing = 1.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-                )
+        Row(Modifier.weight(1f).horizontalScroll(tabScroll), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            collections.forEach { collection ->
+                val active = collection.id == selectedId
+                val glow by animateFloatAsState(if (active) 1f else .14f, tween(420), label = "filament glow")
+                Box(
+                    Modifier.width(92.dp).height(50.dp)
+                        .background(Brush.verticalGradient(listOf(lerp(styleSpec.ink, accent, glow * .55f), styleSpec.surface, styleSpec.ink)), shape)
+                        .border(styleSpec.border.dp, lerp(styleSpec.frame, accent, glow), shape)
+                        .combinedClickable(
+                            onClickLabel = "Open ${collection.title}",
+                            onLongClickLabel = "Edit or delete ${collection.title}",
+                            onClick = { onSelect(collection.id) },
+                            onLongClick = { onManage(collection.id) }
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    TabArtwork(appStyle, accent, active)
+                    Text(
+                        collection.title.uppercase(),
+                        color = lerp(styleSpec.muted.copy(alpha = .6f), styleSpec.text, glow),
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = styleSpec.titleFamily,
+                        letterSpacing = 1.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
+                }
             }
         }
         Box(
             Modifier.width(50.dp).height(50.dp)
                 .background(styleSpec.surface, shape)
                 .border(styleSpec.border.dp, styleSpec.frame, shape)
-                .clickable(onClick = onAdd),
+                .clickable(onClickLabel = "Add a collection", onClick = onAdd),
             contentAlignment = Alignment.Center
         ) { Text("+", color = accent, fontSize = 24.sp, fontWeight = FontWeight.Light) }
     }
@@ -940,6 +980,24 @@ private fun TabArtwork(style: NotaStyle, accent: Color, active: Boolean) {
                 drawOval(edge, Offset(size.width - 18f, size.height - 13f), androidx.compose.ui.geometry.Size(12f, 7f))
                 drawLine(edge, Offset(8f, size.height - 6f), Offset(size.width - 8f, 6f), 1.2f)
             }
+            NotaStyle.SLATE -> {
+                drawLine(edge, Offset(7f, size.height - 7f), Offset(size.width - 7f, size.height - 7f), 2f)
+                drawLine(spec.glow, Offset(7f, size.height - 11f), Offset(size.width * .42f, size.height - 11f), 1f)
+            }
+            NotaStyle.BLEEDING_WATERCOLOURS -> {
+                drawCircle(spec.secondary, 14f, Offset(12f, size.height - 5f), alpha = .5f)
+                drawCircle(spec.glow, 9f, Offset(size.width - 9f, 8f), alpha = .42f)
+            }
+            NotaStyle.ISOLATION -> {
+                drawLine(edge, Offset(8f, size.height - 8f), Offset(size.width - 8f, size.height - 8f), 1f)
+                drawCircle(spec.glow, 2.7f, Offset(size.width * .7f, size.height - 8f))
+            }
+            NotaStyle.MARTIAL_SPIRIT -> {
+                drawLine(spec.secondary, Offset(7f, 6f), Offset(size.width * .32f, 6f), 3f)
+                drawLine(edge, Offset(size.width * .32f, 6f), Offset(size.width - 7f, 6f), 1.5f)
+                drawLine(edge, Offset(size.width / 2f - 5f, size.height - 7f), Offset(size.width / 2f, size.height - 3f), 2f)
+                drawLine(edge, Offset(size.width / 2f, size.height - 3f), Offset(size.width / 2f + 5f, size.height - 7f), 2f)
+            }
         }
     }
 }
@@ -994,6 +1052,23 @@ private fun NotaCard(
                         drawOval(colour, Offset(x, 5f + (index % 2) * 5f), androidx.compose.ui.geometry.Size(10f, 6f))
                         drawOval(colour, Offset(size.width - x - 10f, size.height - 11f - (index % 2) * 5f), androidx.compose.ui.geometry.Size(10f, 6f))
                     }
+                }
+                NotaStyle.SLATE -> {
+                    drawLine(spec.glow.copy(alpha = .34f), Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset), 1.5f)
+                    drawLine(spec.secondary.copy(alpha = .5f), Offset(inset, inset), Offset(inset + 30f, inset), 2f)
+                }
+                NotaStyle.BLEEDING_WATERCOLOURS -> {
+                    drawCircle(spec.secondary.copy(alpha = .2f), 24f, Offset(inset, size.height - inset))
+                    drawCircle(spec.glow.copy(alpha = .17f), 18f, Offset(size.width - inset, inset))
+                }
+                NotaStyle.ISOLATION -> {
+                    drawLine(spec.frame.copy(alpha = .45f), Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset), 1f)
+                    drawCircle(spec.glow.copy(alpha = .85f), 2.5f, Offset(size.width * .76f, size.height - inset))
+                }
+                NotaStyle.MARTIAL_SPIRIT -> {
+                    drawLine(spec.secondary.copy(alpha = .72f), Offset(inset, inset), Offset(size.width * .28f, inset), 3f)
+                    drawLine(spec.glow.copy(alpha = .48f), Offset(size.width * .28f, inset), Offset(size.width - inset, inset), 1.5f)
+                    drawLine(spec.glow.copy(alpha = .4f), Offset(inset, size.height - inset), Offset(size.width - inset, size.height - inset), 1.5f)
                 }
             }
         },
@@ -1217,7 +1292,14 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
             }
         }
         if (shown.isEmpty()) {
-            Text("No ${kind.label.lowercase()} items to show", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .55f), modifier = Modifier.padding(12.dp))
+            val emptyMessage = when {
+                entries.isNotEmpty() -> "Completed items are hidden. Tap SHOW DONE to see them."
+                kind == CollectionKind.TODO -> "Your first task starts above. Write it, then tap KEEP ITEM."
+                kind == CollectionKind.LOG -> "Your first log starts above. Write it, speak it or use a photo."
+                kind == CollectionKind.RECORD -> "Your first record starts above. Write it, speak it or use a photo."
+                else -> "Your first repeat starts above. Choose an interval, then tap KEEP ITEM."
+            }
+            Text(emptyMessage, color = MaterialTheme.colorScheme.onBackground.copy(alpha = .72f), modifier = Modifier.padding(12.dp))
         }
         shown.forEach { entry ->
             CollectionEntryRow(entry, kind, accent,
@@ -2141,6 +2223,24 @@ private fun StyleBackdrop(style: NotaStyle, accent: Color) {
                     drawLine(spec.frame, Offset(18f, y), Offset(40f, y + 22f), 3f)
                     drawLine(spec.frame, Offset(size.width - 18f, y), Offset(size.width - 40f, y + 22f), 3f)
                 }
+            }
+            NotaStyle.SLATE -> {
+                drawLine(spec.glow, Offset(0f, size.height * .08f), Offset(size.width * .26f, size.height * .13f), 2f)
+                drawLine(spec.glow, Offset(size.width * .72f, size.height * .87f), Offset(size.width, size.height * .82f), 2f)
+            }
+            NotaStyle.BLEEDING_WATERCOLOURS -> {
+                drawCircle(spec.secondary, size.width * .16f, Offset(0f, size.height * .12f), alpha = .35f)
+                drawCircle(spec.glow, size.width * .12f, Offset(size.width, size.height * .8f), alpha = .25f)
+            }
+            NotaStyle.ISOLATION -> {
+                drawLine(spec.frame, Offset(0f, size.height * .7f), Offset(size.width, size.height * .7f), 1f)
+                drawCircle(spec.glow, 5f, Offset(size.width * .76f, size.height * .7f))
+            }
+            NotaStyle.MARTIAL_SPIRIT -> {
+                drawLine(spec.glow, Offset(0f, size.height * .06f), Offset(size.width * .18f, size.height * .16f), 2f)
+                drawLine(spec.glow, Offset(size.width, size.height * .06f), Offset(size.width * .82f, size.height * .16f), 2f)
+                drawLine(spec.secondary, Offset(0f, size.height * .82f), Offset(size.width * .22f, size.height), 3f)
+                drawLine(spec.secondary, Offset(size.width, size.height * .82f), Offset(size.width * .78f, size.height), 3f)
             }
         }
     }

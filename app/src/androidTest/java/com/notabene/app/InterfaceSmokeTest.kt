@@ -30,52 +30,43 @@ class InterfaceSmokeTest {
     }
 
     @Test
-    fun allFiveGospelInstrumentsOpenTheirWorkingPanels() {
-        compose.onNodeWithText("MEDS").performClick()
-        compose.onNodeWithText("NEW MEDICATION SCHEDULE").assertIsDisplayed()
-
-        compose.onNodeWithText("SOMA").performClick()
-        compose.onNodeWithText("NEW SOMA RECORD").assertIsDisplayed()
-
-        compose.onNodeWithText("TASK").performClick()
-        compose.onNodeWithText("NEW TASK").assertIsDisplayed()
-
-        compose.onNodeWithText("ASK").performClick()
-        compose.onNodeWithText("NEW QUESTION / TASK").assertIsDisplayed()
-
-        compose.onNodeWithText("SPEND").performClick()
-        compose.onNodeWithText("CAPTURE / REVIEW").assertIsDisplayed()
+    fun firstCollectionExplainsHowToKeepAnItem() {
+        waitForText("NEW TODO ITEM")
+        compose.onNodeWithText("Your first task starts above. Write it, then tap KEEP ITEM.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Add a collection").assertIsDisplayed()
     }
 
     @Test
-    fun settingsKeepsAdministrativeControlsOneLevelDown() {
+    fun settingsCabinetKeepsDataAndHelpEasyToFind() {
         compose.onNodeWithContentDescription("Settings").performClick()
-        compose.onNodeWithText("SETTINGS").assertIsDisplayed()
-        compose.onNodeWithText("${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE} · Development").assertIsDisplayed()
-        compose.onNodeWithText("EXPORT XLSX").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("IMPORT XLSX").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("PRIVACY & SAFETY").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("THE CABINET").assertIsDisplayed()
+        compose.onNodeWithText("EXPORT XLSX").assertIsDisplayed()
+        compose.onNodeWithText("IMPORT XLSX").assertIsDisplayed()
+        compose.onNodeWithText("HOW IT WORKS").performScrollTo().performClick()
+        compose.onNodeWithText("Tap + beside the tabs to add a collection. Hold a tab to rename or delete it.")
+            .performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("ABOUT & SUPPORT").performScrollTo().performClick()
+        compose.onNodeWithText("SEND FEEDBACK").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("RECOMMEND NOTA BENE").performScrollTo().assertIsDisplayed()
     }
 
     @Test
-    fun MEDSLogButtonRemainsAvailableForASecondSameDayEntry() {
-        compose.onNodeWithText("MEDS").performClick()
-        compose.onNode(hasText("Medication") and hasSetTextAction()).performTextInput("Example")
-        compose.onNode(hasText("Dosage") and hasSetTextAction()).performTextInput("one")
-        compose.onNode(hasText("Doses left") and hasSetTextAction()).performTextInput("10")
-        compose.onNodeWithText("ADD").performClick()
-        waitForText("0/1")
-
-        compose.onNodeWithText("LOG TAKEN").performScrollTo().performClick()
-        waitForText("1/1")
-        compose.onNodeWithText("LOG TAKEN").performScrollTo().performClick()
-        waitForText("2/1")
+    fun aNewCollectionOpensItsOwnEntryForm() {
+        waitForText("NEW TODO ITEM")
+        compose.onNodeWithContentDescription("Add a collection").performClick()
+        compose.onNodeWithText("NEW COLLECTION").assertIsDisplayed()
+        compose.onNode(hasText("Name") and hasSetTextAction()).performTextInput("Journal")
+        compose.onNodeWithText("LOG").performClick()
+        compose.onNodeWithText("CREATE").performClick()
+        waitForText("NEW LOG ITEM")
+        compose.onNodeWithText("JOURNAL").assertIsDisplayed()
     }
 
     @Test
-    fun unfinishedTaskSurvivesActivityRecreation() {
-        compose.onNodeWithText("TASK").performClick()
-        compose.onNode(hasText("What needs doing?") and hasSetTextAction()).performTextInput("Survive rotation")
+    fun unfinishedTodoSurvivesActivityRecreation() {
+        waitForText("NEW TODO ITEM")
+        compose.onNode(hasText("What do you want to do?") and hasSetTextAction())
+            .performTextInput("Survive rotation")
 
         compose.activityRule.scenario.recreate()
 

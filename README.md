@@ -10,7 +10,7 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_26-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_43-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
 Development builds are released periodically while the configurable collection model is tested on real phones. Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist and have separate local records; export before removing an installation.
@@ -44,13 +44,13 @@ Anything deliberately entered or accepted by the user is treated as the recorded
 
 Primary data is stored locally in a Room database and survives application closure and phone restart. The expected data volume is small.
 
-The `*` settings control contains the export action. It opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included.
+The `*` settings control opens a four-drawer cabinet for Data, How it works, Privacy, and About & support. Export opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included. The support drawer offers feedback, the Play page and a recommendation share action; during closed testing the share message explains that tester access is required.
 
 > Personal records stay on-device and Android backup is disabled. They leave only when the user explicitly exports an XLSX workbook.
 
 ## Design
 
-The complete interface can be cycled through seven persistent visual treatments using the prominent `MOOD >` control: Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris. Each treatment has its own palette, type character, instrument contours, panel ornament and atmospheric backdrop while preserving the same controls and workflows. Changing style never changes the layout, behaviour or stored records. The newly selected style name glows briefly into view and then fades away.
+The complete interface can be cycled through eleven persistent visual treatments using the prominent `MOOD >` control: Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau, William Morris, Slate, Bleeding Watercolours, Isolation and Martial Spirit. Each treatment has its own palette, type character, instrument contours, panel ornament and atmospheric backdrop while preserving the same controls and workflows. Changing style never changes the layout, behaviour or stored records. The newly selected style name glows briefly into view and then fades away.
 
 Art Nouveau surrounds dark peacock enamel controls and warm ivory working panels with a hand-finished ginkgo-and-whiplash frame.
 
@@ -66,6 +66,8 @@ Steampunk is the sixth completed artwork treatment: oil-black iron, aged brass, 
 
 Retro Futurist is the seventh completed artwork treatment and Nota Bene's home ground: smoked-violet instrument glass, brushed gunmetal, deep blue and quinacridone-crimson stained light, plus glowing amber filaments turn the original industrial-radio idea into a finished machine.
 
+Slate brings rain-dark stone, silver mineral seams and spare engraved controls. Bleeding Watercolours lets crimson, ultramarine and gold pigment pool around a clear working centre. Isolation opens a vast night horizon with a single distant light. Martial Spirit uses lacquer red, brushed metal and disciplined gold geometry. All four keep the entries readable and use the same controls as the original styles.
+
 Nota Bene uses the same interface language throughout. Its user-created collection tabs are large industrial radio-style controls presented on one scrolling line:
 
 <div align="center">
@@ -76,7 +78,7 @@ Nota Bene uses the same interface language throughout. Its user-created collecti
 
 The selected control appears illuminated from behind, like a filament bulb glowing through slightly grimy stained glass; unselected controls remain dimmed. Selecting a tab fades its title into view.
 
-The visual character is **retro-futurist rather than steampunk**: functional machinery from an imagined future, not decorative Victorian engineering.
+The original visual character is **retro-futurist**: functional machinery from an imagined future. The other treatments change its dress without changing how it works.
 
 A mood control moves through **dark purple · blue · yellow fusion · quinacridone crimson**. It also governs the pace and intensity of four atmospheric backgrounds:
 
@@ -92,17 +94,17 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 **Generic collections development build** provides:
 
 - a native Kotlin and Jetpack Compose application;
-- a configurable collection shell and instrument-panel visual language;
+- a configurable collection shell with eleven selectable visual styles;
 - the continuous four-colour mood control and four animated backgrounds;
 - local persistence through Room;
 - a collection-based XLSX export through Android's save picker;
 - tap-away keyboard dismissal throughout the app;
-- the new N.B. fountain-pen identity in the launcher, app header and project page;
+- the N.B. fountain-pen identity in the launcher and project page;
 - reliable sensor-driven rotation with system-bar-safe content;
 - continuous vertical scrolling through every instrument panel;
 - disabled cloud and device-transfer backup;
 - complete local erasure of collections and records; and
-- one compact `*` settings sheet for XLSX import, export and a plain-English privacy notice.
+- one compact `*` settings cabinet for XLSX import/export, a short field guide, a plain-English privacy notice, build details and feedback/recommendation actions.
 
 Every collection supports typed entry, system speech recognition and image-text capture; captured material remains editable before it is kept. A collection can be used to monitor anything from milk for kittens to a prescription for a problem panda—the app provides neutral tools, not a predefined category or recommendation.
 

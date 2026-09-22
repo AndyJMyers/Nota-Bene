@@ -8,7 +8,7 @@
 - The header contains the Nota Bene identity, colour slider, `MOOD >`, animation and `*` settings controls.
 - Every panel scrolls vertically and remains usable after phone rotation.
 - Tapping outside an input dismisses the keyboard.
-- Administrative controls, including XLSX import/export and full local erasure, stay under `*` Settings.
+- Administrative controls, including XLSX import/export and full local erasure, stay under the `*` settings cabinet.
 
 ## Product-test priorities
 
@@ -36,6 +36,8 @@
 ## Visual styles
 
 - [x] Add a persistent `MOOD >` next-style control with a generous touch target.
-- [x] Add distinct palettes, type character, tab artwork, panel frames and backdrop ornament for Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau and William Morris.
+- [x] Add distinct palettes, type character, tab artwork, panel frames and backdrop ornament for Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau, William Morris, Slate, Bleeding Watercolours, Isolation and Martial Spirit.
 - [x] Glow the selected style name into view and fade it away without interrupting the current task.
-- [ ] Refine all seven treatments side-by-side on a physical phone, keeping their operational layout and control language consistent.
+- [x] Keep the add-collection control visible while collection tabs scroll; make tab editing discoverable in the settings guide.
+- [ ] Refine all eleven treatments side-by-side on a physical phone, keeping their operational layout and control language consistent.
+- [ ] Before a public release, replace the closed-test recommendation wording with the public Play link.
