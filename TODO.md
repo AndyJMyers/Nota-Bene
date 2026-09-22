@@ -39,5 +39,6 @@
 - [x] Add distinct palettes, type character, tab artwork, panel frames and backdrop ornament for Retro Futurist, Steampunk, Ecclesiastic, Cosmic Funk, Orbital Deco, Art Nouveau, William Morris, Slate, Bleeding Watercolours, Isolation and Martial Spirit.
 - [x] Glow the selected style name into view and fade it away without interrupting the current task.
 - [x] Keep the add-collection control visible while collection tabs scroll; make tab editing discoverable in the settings guide.
+- [x] Add style-aware empty-state illustrations and a short, non-blocking flourish after storing a record or completion.
 - [ ] Refine all eleven treatments side-by-side on a physical phone, keeping their operational layout and control language consistent.
 - [ ] Before a public release, replace the closed-test recommendation wording with the public Play link.

@@ -73,6 +73,7 @@ The suite does not pretend to replace judgement on a real phone. These remain ma
 - keyboard behaviour, rotation and small-screen feel;
 - save-picker destinations; and
 - the settings cabinet on narrow phones and across all visual styles;
+- empty-state illustrations and the brief completion flourish across light and dark styles, without layout jumps;
 - the Android email/share chooser and Play-page link; and
 - opening the exported workbook in Excel, Google Sheets and LibreOffice.
 

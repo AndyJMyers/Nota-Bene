@@ -10,7 +10,7 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_43-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_44-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
 Development builds are released periodically while the configurable collection model is tested on real phones. Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist and have separate local records; export before removing an installation.
@@ -77,6 +77,8 @@ Nota Bene uses the same interface language throughout. Its user-created collecti
 </div>
 
 The selected control appears illuminated from behind, like a filament bulb glowing through slightly grimy stained glass; unselected controls remain dimmed. Selecting a tab fades its title into view.
+
+Empty TODO, LOG, RECORD and REPEAT collections each have a small line-drawn instrument in the active style. Keeping an item, ticking a task or logging a repeat gives a brief, non-blocking completion glint after the record is stored.
 
 The original visual character is **retro-futurist**: functional machinery from an imagined future. The other treatments change its dress without changing how it works.
 

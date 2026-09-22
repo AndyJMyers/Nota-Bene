@@ -81,6 +81,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -111,6 +112,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -1104,6 +1106,9 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     var pendingAttachmentPath by rememberSaveable(collection.id) { mutableStateOf("") }
     var readingImage by remember { mutableStateOf(false) }
     var entryToEdit by remember { mutableStateOf<CollectionEntry?>(null) }
+    var savedPulse by remember(collection.id) { mutableIntStateOf(0) }
+    var completedEntryId by remember(collection.id) { mutableStateOf<Long?>(null) }
+    var completedPulse by remember(collection.id) { mutableIntStateOf(0) }
     val shown = if (hideCompleted && kind != CollectionKind.REPEAT) entries.filterNot { it.done } else entries
 
     fun absorbCapture(captured: String, source: String) {
@@ -1259,30 +1264,34 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                         }
                     }
                 }
-                Button(
-                    enabled = text.isNotBlank() && (!notifyWhenDue || runCatching { LocalTime.parse(notifyAt) }.isSuccess),
-                    onClick = {
-                        scope.launch {
-                            dao.insertEntry(
-                                CollectionEntry(
-                                    collectionId = collection.id,
-                                    text = text.trim(),
-                                    detail = detail.trim(),
-                                    intervalDays = if (kind == CollectionKind.REPEAT) repeatDays else 0,
-                                    quantity = quantity.toIntOrNull(),
-                                    restockAt = restockAt.toIntOrNull(),
-                                    notifyWhenDue = kind == CollectionKind.REPEAT && notifyWhenDue,
-                                    notifyAt = notifyAt.ifBlank { "09:00" },
-                                    attachmentPath = pendingAttachmentPath
+                Box(Modifier.fillMaxWidth()) {
+                    Button(
+                        enabled = text.isNotBlank() && (!notifyWhenDue || runCatching { LocalTime.parse(notifyAt) }.isSuccess),
+                        onClick = {
+                            scope.launch {
+                                dao.insertEntry(
+                                    CollectionEntry(
+                                        collectionId = collection.id,
+                                        text = text.trim(),
+                                        detail = detail.trim(),
+                                        intervalDays = if (kind == CollectionKind.REPEAT) repeatDays else 0,
+                                        quantity = quantity.toIntOrNull(),
+                                        restockAt = restockAt.toIntOrNull(),
+                                        notifyWhenDue = kind == CollectionKind.REPEAT && notifyWhenDue,
+                                        notifyAt = notifyAt.ifBlank { "09:00" },
+                                        attachmentPath = pendingAttachmentPath
+                                    )
                                 )
-                            )
-                            if (kind == CollectionKind.REPEAT && notifyWhenDue) RepeatReminderScheduler.prepare(context)
-                            text = ""; detail = ""; quantity = ""; restockAt = ""; notifyWhenDue = false; notifyAt = "09:00"; pendingAttachmentPath = ""
-                        }
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink),
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("KEEP ITEM", fontWeight = FontWeight.Black) }
+                                if (kind == CollectionKind.REPEAT && notifyWhenDue) RepeatReminderScheduler.prepare(context)
+                                text = ""; detail = ""; quantity = ""; restockAt = ""; notifyWhenDue = false; notifyAt = "09:00"; pendingAttachmentPath = ""
+                                savedPulse += 1
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { Text("KEEP ITEM", fontWeight = FontWeight.Black) }
+                    CompletionFlourish(savedPulse, accent, Modifier.matchParentSize())
+                }
             }
         }
         if (kind == CollectionKind.TODO) {
@@ -1299,16 +1308,29 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                 kind == CollectionKind.RECORD -> "Your first record starts above. Write it, speak it or use a photo."
                 else -> "Your first repeat starts above. Choose an interval, then tap KEEP ITEM."
             }
-            Text(emptyMessage, color = MaterialTheme.colorScheme.onBackground.copy(alpha = .72f), modifier = Modifier.padding(12.dp))
+            Column(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                if (entries.isEmpty()) EmptyCollectionArtwork(kind, accent)
+                Text(
+                    emptyMessage,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .78f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+                )
+            }
         }
         shown.forEach { entry ->
             CollectionEntryRow(entry, kind, accent,
+                flourishPulse = if (completedEntryId == entry.id) completedPulse else 0,
                 onDone = { done -> scope.launch {
                     if (kind == CollectionKind.REPEAT && done) {
                         dao.recordRepeatEvent(entry.id, System.currentTimeMillis())
                         RepeatReminderScheduler.cancelNotification(context, entry.id)
                     } else {
                         dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null)
+                    }
+                    if (done) {
+                        completedEntryId = entry.id
+                        completedPulse += 1
                     }
                 } },
                 onQuantity = { value -> scope.launch { dao.setQuantity(entry.id, value) } },
@@ -1345,6 +1367,7 @@ private fun CollectionEntryRow(
     entry: CollectionEntry,
     kind: CollectionKind,
     accent: Color,
+    flourishPulse: Int,
     onDone: (Boolean) -> Unit,
     onQuantity: (Int?) -> Unit,
     onDelete: () -> Unit,
@@ -1355,6 +1378,7 @@ private fun CollectionEntryRow(
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
     val events by dao.observeRepeatEvents(entry.id).collectAsState(initial = emptyList())
+    Box(Modifier.fillMaxWidth()) {
     NotaCard(Modifier.fillMaxWidth(), compact = true) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
             if (kind == CollectionKind.TODO) {
@@ -1416,6 +1440,8 @@ private fun CollectionEntryRow(
                 TextButton(onClick = onDelete, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("×", color = Crimson, fontSize = 18.sp) }
             }
         }
+    }
+        CompletionFlourish(flourishPulse, accent, Modifier.matchParentSize())
     }
     if (showAttachment) {
         AttachmentDialog(
