@@ -139,7 +139,6 @@ import kotlin.math.sin
 private val Ink = Color(0xFF090812)
 private const val PrivacyPolicyUrl = "https://andyjmyers.github.io/Nota-Bene/privacy/"
 private const val PlayStoreUrl = "https://play.google.com/store/apps/details?id=com.andyjmyers.notabene"
-private const val ClosedTestUrl = "https://play.google.com/apps/testing/com.andyjmyers.notabene"
 private const val SupportEmail = "andyjmyers@gmail.com"
 private val Glass = Color(0xFF28212B)
 private val Purple = Color(0xFF321052)
@@ -164,7 +163,7 @@ private fun openFeedbackEmail(context: Context) {
 
 private fun shareRecommendation(context: Context) {
     val message = "I thought you might like Nota Bene, a personal log for the things worth remembering. " +
-        "It is in closed testing, so ask Andy for tester access before installing: $ClosedTestUrl"
+        PlayStoreUrl
     val share = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, message)
@@ -714,9 +713,7 @@ private fun SettingsDialog(
                     CabinetNote("VERSION", "${BuildConfig.VERSION_NAME} · Build ${BuildConfig.VERSION_CODE}", spec.panelText, spec.panelMuted)
                     OutlinedButton(onClick = onFeedback, modifier = Modifier.fillMaxWidth()) { Text("SEND FEEDBACK", color = spec.panelText) }
                     OutlinedButton(onClick = onOpenPlay, modifier = Modifier.fillMaxWidth()) { Text("RATE / REVIEW ON PLAY", color = spec.panelText) }
-                    Text("During closed testing, Play feedback is private. Public ratings become available after launch.", color = spec.panelMuted, fontSize = 11.sp)
                     OutlinedButton(onClick = onRecommend, modifier = Modifier.fillMaxWidth()) { Text("RECOMMEND NOTA BENE", color = spec.panelText) }
-                    Text("The shared test link currently needs tester access.", color = spec.panelMuted, fontSize = 11.sp)
                 }
             }
         },
@@ -1102,6 +1099,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
     var notifyWhenDue by rememberSaveable(collection.id) { mutableStateOf(false) }
     var notifyAt by rememberSaveable(collection.id) { mutableStateOf("09:00") }
     var hideCompleted by rememberSaveable(collection.id) { mutableStateOf(false) }
+    var confirmDeleteDone by remember(collection.id) { mutableStateOf(false) }
     var captureStatus by rememberSaveable(collection.id) { mutableStateOf("") }
     var pendingAttachmentPath by rememberSaveable(collection.id) { mutableStateOf("") }
     var readingImage by remember { mutableStateOf(false) }
@@ -1294,11 +1292,31 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                 }
             }
         }
-        if (kind == CollectionKind.TODO) {
+        if (kind == CollectionKind.TODO || kind == CollectionKind.RECORD) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text("${shown.count { !it.done }} OPEN", color = MaterialTheme.colorScheme.onBackground.copy(alpha = .62f), fontSize = 10.sp, letterSpacing = 2.sp, modifier = Modifier.weight(1f))
                 TextButton(onClick = { hideCompleted = !hideCompleted }) { Text(if (hideCompleted) "SHOW DONE" else "HIDE DONE", color = accent, fontSize = 10.sp) }
+                TextButton(enabled = entries.any { it.done }, onClick = { confirmDeleteDone = true }) {
+                    Text("DELETE DONE", color = if (entries.any { it.done }) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onBackground.copy(alpha = .38f), fontSize = 10.sp)
+                }
             }
+        }
+        if (confirmDeleteDone) {
+            AlertDialog(
+                onDismissRequest = { confirmDeleteDone = false },
+                title = { Text("DELETE DONE?") },
+                text = { Text("Delete completed items from ${collection.title}? Open items and other collections will be kept. This cannot be undone; export first if you want a copy.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        confirmDeleteDone = false
+                        scope.launch {
+                            val removed = dao.deleteCompletedEntries(collection.id)
+                            removed.forEach { item -> item.attachmentPath.takeIf { it.isNotBlank() }?.let { File(it).delete() } }
+                        }
+                    }) { Text("DELETE DONE") }
+                },
+                dismissButton = { TextButton(onClick = { confirmDeleteDone = false }) { Text("CANCEL") } }
+            )
         }
         if (shown.isEmpty()) {
             val emptyMessage = when {
@@ -1381,7 +1399,7 @@ private fun CollectionEntryRow(
     Box(Modifier.fillMaxWidth()) {
     NotaCard(Modifier.fillMaxWidth(), compact = true) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
-            if (kind == CollectionKind.TODO) {
+            if (kind == CollectionKind.TODO || kind == CollectionKind.RECORD) {
                 Checkbox(checked = entry.done, onCheckedChange = onDone, modifier = Modifier.size(28.dp))
                 Spacer(Modifier.width(6.dp))
             } else if (kind == CollectionKind.REPEAT) {

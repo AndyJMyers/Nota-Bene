@@ -31,6 +31,23 @@ class DatabaseRegressionTest {
     }
 
     @Test
+    fun deleteDoneKeepsOpenTasksAndOtherCollections() = runBlocking {
+        val dao = database.collectionDao()
+        val selected = dao.insertCollection(Collection(title = "Jobs", kind = "TODO"))
+        val other = dao.insertCollection(Collection(title = "Other", kind = "TODO"))
+        dao.insertEntry(CollectionEntry(id = 101, collectionId = selected, text = "Done", done = true))
+        dao.insertEntry(CollectionEntry(id = 102, collectionId = selected, text = "Open"))
+        dao.insertEntry(CollectionEntry(id = 103, collectionId = other, text = "Other done", done = true))
+        dao.insertRepeatEvent(RepeatEvent(entryId = 101, occurredAt = 1))
+
+        assertEquals(listOf(101L), dao.deleteCompletedEntries(selected).map { it.id })
+        assertEquals(listOf("Open"), dao.observeEntries(selected).first().map { it.text })
+        assertEquals(listOf("Other done"), dao.observeEntries(other).first().map { it.text })
+        assertTrue(dao.observeRepeatEvents(101).first().isEmpty())
+        assertTrue(dao.deleteCompletedEntries(selected).isEmpty())
+    }
+
+    @Test
     fun repeatedSameDayDosesArePersisted() = runBlocking {
         val dao = database.medicationDao()
         val medicationId = dao.insertMedication(

@@ -4,6 +4,7 @@
 
 - Nota Bene opens with one **TODO** collection. The `+` control adds named TODO, LOG, RECORD and REPEAT collections.
 - Tapping a tab selects it; long-pressing it edits or deletes that collection.
+- TODO and RECORD collections have completion checkboxes and can hide/show completed items or delete them after confirmation; deletion is confined to the selected collection.
 - REPEAT items visibly retain their day/week/month/year interval. `LOG` records an occurrence; tapping an item shows its history; long-pressing it edits the item.
 - The header contains the Nota Bene identity, colour slider, `MOOD >`, animation and `*` settings controls.
 - Every panel scrolls vertically and remains usable after phone rotation.
@@ -41,4 +42,6 @@
 - [x] Keep the add-collection control visible while collection tabs scroll; make tab editing discoverable in the settings guide.
 - [x] Add style-aware empty-state illustrations and a short, non-blocking flourish after storing a record or completion.
 - [ ] Refine all eleven treatments side-by-side on a physical phone, keeping their operational layout and control language consistent.
-- [ ] Before a public release, replace the closed-test recommendation wording with the public Play link.
+- [x] Replace the closed-test recommendation wording with the public Play link.
+- [x] Replace only the settings screenshot with the current cabinet layout; retain the other selected screenshots.
+- [ ] Upload the refreshed cabinet screenshot when preparing the production listing.

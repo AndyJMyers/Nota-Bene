@@ -232,6 +232,16 @@ interface CollectionDao {
         deleteRepeatEvents(id)
         deleteEntry(id)
     }
+
+    @Query("SELECT * FROM collection_entries WHERE collectionId = :collectionId AND done = 1")
+    suspend fun completedEntries(collectionId: Long): List<CollectionEntry>
+
+    @Transaction
+    suspend fun deleteCompletedEntries(collectionId: Long): List<CollectionEntry> {
+        val completed = completedEntries(collectionId)
+        completed.forEach { deleteEntryAndEvents(it.id) }
+        return completed
+    }
 }
 
 @Dao

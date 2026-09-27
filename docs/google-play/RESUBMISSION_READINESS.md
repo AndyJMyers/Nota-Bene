@@ -6,12 +6,12 @@
 - Public privacy policy and in-app policy link.
 - Store-listing, Data Safety and App content working drafts.
 - Current generic feature-art direction.
-- Screenshot plan awaiting final local tab refinement.
+- Generic collection screenshots captured; settings refreshed for build 45's cabinet layout.
 
 ## Do before opening a new review
 
-1. Finish local tab testing and settle names, order and sample data.
-2. Capture the screenshot set in `SCREENSHOT_PLAN.md`.
+1. Retain the selected generic collection screenshots and sample data.
+2. Upload the refreshed cabinet settings capture, as noted in `SCREENSHOT_PLAN.md`.
 3. Build a fresh signed App Bundle with a new version code.
 4. Inspect its merged manifest, permissions and dependency inventory.
 5. Recheck the current ML Kit disclosure, then complete Data Safety from the final bundle.

@@ -39,6 +39,7 @@ Run it on a connected phone or emulator:
 
 The Android tests cover:
 
+- deletion of completed tasks without touching open tasks or other collections, including removal of associated event history;
 - two same-day dose rows in a real Room database;
 - persistent stock correction and halted state;
 - erasure of all five instruments and dose history;

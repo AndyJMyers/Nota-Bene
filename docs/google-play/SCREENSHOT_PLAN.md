@@ -1,6 +1,6 @@
-# Nota Bene — screenshots pending final tab refinement
+# Nota Bene — screenshot set
 
-Do not capture or upload screenshots until the tab naming, order and example records have been settled on the phone.
+Five generic-collection screenshots are retained in `screenshots/`: TODO, LOG, REPEAT, personalisation and settings. The collection and personalisation captures from 9 September are retained. `play-settings.png` was refreshed on 27 September from build 45, showing the current cabinet over an empty example collection, without personal records. Additional screenshots of the newest moods are not required. Upload the refreshed settings image when preparing the production listing.
 
 ## Capture set
 

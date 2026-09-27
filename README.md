@@ -10,7 +10,7 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_44-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-Alpha_45-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
 Development builds are released periodically while the configurable collection model is tested on real phones. Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist and have separate local records; export before removing an installation.
@@ -44,7 +44,9 @@ Anything deliberately entered or accepted by the user is treated as the recorded
 
 Primary data is stored locally in a Room database and survives application closure and phone restart. The expected data volume is small.
 
-The `*` settings control opens a four-drawer cabinet for Data, How it works, Privacy, and About & support. Export opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included. The support drawer offers feedback, the Play page and a recommendation share action; during closed testing the share message explains that tester access is required.
+The `*` settings control opens a four-drawer cabinet for Data, How it works, Privacy, and About & support. Export opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included. The support drawer offers feedback, the Play page and a recommendation share action using the public store link.
+
+TODO and RECORD collections offer completion checkboxes, HIDE DONE / SHOW DONE and DELETE DONE. Deletion asks for confirmation and removes only completed items in that collection, leaving open items and other collections untouched.
 
 > Personal records stay on-device and Android backup is disabled. They leave only when the user explicitly exports an XLSX workbook.
 
@@ -110,7 +112,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 Every collection supports typed entry, system speech recognition and image-text capture; captured material remains editable before it is kept. A collection can be used to monitor anything from milk for kittens to a prescription for a problem panda—the app provides neutral tools, not a predefined category or recommendation.
 
-Near-term work is practical rather than expansive: test image extraction, data migration, complete erasure and exports on real devices; then recapture the store material around the configurable interface. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
+Near-term work is practical rather than expansive: test image extraction, data migration, complete erasure and exports on real devices. The generic collection screenshots are retained, with the settings image refreshed for build 45's cabinet layout. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
 
 ## Testing
 
