@@ -108,6 +108,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -1391,7 +1393,7 @@ private fun CollectionEntryRow(
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
-    var showHistory by remember { mutableStateOf(false) }
+    var showHistory by rememberSaveable(entry.id) { mutableStateOf(false) }
     var showAttachment by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
@@ -1411,12 +1413,38 @@ private fun CollectionEntryRow(
                 Spacer(Modifier.width(6.dp))
             }
             Column(
-                Modifier.weight(1f).combinedClickable(
+                Modifier.weight(1f).then(if (kind != CollectionKind.REPEAT) Modifier.combinedClickable(
                     onClick = { showHistory = !showHistory },
                     onLongClick = onEdit
-                )
+                ) else Modifier)
             ) {
-                Text(entry.text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, textDecoration = if (kind != CollectionKind.REPEAT && entry.done) TextDecoration.LineThrough else null)
+                if (kind == CollectionKind.REPEAT) {
+                    val shape = RoundedCornerShape(10.dp)
+                    val foreground = MaterialTheme.colorScheme.onSurface
+                    Row(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .clip(shape)
+                            .background(foreground.copy(alpha = if (showHistory) .20f else .06f))
+                            .border(1.dp, foreground.copy(alpha = if (showHistory) .65f else .30f), shape)
+                            .combinedClickable(
+                                role = Role.Button,
+                                onClickLabel = if (showHistory) "Hide logged items" else "Show logged items",
+                                onClick = { showHistory = !showHistory },
+                                onLongClickLabel = "Edit repeat item",
+                                onLongClick = onEdit
+                            )
+                            .semantics { stateDescription = if (showHistory) "History shown" else "History hidden" }
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(entry.text, modifier = Modifier.weight(1f), color = foreground, fontWeight = FontWeight.Medium)
+                        Text(if (showHistory) "▲" else "▼", color = foreground, fontSize = 12.sp)
+                    }
+                    Spacer(Modifier.height(5.dp))
+                } else {
+                    Text(entry.text, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium, textDecoration = if (entry.done) TextDecoration.LineThrough else null)
+                }
                 if (entry.detail.isNotBlank()) Text(entry.detail, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 if (entry.attachmentPath.isNotBlank()) {
                     TextButton(

@@ -10,7 +10,7 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-Alpha_45-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-1.0.0_candidate-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
 Development builds are released periodically while the configurable collection model is tested on real phones. Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist and have separate local records; export before removing an installation.
@@ -47,6 +47,8 @@ Primary data is stored locally in a Room database and survives application closu
 The `*` settings control opens a four-drawer cabinet for Data, How it works, Privacy, and About & support. Export opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included. The support drawer offers feedback, the Play page and a recommendation share action using the public store link.
 
 TODO and RECORD collections offer completion checkboxes, HIDE DONE / SHOW DONE and DELETE DONE. Deletion asks for confirmation and removes only completed items in that collection, leaving open items and other collections untouched.
+
+REPEAT item headings are buttons: tap to show or hide logged events, with a changed background and arrow indicating the current state. Long-press the heading to edit the item.
 
 > Personal records stay on-device and Android backup is disabled. They leave only when the user explicitly exports an XLSX workbook.
 
@@ -95,7 +97,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Generic collections development build** provides:
+**Version 1.0.0, build 46 — production candidate** provides:
 
 - a native Kotlin and Jetpack Compose application;
 - a configurable collection shell with eleven selectable visual styles;
@@ -112,7 +114,12 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 Every collection supports typed entry, system speech recognition and image-text capture; captured material remains editable before it is kept. A collection can be used to monitor anything from milk for kittens to a prescription for a problem panda—the app provides neutral tools, not a predefined category or recommendation.
 
-Near-term work is practical rather than expansive: test image extraction, data migration, complete erasure and exports on real devices. The generic collection screenshots are retained, with the settings image refreshed for build 45's cabinet layout. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
+Near-term work is practical rather than expansive: test image extraction, data migration, complete erasure and exports on real devices. The repeat-history and cabinet screenshots were refreshed from build 46 using sample records in a separate installation. The maintained UI baseline and product-test priorities are in the [TODO](TODO.md).
+
+<p align="center">
+  <img src="docs/google-play/screenshots/play-repeat.png" alt="Repeat items with collapsed and expanded history buttons" width="260" />
+  <img src="docs/google-play/screenshots/play-settings.png" alt="The settings cabinet with export, import, guidance, privacy and support" width="260" />
+</p>
 
 ## Testing
 

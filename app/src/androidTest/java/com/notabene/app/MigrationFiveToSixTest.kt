@@ -36,7 +36,13 @@ class MigrationFiveToSixTest {
         createVersionFiveDatabase()
 
         val database = Room.databaseBuilder(context, NotaBeneDatabase::class.java, databaseName)
-            .addMigrations(NotaBeneDatabase.MIGRATION_5_6)
+            .addMigrations(
+                NotaBeneDatabase.MIGRATION_5_6,
+                NotaBeneDatabase.MIGRATION_6_7,
+                NotaBeneDatabase.MIGRATION_7_8,
+                NotaBeneDatabase.MIGRATION_8_9,
+                NotaBeneDatabase.MIGRATION_9_10
+            )
             .build()
         try {
             runBlocking {

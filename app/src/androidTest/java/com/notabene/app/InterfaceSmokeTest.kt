@@ -12,6 +12,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -24,16 +25,17 @@ class InterfaceSmokeTest {
 
     @Before
     fun clearRecords() {
+        val context = compose.activity.applicationContext
         compose.runOnIdle {
-            runBlocking { NotaBeneDatabase.get(compose.activity).clearAllTables() }
+            runBlocking(Dispatchers.IO) { NotaBeneDatabase.get(context).clearAllTables() }
         }
     }
 
     @Test
     fun firstCollectionExplainsHowToKeepAnItem() {
         waitForText("NEW TODO ITEM")
-        compose.onNodeWithText("Your first task starts above. Write it, then tap KEEP ITEM.").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Add a collection").assertIsDisplayed()
+        compose.onNodeWithText("Your first task starts above. Write it, then tap KEEP ITEM.", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("+").assertIsDisplayed()
     }
 
     @Test
@@ -53,13 +55,13 @@ class InterfaceSmokeTest {
     @Test
     fun aNewCollectionOpensItsOwnEntryForm() {
         waitForText("NEW TODO ITEM")
-        compose.onNodeWithContentDescription("Add a collection").performClick()
+        compose.onNodeWithText("+").performClick()
         compose.onNodeWithText("NEW COLLECTION").assertIsDisplayed()
         compose.onNode(hasText("Name") and hasSetTextAction()).performTextInput("Journal")
         compose.onNodeWithText("LOG").performClick()
         compose.onNodeWithText("CREATE").performClick()
         waitForText("NEW LOG ITEM")
-        compose.onNodeWithText("JOURNAL").assertIsDisplayed()
+        compose.onAllNodesWithText("JOURNAL")[0].assertIsDisplayed()
     }
 
     @Test

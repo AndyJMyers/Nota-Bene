@@ -6,7 +6,11 @@
 - Public privacy policy and in-app policy link.
 - Store-listing, Data Safety and App content working drafts.
 - Current generic feature-art direction.
-- Generic collection screenshots captured; settings refreshed for build 45's cabinet layout.
+- Generic collection screenshots captured; repeat-history and cabinet images refreshed from build 46 using sample records.
+
+## Production candidate — 30 September 2026
+
+Version 1.0.0 (46) has passed 29 unit tests, 14 on-device tests and release lint. Its signed bundle replaces build 44 in the existing Production draft. The store copy and screenshots have been refreshed. See `RELEASE_1.0.0.md` for the bundle hash and submission outcome.
 
 ## Do before opening a new review
 

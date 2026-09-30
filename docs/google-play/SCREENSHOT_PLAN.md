@@ -1,6 +1,6 @@
 # Nota Bene — screenshot set
 
-Five generic-collection screenshots are retained in `screenshots/`: TODO, LOG, REPEAT, personalisation and settings. The collection and personalisation captures from 9 September are retained. `play-settings.png` was refreshed on 27 September from build 45, showing the current cabinet over an empty example collection, without personal records. Additional screenshots of the newest moods are not required. Upload the refreshed settings image when preparing the production listing.
+Five generic-collection screenshots are retained in `screenshots/`: TODO, LOG, REPEAT, personalisation and settings. The TODO, LOG and personalisation captures from 9 September are retained. `play-repeat.png` and `play-settings.png` were refreshed on 30 September from build 46, showing the history buttons and current cabinet with invented gardening records in a separate capture installation. Personal records were not used. These two images were uploaded for the production listing. Additional screenshots of the newest moods are not required.
 
 ## Capture set
 

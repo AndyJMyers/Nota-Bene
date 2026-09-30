@@ -72,6 +72,7 @@ The suite does not pretend to replace judgement on a real phone. These remain ma
 - notification delivery under manufacturer battery policies;
 - lock-screen presentation under the user’s notification settings;
 - keyboard behaviour, rotation and small-screen feel;
+- repeat-item history buttons: visible collapsed/expanded backgrounds in light and dark moods, tap to show/hide logs, long-press to edit, and retained expansion after rotation;
 - save-picker destinations; and
 - the settings cabinet on narrow phones and across all visual styles;
 - empty-state illustrations and the brief completion flourish across light and dark styles, without layout jumps;
