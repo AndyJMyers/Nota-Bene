@@ -25,3 +25,7 @@ The existing Production draft is named `Nota Bene 1.0.0` and originally containe
 Bundle SHA-256: `D5DB383CC8D08FE2BFFCB2E2580EE09E457B471029A5FB23FADF11A39442DD10`.
 
 Play validation reports two non-blocking warnings: no deobfuscation mapping (release is not obfuscated), and no native debug symbols for bundled native dependencies. The icon, feature graphic and screenshots containing generated artwork are declared as AI-assisted assets.
+
+## Submission outcome
+
+Submitted on 30 September 2026. Play Console confirms **Changes in review** for the Production full rollout of `Nota Bene 1.0.0`, plus the short description, full description and phone screenshots. Automated quick checks were still running at handoff; this is not yet confirmation of public availability. Managed publishing is off.
