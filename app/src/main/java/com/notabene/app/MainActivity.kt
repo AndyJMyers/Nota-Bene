@@ -102,6 +102,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
@@ -1341,13 +1342,12 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
         shown.forEach { entry ->
             CollectionEntryRow(entry, kind, accent,
                 flourishPulse = if (completedEntryId == entry.id) completedPulse else 0,
+                onRepeatLogged = {
+                    completedEntryId = entry.id
+                    completedPulse += 1
+                },
                 onDone = { done -> scope.launch {
-                    if (kind == CollectionKind.REPEAT && done) {
-                        dao.recordRepeatEvent(entry.id, System.currentTimeMillis())
-                        RepeatReminderScheduler.cancelNotification(context, entry.id)
-                    } else {
-                        dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null)
-                    }
+                    dao.setDone(entry.id, done, if (done) System.currentTimeMillis() else null)
                     if (done) {
                         completedEntryId = entry.id
                         completedPulse += 1
@@ -1388,6 +1388,7 @@ private fun CollectionEntryRow(
     kind: CollectionKind,
     accent: Color,
     flourishPulse: Int,
+    onRepeatLogged: () -> Unit,
     onDone: (Boolean) -> Unit,
     onQuantity: (Int?) -> Unit,
     onDelete: () -> Unit,
@@ -1395,9 +1396,47 @@ private fun CollectionEntryRow(
 ) {
     var showHistory by rememberSaveable(entry.id) { mutableStateOf(false) }
     var showAttachment by remember { mutableStateOf(false) }
+    var historyDialog by rememberSaveable(entry.id) { mutableStateOf(false) }
+    var editingEventId by rememberSaveable(entry.id) { mutableStateOf<Long?>(null) }
+    var editingTime by rememberSaveable(entry.id) { mutableStateOf(0L) }
+    var deletingEventId by rememberSaveable(entry.id) { mutableStateOf<Long?>(null) }
+    var undoEventId by rememberSaveable(entry.id) { mutableStateOf<Long?>(null) }
+    var undoUntil by rememberSaveable(entry.id) { mutableStateOf(0L) }
+    var historyBusy by remember { mutableStateOf(false) }
+    val historyScope = rememberCoroutineScope()
+    val undoTimeout = LocalAccessibilityManager.current?.calculateRecommendedTimeoutMillis(
+        10_000L, containsIcons = false, containsText = true, containsControls = true
+    ) ?: 10_000L
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
     val events by dao.observeRepeatEvents(entry.id).collectAsState(initial = emptyList())
+    LaunchedEffect(undoEventId, undoUntil) {
+        if (undoEventId != null) {
+            delay((undoUntil - System.currentTimeMillis()).coerceAtLeast(0))
+            undoEventId = null
+        }
+    }
+    fun changeHistory(action: suspend () -> Unit) {
+        if (historyBusy) return
+        historyBusy = true
+        historyScope.launch {
+            try {
+                action()
+                runCatching {
+                    RepeatReminderScheduler.historyChanged(context, entry.id)
+                    if (entry.notifyWhenDue) RepeatReminderScheduler.prepare(context)
+                }.onFailure {
+                    Toast.makeText(context, "History saved, but reminders could not be refreshed.", Toast.LENGTH_LONG).show()
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Toast.makeText(context, "Could not save the history change. Please try again.", Toast.LENGTH_LONG).show()
+            } finally {
+                historyBusy = false
+            }
+        }
+    }
     Box(Modifier.fillMaxWidth()) {
     NotaCard(Modifier.fillMaxWidth(), compact = true) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
@@ -1406,7 +1445,15 @@ private fun CollectionEntryRow(
                 Spacer(Modifier.width(6.dp))
             } else if (kind == CollectionKind.REPEAT) {
                 Button(
-                    onClick = { onDone(true) },
+                    enabled = !historyBusy,
+                    onClick = { changeHistory {
+                        val id = dao.recordRepeatEvent(entry.id, System.currentTimeMillis())
+                        if (id != 0L) {
+                            undoEventId = id
+                            undoUntil = System.currentTimeMillis() + undoTimeout
+                            onRepeatLogged()
+                        }
+                    } },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 2.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = accent, contentColor = Ink)
                 ) { Text("LOG", fontSize = 10.sp, fontWeight = FontWeight.Black) }
@@ -1459,7 +1506,20 @@ private fun CollectionEntryRow(
                     ) { Text("PHOTO ATTACHED", color = accent, fontSize = 10.sp, fontWeight = FontWeight.Bold) }
                 }
                 if (kind == CollectionKind.REPEAT) {
+                    undoEventId?.let { eventId ->
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Recorded", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
+                            TextButton(enabled = !historyBusy, onClick = { changeHistory {
+                                dao.removeRepeatEvent(entry.id, eventId)
+                                if (undoEventId == eventId) undoEventId = null
+                            } }) { Text("UNDO") }
+                        }
+                    }
                     val next = entry.lastCompletedAt?.let { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it + entry.intervalDays.coerceAtLeast(1) * 86_400_000L)) }
+                    Text(
+                        entry.lastCompletedAt?.let { "Last logged ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(it))}" } ?: "Not logged yet",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp
+                    )
                     Text(
                         listOfNotNull(
                             "Every ${repeatIntervalLabel(entry.intervalDays)}",
@@ -1475,11 +1535,28 @@ private fun CollectionEntryRow(
                 if (showHistory) {
                     Text("Created ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(entry.createdAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                     if (kind == CollectionKind.REPEAT) {
+                        TextButton(enabled = !historyBusy, onClick = {
+                            editingEventId = null
+                            editingTime = System.currentTimeMillis()
+                            historyDialog = true
+                        }) { Text("ADD PAST EVENT", fontSize = 11.sp) }
                         if (events.isEmpty()) {
                             Text("No completion events logged yet", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         } else {
                             events.forEach { event ->
-                                Text("Logged ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(event.occurredAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                                Column {
+                                    Text("Logged ${DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(event.occurredAt))}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                                    Row {
+                                        TextButton(enabled = !historyBusy, onClick = {
+                                            editingEventId = event.id
+                                            editingTime = event.occurredAt
+                                            historyDialog = true
+                                        }) { Text("EDIT", fontSize = 10.sp) }
+                                        TextButton(enabled = !historyBusy, onClick = { deletingEventId = event.id }) {
+                                            Text("DELETE", color = MaterialTheme.colorScheme.error, fontSize = 10.sp)
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -1494,6 +1571,33 @@ private fun CollectionEntryRow(
         }
     }
         CompletionFlourish(flourishPulse, accent, Modifier.matchParentSize())
+    }
+    if (historyDialog) {
+        RepeatEventTimeDialog(
+            initialTime = editingTime,
+            isNew = editingEventId == null,
+            busy = historyBusy,
+            onDismiss = { if (!historyBusy) historyDialog = false },
+            onSave = { time -> changeHistory {
+                val eventId = editingEventId
+                if (eventId == null) dao.recordRepeatEvent(entry.id, time)
+                else dao.correctRepeatEvent(entry.id, eventId, time)
+                historyDialog = false
+            } }
+        )
+    }
+    deletingEventId?.let { eventId ->
+        AlertDialog(
+            onDismissRequest = { if (!historyBusy) deletingEventId = null },
+            title = { Text("Delete this occurrence?") },
+            text = { Text("Only this history entry will be removed. The repeating item and stock count will stay unchanged.") },
+            confirmButton = { TextButton(enabled = !historyBusy, onClick = { changeHistory {
+                dao.removeRepeatEvent(entry.id, eventId)
+                if (undoEventId == eventId) undoEventId = null
+                deletingEventId = null
+            } }) { Text("DELETE") } },
+            dismissButton = { TextButton(enabled = !historyBusy, onClick = { deletingEventId = null }) { Text("CANCEL") } }
+        )
     }
     if (showAttachment) {
         AttachmentDialog(

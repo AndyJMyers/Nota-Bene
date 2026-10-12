@@ -210,7 +210,7 @@ interface CollectionDao {
     suspend fun setQuantity(id: Long, quantity: Int?)
 
     @Insert
-    suspend fun insertRepeatEvent(event: RepeatEvent)
+    suspend fun insertRepeatEvent(event: RepeatEvent): Long
 
     @Query("SELECT * FROM repeat_events WHERE entryId = :entryId ORDER BY occurredAt DESC")
     fun observeRepeatEvents(entryId: Long): Flow<List<RepeatEvent>>
@@ -218,10 +218,36 @@ interface CollectionDao {
     @Query("DELETE FROM repeat_events WHERE entryId = :entryId")
     suspend fun deleteRepeatEvents(entryId: Long)
 
+    @Query("SELECT EXISTS(SELECT 1 FROM collection_entries WHERE id = :entryId)")
+    suspend fun entryExists(entryId: Long): Boolean
+
+    @Query("UPDATE collection_entries SET done = 0, lastCompletedAt = (SELECT MAX(occurredAt) FROM repeat_events WHERE entryId = :entryId) WHERE id = :entryId")
+    suspend fun refreshRepeatCompletion(entryId: Long)
+
+    @Query("UPDATE repeat_events SET occurredAt = :occurredAt WHERE id = :eventId AND entryId = :entryId")
+    suspend fun updateRepeatEventTime(entryId: Long, eventId: Long, occurredAt: Long)
+
+    @Query("DELETE FROM repeat_events WHERE id = :eventId AND entryId = :entryId")
+    suspend fun deleteRepeatEvent(entryId: Long, eventId: Long)
+
     @Transaction
-    suspend fun recordRepeatEvent(entryId: Long, occurredAt: Long) {
-        insertRepeatEvent(RepeatEvent(entryId = entryId, occurredAt = occurredAt))
-        setDone(entryId, false, occurredAt)
+    suspend fun recordRepeatEvent(entryId: Long, occurredAt: Long): Long {
+        if (!entryExists(entryId)) return 0
+        val id = insertRepeatEvent(RepeatEvent(entryId = entryId, occurredAt = occurredAt))
+        refreshRepeatCompletion(entryId)
+        return id
+    }
+
+    @Transaction
+    suspend fun correctRepeatEvent(entryId: Long, eventId: Long, occurredAt: Long) {
+        updateRepeatEventTime(entryId, eventId, occurredAt)
+        refreshRepeatCompletion(entryId)
+    }
+
+    @Transaction
+    suspend fun removeRepeatEvent(entryId: Long, eventId: Long) {
+        deleteRepeatEvent(entryId, eventId)
+        refreshRepeatCompletion(entryId)
     }
 
     @Query("DELETE FROM collection_entries WHERE id = :id")

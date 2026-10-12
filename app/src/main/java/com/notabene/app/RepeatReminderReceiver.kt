@@ -55,6 +55,15 @@ object RepeatReminderScheduler {
         context.getSystemService(NotificationManager::class.java).cancel(notificationId(entryId))
     }
 
+    /** A correction can make an already-notified occurrence due again. */
+    fun historyChanged(context: Context, entryId: Long) {
+        cancelNotification(context, entryId)
+        val preferences = context.getSharedPreferences("repeat_reminders", Context.MODE_PRIVATE)
+        val edit = preferences.edit()
+        preferences.all.keys.filter { it.startsWith("$entryId:") }.forEach { edit.remove(it) }
+        edit.apply()
+    }
+
     private fun notificationId(entryId: Long): Int = 20_000 + (entryId % 1_000_000).toInt()
     internal fun idFor(entryId: Long): Int = notificationId(entryId)
 }

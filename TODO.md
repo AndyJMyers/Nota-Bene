@@ -13,6 +13,7 @@
 
 ## Product-test priorities
 
+- [ ] Verify build 48 on the phone: LOG then UNDO, add a past occurrence, edit its date/time, cancel/confirm deleting it, and check last-logged/next-due values, stock and reminders.
 - [ ] Test creating, renaming and deleting every collection type on the intended phone.
 - [ ] Test typed, speech and image-text capture; confirm captured text remains editable before saving.
 - [ ] Test repeat-event logging, visible history, item editing, reminders, notification permission and phone restart behaviour.
@@ -22,6 +23,7 @@
 
 ## Small complete circuits still to add
 
+- [ ] Follow-on usability increment: reorder collections/items through edit controls and show last successful export in the cabinet.
 - [ ] Address Play's DEX optimisation/obfuscation warning before February 2027, with signed-release regression testing.
 - [ ] Review Play's edge-to-edge display recommendation on supported Android versions.
 - [ ] Update the import format for the generic collection workbook.

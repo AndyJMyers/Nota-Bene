@@ -10,6 +10,7 @@ The suite is intentionally small and risk-led. It protects stored data, reminder
 
 The local JVM tests cover:
 
+- repeat-history local times, future-time rejection and both daylight-saving transitions;
 - older dose-count colour boundaries;
 - stock arithmetic, including exhaustion without negative display;
 - receipt merchant/amount extraction;
@@ -39,6 +40,9 @@ Run it on a connected phone or emulator:
 
 The Android tests cover:
 
+- repeat-history backdating, editing, exact-event Undo, deletion of the last occurrence, unchanged stock and entry isolation;
+- clearing only the corrected item's reminder markers;
+- the repeat-history toggle, rotation, Undo and add/edit/delete history flow;
 - deletion of completed tasks without touching open tasks or other collections, including removal of associated event history;
 - two same-day dose rows in a real Room database;
 - persistent stock correction and halted state;

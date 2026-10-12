@@ -48,6 +48,57 @@ class DatabaseRegressionTest {
     }
 
     @Test
+    fun correctingRepeatHistoryRecalculatesLatestWithoutChangingStock() = runBlocking {
+        val dao = database.collectionDao()
+        val collection = dao.insertCollection(Collection(title = "Routines", kind = "REPEAT"))
+        dao.insertEntry(CollectionEntry(id = 201, collectionId = collection, text = "Water fern", quantity = 12))
+        val first = dao.recordRepeatEvent(201, 2000)
+        val latest = dao.recordRepeatEvent(201, 3000)
+        val backdated = dao.recordRepeatEvent(201, 1000)
+        assertEquals(3000L, dao.observeEntries(collection).first().single().lastCompletedAt)
+        dao.correctRepeatEvent(201, latest, 500)
+        assertEquals(2000L, dao.observeEntries(collection).first().single().lastCompletedAt)
+        dao.removeRepeatEvent(201, first)
+        assertEquals(1000L, dao.observeEntries(collection).first().single().lastCompletedAt)
+        dao.removeRepeatEvent(201, backdated)
+        dao.removeRepeatEvent(201, latest)
+        val entry = dao.observeEntries(collection).first().single()
+        assertEquals(null, entry.lastCompletedAt)
+        assertEquals(12, entry.quantity)
+        assertFalse(entry.done)
+    }
+
+    @Test
+    fun undoRemovesOnlyItsExactEventAndIsSafeToRepeat() = runBlocking {
+        val dao = database.collectionDao()
+        val collection = dao.insertCollection(Collection(title = "Routines", kind = "REPEAT"))
+        dao.insertEntry(CollectionEntry(id = 202, collectionId = collection, text = "Same time"))
+        dao.insertEntry(CollectionEntry(id = 203, collectionId = collection, text = "Other"))
+        val first = dao.recordRepeatEvent(202, 1000)
+        val second = dao.recordRepeatEvent(202, 1000)
+        val other = dao.recordRepeatEvent(203, 2000)
+        dao.removeRepeatEvent(202, second)
+        dao.removeRepeatEvent(202, second)
+        dao.removeRepeatEvent(202, other)
+        dao.correctRepeatEvent(202, other, 3000)
+        assertEquals(listOf(first), dao.observeRepeatEvents(202).first().map { it.id })
+        assertEquals(2000L, dao.observeRepeatEvents(203).first().single().occurredAt)
+        dao.deleteEntryAndEvents(202)
+        assertEquals(0L, dao.recordRepeatEvent(202, 4000))
+        assertTrue(dao.observeRepeatEvents(202).first().isEmpty())
+    }
+
+    @Test
+    fun historyCorrectionClearsOnlyItsOwnReminderMarkers() {
+        val preferences = context.getSharedPreferences("repeat_reminders", Context.MODE_PRIVATE)
+        preferences.edit().putBoolean("201:123", true).putBoolean("202:123", true).commit()
+        RepeatReminderScheduler.historyChanged(context, 201)
+        assertFalse(preferences.contains("201:123"))
+        assertTrue(preferences.getBoolean("202:123", false))
+        preferences.edit().remove("202:123").commit()
+    }
+
+    @Test
     fun repeatedSameDayDosesArePersisted() = runBlocking {
         val dao = database.medicationDao()
         val medicationId = dao.insertMedication(
