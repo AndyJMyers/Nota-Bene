@@ -97,7 +97,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Version 1.0.0, build 46 is live on Google Play.** Version **1.0.1, build 47** is the next maintenance update, adding a clear, highlighted `Show History` toggle for repeating items without changing recording. The app provides:
+**Version 1.0.0, build 46 is live on Google Play.** Version **1.0.1, build 47** was submitted for review on 12 October 2026, adding a clear, highlighted `Show History` toggle for repeating items without changing recording. The app provides:
 
 - a native Kotlin and Jetpack Compose application;
 - a configurable collection shell with eleven selectable visual styles;

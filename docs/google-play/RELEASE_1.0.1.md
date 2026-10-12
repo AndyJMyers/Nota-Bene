@@ -15,7 +15,11 @@ Repeating items now have a clear Show History button: muted when history is hidd
 - Passed 29 JVM unit tests, release lint (0 errors, 11 warnings), signed release bundle build and Android test compilation.
 - Signed bundle verified with jarsigner. SHA-256: `32BC7CD1C982D6DB121B9AEAF2D9752C64F085AB058A32FBE5B223F746C97402`.
 - Owner approved the revised UI. No phone was connected for rerunning instrumentation tests; the new device regression test is compiled, not device-verified in this release.
-- Submission outcome will be recorded below when confirmed by Play.
+- Play accepted build 47 with no blocking errors and unchanged supported-device coverage. The two warnings concern the absent obfuscation mapping and native debug symbols, as for the previous release.
+
+## Submission outcome
+
+Submitted to Production on 12 October 2026 for full rollout to the existing targeted countries. Play Console confirms **Changes in review** for `Nota Bene 1.0.1`. Preliminary quick checks are still running; this is not approval or confirmation that 1.0.1 is publicly available. Managed publishing remains off. No pricing or store-asset changes were submitted.
 
 ## Follow-up from Play Console
 
