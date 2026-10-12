@@ -1,5 +1,7 @@
 # Nota Bene testing
 
+Build 49 adds six fast display-order tests: unchanged defaults, missing/duplicate IDs, new items, movement boundaries, stale positions and completed-group separation. Phone checks should cover Save versus Cancel, persistence after restart, and the cabinet timestamp updating only after a successful export.
+
 The suite is intentionally small and risk-led. It protects stored data, reminder decisions, import/export integrity, style cycling and the UI paths that have previously proved easy to regress. Some tests still exercise the older five-tab data format because existing exports and database migrations remain relevant.
 
 ## Fast suite — run routinely

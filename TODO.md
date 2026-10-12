@@ -23,7 +23,8 @@
 
 ## Small complete circuits still to add
 
-- [ ] Follow-on usability increment: reorder collections/items through edit controls and show last successful export in the cabinet.
+- [x] Reorder collections/items through edit controls and show last successful export in the cabinet (build 49).
+- [ ] Phone-check build 49 ordering (Save/Cancel, rotation, restart, completed items) and export date (success, cancellation, failed destination).
 - [ ] Address Play's DEX optimisation/obfuscation warning before February 2027, with signed-release regression testing.
 - [ ] Review Play's edge-to-edge display recommendation on supported Android versions.
 - [ ] Update the import format for the generic collection workbook.

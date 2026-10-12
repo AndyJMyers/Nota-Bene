@@ -239,7 +239,8 @@ private fun NotaBeneApp() {
     val database = remember { NotaBeneDatabase.get(context) }
     val uiPreferences = remember { context.getSharedPreferences("nota-bene-ui", Activity.MODE_PRIVATE) }
     val collectionDao = remember { database.collectionDao() }
-    val collections by collectionDao.observeCollections().collectAsState(initial = emptyList())
+    val rawCollections by collectionDao.observeCollections().collectAsState(initial = emptyList())
+    val collections = displayOrder(rawCollections, displayPreference("collections")) { it.id }
     var selectedCollectionId by rememberSaveable { mutableStateOf<Long?>(null) }
     var mood by rememberSaveable { mutableFloatStateOf(.42f) }
     var effect by rememberSaveable { mutableStateOf(Effect.STARS) }
@@ -297,6 +298,7 @@ private fun NotaBeneApp() {
                     context.contentResolver.openOutputStream(uri)?.use { exportWorkbook(database, it) }
                         ?: error("Could not open the selected file")
                 }
+                saveDisplayPreference(context, "last-export", System.currentTimeMillis().toString())
                 Toast.makeText(context, "Nota Bene records exported", Toast.LENGTH_SHORT).show()
             } catch (_: Exception) {
                 Toast.makeText(context, "Export failed", Toast.LENGTH_LONG).show()
@@ -509,11 +511,14 @@ private fun NotaBeneApp() {
                 EditCollectionDialog(
                     collection = collection,
                     canDelete = collections.size > 1,
+                    position = collections.indexOfFirst { it.id == collection.id },
+                    count = collections.size,
                     accent = accent,
                     onDismiss = { collectionToManage = null },
-                    onRename = { title ->
+                    onRename = { title, position ->
                         scope.launch {
                             withContext(Dispatchers.IO) { collectionDao.renameCollection(collection.id, title) }
+                            saveDisplayPreference(context, "collections", movedOrder(collections.map { it.id }, collection.id, position))
                             collectionToManage = null
                         }
                     },
@@ -680,6 +685,12 @@ private fun SettingsDialog(
             ) {
                 CabinetDrawer("01", "DATA", "Take your records with you", accent, initiallyOpen = true) {
                     OutlinedButton(onClick = onExport, modifier = Modifier.fillMaxWidth()) { Text("EXPORT XLSX", color = spec.panelText) }
+                    val lastExport = displayPreference("last-export").toLongOrNull()
+                    Text(
+                        lastExport?.let { "Last exported: " + java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(it)) }
+                            ?: "No successful export recorded on this installation",
+                        color = spec.panelMuted, fontSize = 11.sp
+                    )
                     OutlinedButton(onClick = onImport, modifier = Modifier.fillMaxWidth()) { Text("IMPORT XLSX", color = spec.panelText) }
                     HorizontalDivider(color = spec.frame.copy(alpha = .55f))
                     if (confirmErase) {
@@ -864,12 +875,15 @@ private fun NewCollectionDialog(
 private fun EditCollectionDialog(
     collection: Collection,
     canDelete: Boolean,
+    position: Int,
+    count: Int,
     accent: Color,
     onDismiss: () -> Unit,
-    onRename: (String) -> Unit,
+    onRename: (String, Int) -> Unit,
     onDelete: () -> Unit
 ) {
     var title by remember(collection.id) { mutableStateOf(collection.title) }
+    var newPosition by rememberSaveable(collection.id) { mutableStateOf(position) }
     var confirmingDelete by remember(collection.id) { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -891,6 +905,7 @@ private fun EditCollectionDialog(
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     PaymentField("Name", title, { title = it }, Modifier.fillMaxWidth(), accent)
+                    OrderControls(newPosition, count) { newPosition = it }
                     Text(
                         "Type: ${runCatching { CollectionKind.valueOf(collection.kind) }.getOrDefault(CollectionKind.LOG).label}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -909,7 +924,7 @@ private fun EditCollectionDialog(
             if (confirmingDelete) {
                 TextButton(onClick = onDelete) { Text("DELETE", color = Color(0xFFE2B5C2)) }
             } else {
-                TextButton(onClick = { onRename(title.trim()) }, enabled = title.isNotBlank()) { Text("SAVE", color = accent) }
+                TextButton(onClick = { onRename(title.trim(), newPosition) }, enabled = title.isNotBlank()) { Text("SAVE", color = accent) }
             }
         },
         dismissButton = {
@@ -1091,7 +1106,8 @@ private fun panelAccent(accent: Color): Color = when (LocalNotaStyle.current) {
 private fun CollectionPanel(collection: Collection, accent: Color, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
-    val entries by dao.observeEntries(collection.id).collectAsState(initial = emptyList())
+    val rawEntries by dao.observeEntries(collection.id).collectAsState(initial = emptyList())
+    val entries = displayOrder(rawEntries, displayPreference("entries-${collection.id}")) { it.id }.sortedBy { it.done }
     val scope = rememberCoroutineScope()
     val kind = remember(collection.kind) { runCatching { CollectionKind.valueOf(collection.kind) }.getOrDefault(CollectionKind.LOG) }
     var text by rememberSaveable(collection.id) { mutableStateOf("") }
@@ -1365,12 +1381,18 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
         entryToEdit?.let { entry ->
             EditEntryDialog(
                 entry = entry,
+                position = entries.filter { it.done == entry.done }.indexOfFirst { it.id == entry.id },
+                count = entries.count { it.done == entry.done },
                 kind = kind,
                 accent = accent,
                 onDismiss = { entryToEdit = null },
-                onSave = { updated ->
+                onSave = { updated, position ->
                     scope.launch {
                         dao.updateEntry(updated)
+                        val peers = entries.filter { it.done == entry.done }.map { it.id }
+                        val others = entries.filter { it.done != entry.done }.map { it.id }
+                        saveDisplayPreference(context, "entries-${collection.id}",
+                            movedOrder(peers, entry.id, position) + others.joinToString(",", prefix = if (others.isEmpty()) "" else ","))
                         if (updated.notifyWhenDue) RepeatReminderScheduler.prepare(context)
                         entryToEdit = null
                     }
@@ -1632,11 +1654,14 @@ private fun AttachmentDialog(path: String, onDismiss: () -> Unit) {
 @Composable
 private fun EditEntryDialog(
     entry: CollectionEntry,
+    position: Int,
+    count: Int,
     kind: CollectionKind,
     accent: Color,
     onDismiss: () -> Unit,
-    onSave: (CollectionEntry) -> Unit
+    onSave: (CollectionEntry, Int) -> Unit
 ) {
+    var newPosition by rememberSaveable(entry.id) { mutableStateOf(position) }
     var text by remember(entry.id) { mutableStateOf(entry.text) }
     var detail by remember(entry.id) { mutableStateOf(entry.detail) }
     var repeatDays by remember(entry.id) { mutableStateOf(entry.intervalDays.coerceAtLeast(1)) }
@@ -1652,6 +1677,8 @@ private fun EditEntryDialog(
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PaymentField("Item", text, { text = it }, Modifier.fillMaxWidth(), accent)
+                OrderControls(newPosition, count) { newPosition = it }
+                Text("Position in this group of items. Saved with this edit.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                 PaymentField("Detail (optional)", detail, { detail = it }, Modifier.fillMaxWidth(), accent)
                 if (kind == CollectionKind.REPEAT) {
                     Text("REPEAT", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
@@ -1689,7 +1716,7 @@ private fun EditEntryDialog(
                             restockAt = if (kind == CollectionKind.REPEAT) restockAt.toIntOrNull() else entry.restockAt,
                             notifyWhenDue = kind == CollectionKind.REPEAT && notifyWhenDue,
                             notifyAt = notifyAt.ifBlank { "09:00" }
-                        )
+                        ), newPosition
                     )
                 },
                 enabled = text.isNotBlank() && validTime
