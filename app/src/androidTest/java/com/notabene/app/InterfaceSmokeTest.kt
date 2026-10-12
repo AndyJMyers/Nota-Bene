@@ -65,6 +65,28 @@ class InterfaceSmokeTest {
     }
 
     @Test
+    fun repeatHistoryToggleShowsItsStateAndSurvivesRotation() {
+        waitForText("NEW TODO ITEM")
+        compose.onNodeWithText("+").performClick()
+        compose.onNode(hasText("Name") and hasSetTextAction()).performTextInput("Routines")
+        compose.onNodeWithText("REPEAT").performClick()
+        compose.onNodeWithText("CREATE").performClick()
+        waitForText("NEW REPEAT ITEM")
+        compose.onNode(hasText("What do you want to do?") and hasSetTextAction())
+            .performTextInput("Water the fern")
+        compose.onNodeWithText("KEEP ITEM").performScrollTo().performClick()
+        waitForText("Show History")
+        compose.onNodeWithText("Show History").performScrollTo().performClick()
+        compose.onNodeWithText("No completion events logged yet").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show History").performScrollTo().assertIsDisplayed()
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("No completion events logged yet").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show History").performScrollTo().performClick()
+        compose.onNodeWithText("Show History").assertIsDisplayed()
+        compose.onNodeWithText("No completion events logged yet").assertDoesNotExist()
+    }
+
+    @Test
     fun unfinishedTodoSurvivesActivityRecreation() {
         waitForText("NEW TODO ITEM")
         compose.onNode(hasText("What do you want to do?") and hasSetTextAction())

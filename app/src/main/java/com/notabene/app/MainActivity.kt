@@ -1419,13 +1419,20 @@ private fun CollectionEntryRow(
                 ) else Modifier)
             ) {
                 if (kind == CollectionKind.REPEAT) {
+                    Text(
+                        entry.text,
+                        modifier = Modifier.combinedClickable(onClick = onEdit, onLongClick = onEdit),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(Modifier.height(5.dp))
                     val shape = RoundedCornerShape(10.dp)
-                    val foreground = MaterialTheme.colorScheme.onSurface
+                    val foreground = if (showHistory) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.onSurface
                     Row(
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                             .clip(shape)
-                            .background(foreground.copy(alpha = if (showHistory) .20f else .06f))
-                            .border(1.dp, foreground.copy(alpha = if (showHistory) .65f else .30f), shape)
+                            .background(if (showHistory) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = .06f))
+                            .border(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = if (showHistory) 1f else .40f), shape)
                             .combinedClickable(
                                 role = Role.Button,
                                 onClickLabel = if (showHistory) "Hide logged items" else "Show logged items",
@@ -1436,10 +1443,9 @@ private fun CollectionEntryRow(
                             .semantics { stateDescription = if (showHistory) "History shown" else "History hidden" }
                             .padding(horizontal = 10.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Text(entry.text, modifier = Modifier.weight(1f), color = foreground, fontWeight = FontWeight.Medium)
-                        Text(if (showHistory) "▲" else "▼", color = foreground, fontSize = 12.sp)
+                        Text("Show History", color = foreground, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(5.dp))
                 } else {
@@ -1481,7 +1487,7 @@ private fun CollectionEntryRow(
             }
             Column(horizontalAlignment = Alignment.End) {
                 if (kind == CollectionKind.REPEAT && entry.quantity != null) {
-                    TextButton(onClick = { onQuantity((entry.quantity - 1).coerceAtLeast(0)) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("−", color = accent, fontSize = 18.sp) }
+                    TextButton(onClick = { onQuantity((entry.quantity - 1).coerceAtLeast(0)) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("STOCK −", color = MaterialTheme.colorScheme.onSurface, fontSize = 10.sp) }
                 }
                 TextButton(onClick = onDelete, contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)) { Text("×", color = Crimson, fontSize = 18.sp) }
             }

@@ -72,7 +72,7 @@ The suite does not pretend to replace judgement on a real phone. These remain ma
 - notification delivery under manufacturer battery policies;
 - lock-screen presentation under the user’s notification settings;
 - keyboard behaviour, rotation and small-screen feel;
-- repeat-item history buttons: visible collapsed/expanded backgrounds in light and dark moods, tap to show/hide logs, long-press to edit, and retained expansion after rotation;
+- repeat-item Show History button: muted when history is hidden, highlighted with an inverted background when displayed, in light and dark moods; no +/− or on/off recording labels; tap again to hide logs, long-press to edit, and retained expansion after rotation; the separate STOCK − control only reduces stock;
 - save-picker destinations; and
 - the settings cabinet on narrow phones and across all visual styles;
 - empty-state illustrations and the brief completion flourish across light and dark styles, without layout jumps;

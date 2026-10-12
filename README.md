@@ -10,7 +10,7 @@
 
 [![Android](https://img.shields.io/badge/Android-8%2B-164b89?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-Compose-321052?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Status](https://img.shields.io/badge/status-1.0.0_candidate-9d174d?style=for-the-badge)](#current-milestone)
+[![Status](https://img.shields.io/badge/status-live_on_Google_Play-9d174d?style=for-the-badge)](#current-milestone)
 [![Storage](https://img.shields.io/badge/storage-local_first-f2c94c?style=for-the-badge)](#data)
 
 Development builds are released periodically while the configurable collection model is tested on real phones. Settings shows the installed version, build number and Development/Release edition directly beneath its title. Older and development installations can coexist and have separate local records; export before removing an installation.
@@ -97,7 +97,7 @@ A single control cycles forward through the effects. Nota Bene is a utility, not
 
 ## Current milestone
 
-**Version 1.0.0, build 46 — production candidate** provides:
+**Version 1.0.0, build 46 is live on Google Play.** Version **1.0.1, build 47** is the next maintenance update, adding a clear, highlighted `Show History` toggle for repeating items without changing recording. The app provides:
 
 - a native Kotlin and Jetpack Compose application;
 - a configurable collection shell with eleven selectable visual styles;

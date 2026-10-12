@@ -5,7 +5,7 @@
 - Nota Bene opens with one **TODO** collection. The `+` control adds named TODO, LOG, RECORD and REPEAT collections.
 - Tapping a tab selects it; long-pressing it edits or deletes that collection.
 - TODO and RECORD collections have completion checkboxes and can hide/show completed items or delete them after confirmation; deletion is confined to the selected collection.
-- REPEAT items visibly retain their day/week/month/year interval. `LOG` records an occurrence; the item-heading button toggles history with distinct backgrounds and an arrow for each state; long-pressing it edits the item.
+- REPEAT items visibly retain their day/week/month/year interval. `LOG` records an occurrence; `Show History` toggles the display of logged events, muted when hidden and highlighted when shown, without changing recording. Tap the item title or long-press the history button to edit. `STOCK −` reduces the on-hand count.
 - The header contains the Nota Bene identity, colour slider, `MOOD >`, animation and `*` settings controls.
 - Every panel scrolls vertically and remains usable after phone rotation.
 - Tapping outside an input dismisses the keyboard.
@@ -22,6 +22,8 @@
 
 ## Small complete circuits still to add
 
+- [ ] Address Play's DEX optimisation/obfuscation warning before February 2027, with signed-release regression testing.
+- [ ] Review Play's edge-to-edge display recommendation on supported Android versions.
 - [ ] Update the import format for the generic collection workbook.
 - [ ] Reconfirm reminder timing and battery-saving behaviour on physical devices.
 - [ ] Refine each visual treatment side-by-side on a physical phone while preserving the common operational layout.
