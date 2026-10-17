@@ -50,6 +50,13 @@ class MigrationNineToTenTest {
                 assertEquals("Existing record", cursor.getString(0))
                 assertEquals("", cursor.getString(1))
             }
+            NotaBeneDatabase.MIGRATION_10_11.migrate(database)
+            database.query("SELECT text, calendarAt, calendarRepeat FROM collection_entries").use { cursor ->
+                assertTrue(cursor.moveToFirst())
+                assertEquals("Existing record", cursor.getString(0))
+                assertEquals("", cursor.getString(1))
+                assertEquals("NONE", cursor.getString(2))
+            }
         }
         helper.close()
     }

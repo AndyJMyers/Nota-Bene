@@ -848,7 +848,7 @@ private fun NewCollectionDialog(
         containerColor = MaterialTheme.colorScheme.surface,
         title = { Text("NEW COLLECTION", color = accent, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PaymentField("Name", title, { title = it }, Modifier.fillMaxWidth(), accent)
                 Text("TYPE", color = panelAccent(accent), fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
                 CollectionKind.entries.forEach { option ->
@@ -946,6 +946,7 @@ private val CollectionKind.label: String
         CollectionKind.LOG -> "LOG"
         CollectionKind.RECORD -> "RECORD"
         CollectionKind.REPEAT -> "REPEAT"
+        CollectionKind.CALENDAR -> "CALENDAR"
     }
 
 private val CollectionKind.description: String
@@ -954,6 +955,7 @@ private val CollectionKind.description: String
         CollectionKind.LOG -> "A dated stream of notes and observations."
         CollectionKind.RECORD -> "A dated item with an optional value or reference."
         CollectionKind.REPEAT -> "Items you complete again, with optional stock counts."
+        CollectionKind.CALENDAR -> "Local events with a date, time and optional repeat."
     }
 
 @Composable
@@ -1020,7 +1022,7 @@ private fun TabArtwork(style: NotaStyle, accent: Color, active: Boolean) {
 }
 
 @Composable
-private fun NotaCard(
+internal fun NotaCard(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
@@ -1104,6 +1106,10 @@ private fun panelAccent(accent: Color): Color = when (LocalNotaStyle.current) {
 
 @Composable
 private fun CollectionPanel(collection: Collection, accent: Color, modifier: Modifier = Modifier) {
+    if (collection.kind == CollectionKind.CALENDAR.name) {
+        CalendarPanel(collection, accent, modifier)
+        return
+    }
     val context = LocalContext.current
     val dao = remember { NotaBeneDatabase.get(context).collectionDao() }
     val rawEntries by dao.observeEntries(collection.id).collectAsState(initial = emptyList())
@@ -1194,6 +1200,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                         CollectionKind.LOG -> "What do you want to log?"
                         CollectionKind.RECORD -> "What do you want to record?"
                         CollectionKind.REPEAT -> "What do you want to do?"
+                        CollectionKind.CALENDAR -> "What are you planning?"
                     },
                     text,
                     { text = it },
@@ -1207,6 +1214,7 @@ private fun CollectionPanel(collection: Collection, accent: Color, modifier: Mod
                         CollectionKind.LOG -> "Detail (optional)"
                         CollectionKind.RECORD -> "Value or reference (optional)"
                         CollectionKind.REPEAT -> "Detail (optional)"
+                        CollectionKind.CALENDAR -> "Detail (optional)"
                     },
                     detail,
                     { detail = it },

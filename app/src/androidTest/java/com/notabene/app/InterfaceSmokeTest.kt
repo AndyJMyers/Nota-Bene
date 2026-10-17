@@ -34,6 +34,25 @@ class InterfaceSmokeTest {
     }
 
     @Test
+    fun calendarCanSaveAnEventAndKeepDraftAcrossRecreation() {
+        waitForText("NEW TODO ITEM")
+        compose.onNodeWithText("+").performClick()
+        compose.onNode(hasText("Name") and hasSetTextAction()).performTextInput("Family")
+        compose.onNodeWithText("CALENDAR").performScrollTo().performClick()
+        compose.onNodeWithText("CREATE").performClick()
+        waitForText("NEW EVENT")
+        compose.onNodeWithText("NEW EVENT").performClick()
+        compose.onNode(hasText("Title") and hasSetTextAction()).performTextInput("Sunday lunch")
+        compose.activityRule.scenario.recreate()
+        compose.onNodeWithText("Sunday lunch").assertIsDisplayed()
+        compose.onNodeWithText("Repeat: Never").performScrollTo().performClick()
+        compose.onNodeWithText("Weekly").performClick()
+        compose.onNodeWithText("SAVE").performClick()
+        waitForText("Sunday lunch")
+        compose.onNodeWithText("Repeats weekly · next occurrence shown").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
     fun firstCollectionExplainsHowToKeepAnItem() {
         waitForText("NEW TODO ITEM")
         compose.onNodeWithText("Your first task starts above. Write it, then tap KEEP ITEM.", useUnmergedTree = true).performScrollTo().assertIsDisplayed()

@@ -64,7 +64,7 @@ internal fun EmptyCollectionArtwork(kind: CollectionKind, accent: Color) {
                 drawCircle(signal, 3.5f * u, Offset(cx + 28f * u, cy - 12f * u))
                 repeat(3) { dot -> drawCircle(frame, 1.8f * u, Offset(cx - 12f * u + dot * 12f * u, cy + 19f * u)) }
             }
-            CollectionKind.RECORD -> {
+            CollectionKind.RECORD, CollectionKind.CALENDAR -> {
                 drawRoundRect(frame, Offset(cx - 34f * u, cy - 29f * u), Size(66f * u, 53f * u), CornerRadius(3f * u), style = Stroke(1.5f * u))
                 drawRoundRect(light, Offset(cx - 27f * u, cy - 24f * u), Size(66f * u, 53f * u), CornerRadius(3f * u), style = Stroke(2f * u))
                 drawCircle(signal, 5f * u, Offset(cx + 19f * u, cy - 13f * u))

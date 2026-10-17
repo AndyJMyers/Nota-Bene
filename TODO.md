@@ -1,8 +1,15 @@
 # Nota Bene TODO
 
+## Calendar local candidate — build 50
+
+- [x] Named local CALENDAR collections, date/time/title/details, real day/week/month/year repeats and an upcoming agenda.
+- [x] Edit/delete series, past one-off events toggle, rotation-safe draft, additive database migration and export columns.
+- [ ] Phone acceptance across light/dark moods and rotation; verify upgrade preserves existing data.
+- [ ] Repair configurable-collection XLSX import before describing exports as restorable backups. Existing importer accepts only the legacy five-sheet format; calendars are export-only for now.
+
 ## Current UI baseline — do not drift
 
-- Nota Bene opens with one **TODO** collection. The `+` control adds named TODO, LOG, RECORD and REPEAT collections.
+- Nota Bene opens with one **TODO** collection. The `+` control adds named TODO, LOG, RECORD, REPEAT and (local build 50) CALENDAR collections.
 - Tapping a tab selects it; long-pressing it edits or deletes that collection.
 - TODO and RECORD collections have completion checkboxes and can hide/show completed items or delete them after confirmation; deletion is confined to the selected collection.
 - REPEAT items visibly retain their day/week/month/year interval. `LOG` records an occurrence; `Show History` toggles the display of logged events, muted when hidden and highlighted when shown, without changing recording. Tap the item title or long-press the history button to edit. `STOCK −` reduces the on-hand count.

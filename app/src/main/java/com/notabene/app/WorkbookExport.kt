@@ -29,7 +29,7 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
                 listOf(
                     exportDate(entry.createdAt), entry.text, entry.detail, collection.kind, yesNo(entry.done),
                     entry.lastCompletedAt?.let(::exportDate).orEmpty(), entry.intervalDays, entry.quantity ?: "", entry.restockAt ?: "",
-                    yesNo(entry.notifyWhenDue), entry.notifyAt
+                    yesNo(entry.notifyWhenDue), entry.notifyAt, entry.calendarAt, entry.calendarRepeat
                 )
             ) + if (collection.kind == CollectionKind.REPEAT.name) {
                 dao.observeRepeatEvents(entry.id).first().map { event ->
@@ -41,7 +41,7 @@ suspend fun exportWorkbook(database: NotaBeneDatabase, output: OutputStream) {
         }
         ExportSheet(
             safeSheetName(collection.title),
-            listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at")) +
+            listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at", "Event date and time", "Calendar repeat")) +
                 rows
         )
     }.ifEmpty { listOf(ExportSheet("TODO", listOf(listOf("Date", "Item", "Detail", "Type", "Completed", "Last completed", "Repeat days", "On hand", "Restock at", "Notify when due", "Notify at")))) }

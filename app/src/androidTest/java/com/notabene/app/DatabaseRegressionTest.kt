@@ -31,6 +31,29 @@ class DatabaseRegressionTest {
     }
 
     @Test
+    fun calendarsKeepTheirEventsSeparateAndExportDates() = runBlocking {
+        val dao = database.collectionDao()
+        val work = dao.insertCollection(Collection(title = "Work", kind = "CALENDAR"))
+        val family = dao.insertCollection(Collection(title = "Family", kind = "CALENDAR"))
+        dao.insertEntry(CollectionEntry(id = 901, collectionId = work, text = "Meeting", calendarAt = "2026-10-19T09:00", calendarRepeat = "WEEKLY"))
+        dao.insertEntry(CollectionEntry(id = 902, collectionId = family, text = "Lunch", calendarAt = "2026-10-18T13:00"))
+        val event = dao.observeEntries(work).first().single()
+        assertEquals("WEEKLY", event.calendarRepeat)
+        dao.updateEntry(event.copy(calendarAt = "2026-10-19T10:00"))
+        val output = java.io.ByteArrayOutputStream()
+        exportWorkbook(database, output)
+        val xml = StringBuilder()
+        java.util.zip.ZipInputStream(output.toByteArray().inputStream()).use { zip ->
+            while (zip.nextEntry != null) xml.append(zip.readBytes().toString(Charsets.UTF_8))
+        }
+        assertTrue(xml.contains("2026-10-19T10:00"))
+        assertTrue(xml.contains("WEEKLY"))
+        dao.deleteEntryAndEvents(901)
+        assertTrue(dao.observeEntries(work).first().isEmpty())
+        assertEquals("Lunch", dao.observeEntries(family).first().single().text)
+    }
+
+    @Test
     fun deleteDoneKeepsOpenTasksAndOtherCollections() = runBlocking {
         val dao = database.collectionDao()
         val selected = dao.insertCollection(Collection(title = "Jobs", kind = "TODO"))

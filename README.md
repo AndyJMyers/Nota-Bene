@@ -35,6 +35,9 @@ Nota Bene is a small local-first organiser made of user-named collections. It op
 | **LOG** | A dated stream of notes, observations and other things worth retaining |
 | **RECORD** | A dated item with an optional value or reference |
 | **REPEAT** | An item to complete again, with an optional repeat interval, quantity and restock point |
+| **CALENDAR** *(local test build 50)* | Separate named calendars with title, date/time, details and optional daily, weekly, monthly or yearly repeats |
+
+Calendar is currently a local test feature, not yet submitted to Play. It uses an upcoming-events list, with past one-off events available on request. Dates and times stay local; there is no calendar-account integration, sharing or event alert. Editing or deleting a repeating event affects the whole series. Month-end and leap-day repeats use the last valid day without moving the original anchor.
 
 The application does not assign a category or meaning to what a person writes. A collection might be household jobs, books, work expenses, research, supplies or anything else the owner finds useful. The contents remain local and private.
 
@@ -45,6 +48,8 @@ Anything deliberately entered or accepted by the user is treated as the recorded
 Primary data is stored locally in a Room database and survives application closure and phone restart. The expected data volume is small.
 
 The `*` settings control opens a four-drawer cabinet for Data, How it works, Privacy, and About & support. Export opens Android's standard save picker and creates a dated XLSX workbook with one worksheet for each user-created collection. Completed records and their stored details are included. The support drawer offers feedback, the Play page and a recommendation share action using the public store link.
+
+Current limitation: the importer accepts the original five-sheet format, not configurable-collection exports. Build 50 exports calendar date/time and recurrence as additional columns, but these cannot yet be restored through Import. Keep the installed app and its local data; export is not yet a round-trip backup for the newer collection model.
 
 TODO and RECORD collections offer completion checkboxes, HIDE DONE / SHOW DONE and DELETE DONE. Deletion asks for confirmation and removes only completed items in that collection, leaving open items and other collections untouched.
 
